@@ -1,0 +1,27 @@
+name: PR ↔ Issue link
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify PR body references an issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            const pattern = /(closes|close|closed|fixes|fix|fixed|resolves|resolve|resolved|refs|ref):?\s+#\d+/i;
+            if (!pattern.test(body)) {
+              core.setFailed(
+                'PR description must reference an issue. ' +
+                'Add "Closes #N", "Fixes #N", or "Refs #N" to the PR body.'
+              );
+            } else {
+              core.info('PR references an issue ✓');
+            }

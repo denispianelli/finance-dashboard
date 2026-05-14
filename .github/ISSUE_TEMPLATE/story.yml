@@ -1,0 +1,51 @@
+name: 📘 Story
+description: User-facing slice of an Epic. Single PR target.
+title: 'Story — '
+labels: ['story']
+body:
+  - type: input
+    id: epic
+    attributes:
+      label: Parent Epic
+      placeholder: '#N'
+    validations:
+      required: true
+  - type: textarea
+    id: user-story
+    attributes:
+      label: User story
+      value: |
+        En tant qu'**[utilisateur]**, je veux **[action]** afin de **[bénéfice]**.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - [ ] (Criterion 1)
+        - [ ] (Criterion 2)
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Implementation outline
+      description: Bullet list of tasks. Detailed code lives in Plan B.
+  - type: dropdown
+    id: estimate
+    attributes:
+      label: Rough estimate
+      options:
+        - 'S — ≤ half a day'
+        - 'M — 1-2 days'
+        - 'L — 3-5 days'
+        - 'XL — > 1 week (consider splitting)'
+    validations:
+      required: true
+  - type: input
+    id: ref
+    attributes:
+      label: Reference (Plan B task, spec section, ADR)
+      placeholder: 'Plan B — Task N · Spec §M'

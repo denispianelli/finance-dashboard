@@ -1,0 +1,35 @@
+name: 🐛 Bug
+description: Something is broken.
+title: 'Bug — '
+labels: ['bug']
+body:
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+        2.
+        3.
+      render: markdown
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: 'OS · app version · Node version'
+    validations:
+      required: true

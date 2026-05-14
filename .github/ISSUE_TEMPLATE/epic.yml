@@ -1,0 +1,45 @@
+name: 🎯 Epic
+description: Phase-level work item. Mirrors a Notion EPIC entry.
+title: 'Epic — '
+labels: ['epic']
+body:
+  - type: input
+    id: notion
+    attributes:
+      label: Notion EPIC URL
+      placeholder: https://www.notion.so/...
+    validations:
+      required: true
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Phase
+      options:
+        - 'Phase 0 — Foundation'
+        - 'Phase 1 — Import'
+        - 'Phase 2 — Dashboard'
+        - 'Phase 3 — Catégorisation'
+        - 'Phase 4 — IA'
+        - 'Phase 5 — Robustesse'
+        - 'Phase 6 — Distribution'
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Why this Epic exists and what it delivers.
+    validations:
+      required: true
+  - type: textarea
+    id: dod
+    attributes:
+      label: Definition of Done
+      value: |
+        - [ ] All linked stories closed
+        - [ ] CI green on all OS
+        - [ ] Notion EPIC entry set to "Done"
+        - [ ] Relevant ADRs created / updated
+      render: markdown
+    validations:
+      required: true

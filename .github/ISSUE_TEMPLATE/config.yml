@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/denispianelli/finance-dashboard/discussions
+    about: Questions, ideas, RFCs that don't need a ticket.

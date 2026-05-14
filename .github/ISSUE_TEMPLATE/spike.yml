@@ -1,0 +1,25 @@
+name: 🔬 Spike
+description: Time-boxed research with a deliverable.
+title: 'Spike — '
+labels: ['spike']
+body:
+  - type: input
+    id: timebox
+    attributes:
+      label: Time-box
+      placeholder: 'ex: 2 days'
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Question being answered
+    validations:
+      required: true
+  - type: textarea
+    id: deliverable
+    attributes:
+      label: Deliverable that closes this spike
+      description: ADR, decision in the Decision Log, doc, etc.
+    validations:
+      required: true
