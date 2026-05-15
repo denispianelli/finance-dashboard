@@ -3,6 +3,7 @@ import type { IpcMainInvokeEvent } from 'electron';
 import type { IpcChannel, IpcPayload, IpcResponse } from '@shared/types/ipc';
 import { CHANNELS } from './channels';
 import { handlePing } from './handlers/ping';
+import { handlePickFile } from './handlers/importPickFile';
 
 type Handler<C extends IpcChannel> = (
   payload: IpcPayload<C>,
@@ -27,4 +28,5 @@ function register<C extends IpcChannel>(channel: C, handler: Handler<C>): void {
 
 export function registerAllHandlers(): void {
   register(CHANNELS.appPing, handlePing);
+  register(CHANNELS.importPickFile, () => handlePickFile());
 }
