@@ -1,7 +1,8 @@
 {
   "name": "finance-dashboard",
-  "version": "0.0.1",
-  "description": "Privacy-first desktop finance dashboard with embedded local LLM",
+  "version": "0.1.0",
+  "description": "Privacy-first desktop finance dashboard with local LLM",
+  "main": "out/main/index.js",
   "license": "AGPL-3.0-only",
   "author": "Denis Pianelli <denis.pianelli@gmail.com>",
   "repository": {
@@ -14,18 +15,40 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --max-warnings 0",
+    "format": "prettier --write src",
     "prepare": "husky"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.1",
     "@commitlint/config-conventional": "^21.0.1",
+    "@types/node": "^25.8.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^42.1.0",
+    "electron-vite": "^5.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.4",
-    "prettier": "^3.8.3"
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3",
+    "vite": "^7.3.3"
   },
   "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write"
+    ],
     "*.{json,md,yml,yaml}": [
       "prettier --write"
     ]
+  },
+  "dependencies": {
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-router-dom": "^7.15.1"
   }
 }
