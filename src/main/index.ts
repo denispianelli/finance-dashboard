@@ -1,6 +1,7 @@
 import { app, BrowserWindow, shell } from 'electron';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { registerAllHandlers } from './ipc/register';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -13,7 +14,7 @@ function createWindow(): void {
     title: 'Finance Dashboard',
     backgroundColor: '#0f0f18',
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/index.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
@@ -33,6 +34,7 @@ function createWindow(): void {
 }
 
 void app.whenReady().then(() => {
+  registerAllHandlers();
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
