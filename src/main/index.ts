@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell } from 'electron';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registerAllHandlers } from './ipc/register';
+import { getDb, closeDb } from './db';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -34,11 +35,16 @@ function createWindow(): void {
 }
 
 void app.whenReady().then(() => {
+  getDb();
   registerAllHandlers();
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+});
+
+app.on('will-quit', () => {
+  closeDb();
 });
 
 app.on('window-all-closed', () => {
