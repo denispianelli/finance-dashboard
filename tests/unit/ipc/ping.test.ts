@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { handlePing } from '../../../src/main/ipc/handlers/ping';
 
 describe('handlePing', () => {
@@ -10,9 +10,11 @@ describe('handlePing', () => {
     expect(result.serverNow).toBeGreaterThanOrEqual(now);
   });
 
-  it('serverNow is close to now (within 100ms)', () => {
-    const now = Date.now();
-    const result = handlePing({ now });
-    expect(result.serverNow - now).toBeLessThan(100);
+  it('serverNow reflects the time of the call', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_000_000);
+    const result = handlePing({ now: 999_000 });
+    expect(result.serverNow).toBe(1_000_000);
+    vi.useRealTimers();
   });
 });

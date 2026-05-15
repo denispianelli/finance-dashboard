@@ -8,3 +8,7 @@ export interface IpcContract {
 export type IpcChannel = keyof IpcContract;
 export type IpcPayload<C extends IpcChannel> = IpcContract[C]['payload'];
 export type IpcResponse<C extends IpcChannel> = IpcContract[C]['response'];
+
+export type ElectronAPI = {
+  invoke: <C extends IpcChannel>(channel: C, payload: IpcPayload<C>) => Promise<IpcResponse<C>>;
+};

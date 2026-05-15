@@ -1,10 +1,8 @@
-import type { IpcChannel, IpcPayload, IpcResponse } from '@shared/types/ipc';
+import type { ElectronAPI, IpcChannel, IpcPayload, IpcResponse } from '@shared/types/ipc';
 
 declare global {
   interface Window {
-    electronAPI: {
-      invoke: <C extends IpcChannel>(channel: C, payload: IpcPayload<C>) => Promise<IpcResponse<C>>;
-    };
+    electronAPI: ElectronAPI;
   }
 }
 

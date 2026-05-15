@@ -7,8 +7,13 @@ export default function App() {
   const [pong, setPong] = useState<string>('');
 
   async function ping() {
-    const result = await ipc.invoke('app:ping', { now: Date.now() });
-    setPong(`pong roundtrip: ${result.serverNow - result.receivedAt}ms`);
+    try {
+      const result = await ipc.invoke('app:ping', { now: Date.now() });
+      setPong(`pong roundtrip: ${result.serverNow - result.receivedAt}ms`);
+    } catch (err) {
+      setPong('ping failed');
+      console.error('[ipc] ping error:', err);
+    }
   }
 
   return (
