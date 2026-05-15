@@ -8,8 +8,24 @@ export interface PingResponse {
   serverNow: number;
 }
 
+export type ImportFileType = 'pdf' | 'csv' | 'ofx';
+
+export type PickFilePayload = Record<string, never>;
+
+export type PickFileResponse =
+  | { cancelled: true }
+  | {
+      cancelled: false;
+      path: string;
+      type: ImportFileType;
+      hash: string;
+      size: number;
+      alreadyImported: boolean;
+    };
+
 export interface IpcContract {
   'app:ping': { payload: PingPayload; response: PingResponse };
+  'import:pickFile': { payload: PickFilePayload; response: PickFileResponse };
 }
 
 export type IpcChannel = keyof IpcContract;
