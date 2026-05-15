@@ -1,9 +1,12 @@
-import { contextBridge, ipcRenderer } from 'electron';
 import type { ElectronAPI, IpcChannel, IpcPayload, IpcResponse } from '@shared/types/ipc';
 
-const api: ElectronAPI = {
-  invoke: <C extends IpcChannel>(channel: C, payload: IpcPayload<C>): Promise<IpcResponse<C>> =>
-    ipcRenderer.invoke(channel, payload),
-};
+declare global {
+  interface Window {
+    electronAPI: ElectronAPI;
+  }
+}
 
-contextBridge.exposeInMainWorld('electronAPI', api);
+export const ipc = {
+  invoke: <C extends IpcChannel>(channel: C, payload: IpcPayload<C>): Promise<IpcResponse<C>> =>
+    window.electronAPI.invoke(channel, payload),
+};
