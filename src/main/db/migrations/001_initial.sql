@@ -1,5 +1,3 @@
-PRAGMA foreign_keys = ON;
-
 CREATE TABLE accounts (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -82,9 +80,3 @@ CREATE TABLE categorization_rules (
   FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 
-CREATE TABLE IF NOT EXISTS schema_migrations (
-  version INTEGER PRIMARY KEY,
-  applied_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
-
-INSERT INTO schema_migrations(version) VALUES (1);

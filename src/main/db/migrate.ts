@@ -17,10 +17,19 @@ export function runMigrations(db: DatabaseSync): void {
       db.prepare('SELECT version FROM schema_migrations').all() as Array<{
         version: number;
       }>
-    ).map((r) => r.version),
+    ).map((r) => (Number.isFinite(r.version) ? r.version : null)),
   );
+  const insertVersion = db.prepare('INSERT INTO schema_migrations(version) VALUES (?)');
   for (const migration of MIGRATIONS) {
     if (applied.has(migration.version)) continue;
-    db.exec(migration.sql);
+    db.exec('BEGIN');
+    try {
+      db.exec(migration.sql);
+      insertVersion.run(migration.version);
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
+    }
   }
 }
