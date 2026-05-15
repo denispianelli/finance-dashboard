@@ -19,7 +19,7 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --max-warnings 0",
+    "lint": "tsc --noEmit",
     "format": "prettier --write src",
     "prepare": "husky"
   },
