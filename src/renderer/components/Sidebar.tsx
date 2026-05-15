@@ -1,7 +1,14 @@
+import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Separator } from './ui/separator';
 
-const items = [
+interface NavItem {
+  path: string;
+  label: string;
+  icon: ReactNode;
+}
+
+const items: NavItem[] = [
   { path: '/', label: 'Dashboard', icon: '📊' },
   { path: '/settings', label: 'Paramètres', icon: '⚙️' },
 ];
@@ -18,7 +25,7 @@ export function Sidebar() {
             to={it.path}
             end={it.path === '/'}
             className={({ isActive }) =>
-              `flex items-center gap-2 px-3 py-2 rounded-md text-sm ${
+              `flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
                 isActive
                   ? 'bg-muted text-foreground'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
