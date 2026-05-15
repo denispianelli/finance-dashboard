@@ -14,9 +14,9 @@ export function runMigrations(db: DatabaseSync): void {
   );
   const applied = new Set(
     (
-      db.prepare('SELECT version FROM schema_migrations').all() as Array<{
+      db.prepare('SELECT version FROM schema_migrations').all() as {
         version: number;
-      }>
+      }[]
     ).map((r) => r.version),
   );
   const insertVersion = db.prepare('INSERT INTO schema_migrations(version) VALUES (?)');

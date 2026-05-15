@@ -7,9 +7,9 @@ describe('runMigrations', () => {
     const db = new DatabaseSync(':memory:');
     runMigrations(db);
     const tables = (
-      db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all() as Array<{
+      db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all() as {
         name: string;
-      }>
+      }[]
     ).map((r) => r.name);
     expect(tables).toContain('accounts');
     expect(tables).toContain('transactions');
@@ -23,7 +23,9 @@ describe('runMigrations', () => {
   it('is idempotent — running twice does not error', () => {
     const db = new DatabaseSync(':memory:');
     runMigrations(db);
-    expect(() => runMigrations(db)).not.toThrow();
+    expect(() => {
+      runMigrations(db);
+    }).not.toThrow();
     db.close();
   });
 
@@ -31,9 +33,7 @@ describe('runMigrations', () => {
     const db = new DatabaseSync(':memory:');
     runMigrations(db);
     const versions = (
-      db.prepare('SELECT version FROM schema_migrations').all() as Array<{
-        version: number;
-      }>
+      db.prepare('SELECT version FROM schema_migrations').all() as { version: number }[]
     ).map((r) => r.version);
     expect(versions).toContain(1);
     db.close();
