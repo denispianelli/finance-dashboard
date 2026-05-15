@@ -11,10 +11,17 @@ const MODELS = [
   { name: 'Llama 3.2 3B Q4_K_M', file: 'llama-3.2-3b-instruct-q4_k_m.gguf' },
 ];
 
-// Update these with your actual PDF paths and expected transaction counts
 const FIXTURES = [
-  { path: 'spike-fixtures/bank1.pdf', bank: 'Banque 1', expectedTx: 0 },
-  { path: 'spike-fixtures/bank2.pdf', bank: 'Banque 2', expectedTx: 0 },
+  {
+    path: 'spike-fixtures/COMPTEDEDEPOTS_08992009022_20251202.pdf',
+    bank: 'LCL Compte courant',
+    expectedTx: 0,
+  },
+  {
+    path: 'spike-fixtures/COMPTEDEDEPOTSJOINT_08992007490_20251202.pdf',
+    bank: 'LCL Compte joint',
+    expectedTx: 0,
+  },
 ];
 
 const PROMPT =
@@ -44,15 +51,16 @@ async function benchModel(
   const t0 = performance.now();
   const model = await llama.loadModel({ modelPath });
   const loadMs = performance.now() - t0;
-  const context = await model.createContext();
   const results = [];
 
   for (const f of fixtures) {
+    const context = await model.createContext();
     const session = new LlamaChatSession({ contextSequence: context.getSequence() });
     const ti = performance.now();
     const response = await session.prompt(`${PROMPT}\n\n---\n${f.text.slice(0, 8000)}`);
     const ms = performance.now() - ti;
     results.push({ fixture: f.name, ms, response: response.trim() });
+    await context.dispose();
   }
 
   await model.dispose();

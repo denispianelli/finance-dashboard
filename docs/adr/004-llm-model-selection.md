@@ -1,43 +1,50 @@
 # ADR-004 — LLM model selection
 
 - **Status** : Accepted
-- **Date** : <!-- À remplir -->
+- **Date** : 2026-05-15
 - **Category** : LLM, Performance
 - **Supersedes** : ADR-004 (Proposed, in Notion)
 
 ## Context
 
-L'app a besoin d'un LLM local pour deux usages :
+The app needs a local LLM for two use cases:
 
-1. **Mapping des colonnes** (1× par banque) : identifier la structure d'un relevé CSV/PDF
-2. **Catégorisation des transactions** : classer chaque ligne dans une catégorie
+1. **Column mapping** (once per bank): identify the structure of a CSV/PDF bank statement
+2. **Transaction categorization**: classify each transaction line into a category
 
-Contraintes :
+Constraints:
 
-- Tourne sur CPU (pas de GPU requis)
-- Tient dans ~2 GB de RAM
-- Bon français
-- Bonne sortie JSON structurée
-- Intégrable via `node-llama-cpp` dans Electron (main process)
+- Runs on CPU (no GPU required)
+- Fits in ~2 GB RAM
+- Good French language support
+- Reliable structured JSON output
+- Embeddable via `node-llama-cpp` in Electron (main process)
 
 ## Decision
 
-<!-- Après le benchmark, remplacer cette ligne par : -->
-<!-- Après avoir benchmarké 3 candidats sur de vrais relevés bancaires, nous avons retenu **[modèle]** en quantization Q4_K_M. -->
+After benchmarking 3 candidates against 2 real LCL bank statements (current account +
+joint account, December 2025), we selected **Llama 3.2 3B Instruct Q4_K_M**.
 
 ## Alternatives considered
 
-<!-- Remplir avec les résultats mesurés — voir src/main/llm/README.md -->
+Benchmark run CPU-only (WSL2, Intel i7-10700KF, 16 GB RAM).
+See `src/main/llm/README.md` for full measurements.
 
-| Model               | Load | Inference | French | JSON | Verdict |
-| ------------------- | ---- | --------- | ------ | ---- | ------- |
-| Qwen2.5 3B Instruct | Xms  | Xms       | X/5    | X/5  |         |
-| Phi-3.5 Mini        | Xms  | Xms       | X/5    | X/5  |         |
-| Llama 3.2 3B        | Xms  | Xms       | X/5    | X/5  |         |
+| Model               | Load     | Avg inference | French | JSON | Verdict |
+| ------------------- | -------- | ------------- | ------ | ---- | ------- |
+| Qwen2.5 3B Instruct | 4 309 ms | 70 657 ms     | 4/5    | 5/5  | ✅      |
+| Phi-3.5 Mini        | 3 426 ms | 156 892 ms    | 4/5    | 2/5  | ❌      |
+| Llama 3.2 3B        | 5 963 ms | 56 607 ms     | 5/5    | 5/5  | ✅ 🏆   |
+
+**Phi-3.5 Mini eliminated**: 2.8× slower than Llama and ignores the "strict JSON only"
+instruction — outputs correct JSON wrapped in verbose French explanation.
+
+**Llama 3.2 3B selected**: fastest inference, perfectly strict JSON output, native French
+terminology (`libelle`, `solde`).
 
 ## Consequences
 
-- L'installeur télécharge ~X GB au premier lancement
-- Temps d'inférence par relevé : ~Xs
-- Latence de catégorisation par transaction : ~Xms
-- Empreinte mémoire à l'exécution : ~X GB
+- Installer downloads ~1.9 GB on first launch (GGUF file)
+- Column mapping inference time: ~57 s on CPU (i7-10700KF) — GPU times not yet measured
+- Runtime memory footprint: ~2 GB
+- `node-llama-cpp` handles model download and loading in the main process
