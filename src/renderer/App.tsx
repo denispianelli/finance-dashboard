@@ -1,39 +1,17 @@
-import { useState } from 'react';
-import { Button } from './components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
-import { ipc } from './ipc/client';
+import { HashRouter, Route, Routes } from 'react-router-dom';
+import { AppShell } from './components/AppShell';
+import { DashboardPage } from './pages/DashboardPage';
+import { SettingsPage } from './pages/SettingsPage';
 
 export default function App() {
-  const [pong, setPong] = useState<string>('');
-
-  async function ping() {
-    try {
-      const result = await ipc.invoke('app:ping', { now: Date.now() });
-      setPong(`pong roundtrip: ${result.serverNow - result.receivedAt}ms`);
-    } catch (err) {
-      setPong('ping failed');
-      console.error('[ipc] ping error:', err);
-    }
-  }
-
   return (
-    <div className="min-h-screen p-8">
-      <Card className="max-w-md">
-        <CardHeader>
-          <CardTitle>Finance Dashboard</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-muted-foreground">IPC test</p>
-          <Button
-            onClick={() => {
-              void ping();
-            }}
-          >
-            Ping main
-          </Button>
-          {pong && <p className="text-sm">{pong}</p>}
-        </CardContent>
-      </Card>
-    </div>
+    <HashRouter>
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+      </Routes>
+    </HashRouter>
   );
 }
