@@ -17,5 +17,7 @@ models/
 spike-fixtures/
 spike-results.txt
 coverage/
+test-results/
+playwright-report/
 .vscode/
 .idea/
