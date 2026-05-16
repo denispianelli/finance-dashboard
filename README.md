@@ -5,7 +5,7 @@
 
 ## Status
 
-🚧 **Phase 0 — Foundation.** Not yet usable. Roadmap below.
+🚧 **Phase 1 — Import Pipeline (in progress).** Foundation complete. Not yet usable end-to-end. Roadmap below.
 
 ## Promise
 
@@ -13,7 +13,7 @@ You import your bank statements (PDF / CSV / OFX). The app extracts transactions
 
 ## Stack
 
-Electron · TypeScript · React · shadcn/ui · Tailwind · Recharts · SQLite (`better-sqlite3`) · `node-llama-cpp` · Qwen2.5 3B Instruct · pdfjs-dist · papaparse · ofx-js · tesseract.js (on-demand)
+Electron · TypeScript · React · shadcn/ui · Tailwind · Recharts _(planned)_ · SQLite (`node:sqlite`) · `node-llama-cpp` · Llama 3.2 3B Instruct Q4*K_M · pdfjs-dist · papaparse *(planned)_ · ofx-js _(planned)_ · tesseract.js _(planned, on-demand)\_
 
 ## Documentation
 
@@ -28,15 +28,15 @@ Electron · TypeScript · React · shadcn/ui · Tailwind · Recharts · SQLite (
 
 | Phase                               | Status         |
 | ----------------------------------- | -------------- |
-| Phase 0 — Foundation                | 🟡 In progress |
-| Phase 1 — Import Pipeline           | ⚪ Backlog     |
+| Phase 0 — Foundation                | ✅ Done        |
+| Phase 1 — Import Pipeline           | 🟡 In progress |
 | Phase 2 — Dashboard                 | ⚪ Backlog     |
 | Phase 3 — Categorization & Rules    | ⚪ Backlog     |
 | Phase 4 — AI Features               | ⚪ Backlog     |
 | Phase 5 — Robustness (OCR + Backup) | ⚪ Backlog     |
 | Phase 6 — Distribution              | ⚪ Backlog     |
 
-Live tracking : [GitHub Project](https://github.com/users/denispianelli/projects) (link added after Task 10).
+Live tracking : [GitHub Project](https://github.com/users/denispianelli/projects/5).
 
 ## License
 
