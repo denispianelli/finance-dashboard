@@ -49,4 +49,15 @@ describe('LCL seed (migration 002)', () => {
     expect(versions).toContain(2);
     db.close();
   });
+
+  it('is idempotent — running migrations twice does not duplicate rows', () => {
+    const db = new DatabaseSync(':memory:');
+    runMigrations(db);
+    runMigrations(db);
+    const row = db.prepare('SELECT count(*) as n FROM banks WHERE id = ?').get('lcl') as {
+      n: number;
+    };
+    expect(row.n).toBe(1);
+    db.close();
+  });
 });
