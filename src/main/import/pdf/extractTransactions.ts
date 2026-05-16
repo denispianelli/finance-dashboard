@@ -29,8 +29,10 @@ export function parseAmount(str: string): number | null {
 }
 
 export function parseDateStr(ddmm: string, year: number): string {
-  const [day, month] = ddmm.split('.');
-  return `${year}-${month!.padStart(2, '0')}-${day!.padStart(2, '0')}`;
+  const parts = ddmm.split('.');
+  const day = parts[0] ?? '';
+  const month = parts[1] ?? '';
+  return `${String(year)}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 }
 
 function yyToFullYear(yy: number): number {
@@ -38,16 +40,20 @@ function yyToFullYear(yy: number): number {
 }
 
 export function parseValeurDate(str: string): string {
-  const [day, month, yy] = str.split('.');
-  const fullYear = yyToFullYear(parseInt(yy!, 10));
-  return `${fullYear}-${month!.padStart(2, '0')}-${day!.padStart(2, '0')}`;
+  const parts = str.split('.');
+  const day = parts[0] ?? '';
+  const month = parts[1] ?? '';
+  const yy = parts[2] ?? '0';
+  const fullYear = yyToFullYear(parseInt(yy, 10));
+  return `${String(fullYear)}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 }
 
 function inferYear(items: PdfTextItem[]): number {
   for (const item of items) {
     const m = /^\d{2}\.\d{2}\.(\d{2})$/.exec(item.str);
     if (m) {
-      return yyToFullYear(parseInt(m[1]!, 10));
+      const yyStr = m[1] ?? '0';
+      return yyToFullYear(parseInt(yyStr, 10));
     }
   }
   return new Date().getFullYear();
@@ -56,15 +62,20 @@ function inferYear(items: PdfTextItem[]): number {
 function groupItemsByY(items: PdfTextItem[], tolerance = 4): PdfTextItem[][] {
   if (items.length === 0) return [];
   const sorted = [...items].sort((a, b) => b.y - a.y);
+  const firstItem = sorted[0];
+  if (!firstItem) return [];
   const groups: PdfTextItem[][] = [];
-  let current: PdfTextItem[] = [sorted[0]!];
+  let current: PdfTextItem[] = [firstItem];
+  let currentY = firstItem.y;
   for (let i = 1; i < sorted.length; i++) {
-    const item = sorted[i]!;
-    if (Math.abs(item.y - current[0]!.y) <= tolerance) {
+    const item = sorted[i];
+    if (!item) continue;
+    if (Math.abs(item.y - currentY) <= tolerance) {
       current.push(item);
     } else {
       groups.push(current.sort((a, b) => a.x - b.x));
       current = [item];
+      currentY = item.y;
     }
   }
   groups.push(current.sort((a, b) => a.x - b.x));
@@ -131,7 +142,7 @@ export function extractTransactions(pages: PdfPage[], mapping: ColumnMapping): E
       transactions.push({
         date,
         label: labelStr,
-        amount: debitAmt != null ? -debitAmt : creditAmt!,
+        amount: debitAmt != null ? -debitAmt : (creditAmt ?? 0),
       });
     }
   }

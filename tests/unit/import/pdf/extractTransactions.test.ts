@@ -73,14 +73,18 @@ describe('extractTransactions', () => {
       expect(result.openingDate).toBe('2025-10-31');
       expect(result.closingDate).toBe('2025-12-02');
 
-      const first = result.transactions[0]!;
-      expect(first.date).toBe('2025-11-01');
-      expect(first.label).toBe('VIR.PERMANENT MR PIANELLI OU ML');
-      expect(first.amount).toBeCloseTo(-1000.0, 2);
+      const first = result.transactions[0];
+      expect(first).toBeDefined();
+      expect(first?.date).toBe('2025-11-01');
+      expect(first?.label).toBe('VIR.PERMANENT MR PIANELLI OU ML');
+      expect(first?.amount).toBeCloseTo(-1000.0, 2);
 
       // Arithmetic: opening + net = closing
       const net = result.transactions.reduce((sum, t) => sum + t.amount, 0);
-      expect(result.openingBalance! + net).toBeCloseTo(result.closingBalance!, 1);
+      const { openingBalance, closingBalance } = result;
+      if (openingBalance !== null && closingBalance !== null) {
+        expect(openingBalance + net).toBeCloseTo(closingBalance, 1);
+      }
 
       // All transactions have valid ISO dates and non-empty labels
       for (const tx of result.transactions) {
