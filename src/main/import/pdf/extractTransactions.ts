@@ -16,14 +16,14 @@ export interface ExtractedTransaction {
 
 export interface ExtractionResult {
   transactions: ExtractedTransaction[];
-  openingBalance: number;
-  closingBalance: number;
+  openingBalance: number | null;
+  closingBalance: number | null;
   openingDate: string;
   closingDate: string;
 }
 
 export function parseAmount(str: string): number | null {
-  const cleaned = str.replace(/\s/g, '').replace(',', '.');
+  const cleaned = str.replace(/\s/g, '').replace(/,/g, '.');
   const n = parseFloat(cleaned);
   return isNaN(n) ? null : n;
 }
@@ -33,9 +33,13 @@ export function parseDateStr(ddmm: string, year: number): string {
   return `${year}-${month!.padStart(2, '0')}-${day!.padStart(2, '0')}`;
 }
 
+function yyToFullYear(yy: number): number {
+  return yy <= 50 ? 2000 + yy : 1900 + yy;
+}
+
 export function parseValeurDate(str: string): string {
   const [day, month, yy] = str.split('.');
-  const fullYear = parseInt(yy!, 10) <= 50 ? 2000 + parseInt(yy!, 10) : 1900 + parseInt(yy!, 10);
+  const fullYear = yyToFullYear(parseInt(yy!, 10));
   return `${fullYear}-${month!.padStart(2, '0')}-${day!.padStart(2, '0')}`;
 }
 
@@ -43,8 +47,7 @@ function inferYear(items: PdfTextItem[]): number {
   for (const item of items) {
     const m = /^\d{2}\.\d{2}\.(\d{2})$/.exec(item.str);
     if (m) {
-      const yy = parseInt(m[1]!, 10);
-      return yy <= 50 ? 2000 + yy : 1900 + yy;
+      return yyToFullYear(parseInt(m[1]!, 10));
     }
   }
   return new Date().getFullYear();
@@ -71,8 +74,8 @@ function groupItemsByY(items: PdfTextItem[], tolerance = 4): PdfTextItem[][] {
 export function extractTransactions(pages: PdfPage[], mapping: ColumnMapping): ExtractionResult {
   const year = inferYear(pages.flatMap((p) => p.items));
 
-  let openingBalance = 0;
-  let closingBalance = 0;
+  let openingBalance: number | null = null;
+  let closingBalance: number | null = null;
   let openingDate = '';
   let closingDate = '';
   const transactions: ExtractedTransaction[] = [];
@@ -109,13 +112,13 @@ export function extractTransactions(pages: PdfPage[], mapping: ColumnMapping): E
         .trim();
 
       if (labelStr.includes('ANCIEN SOLDE')) {
-        openingBalance = creditItems.map((i) => parseAmount(i.str)).find((n) => n !== null) ?? 0;
+        openingBalance = creditItems.map((i) => parseAmount(i.str)).find((n) => n !== null) ?? null;
         openingDate = parseDateStr(dateStr, year);
         continue;
       }
 
       if (/SOLDE EN EUROS/i.test(labelStr)) {
-        closingBalance = creditItems.map((i) => parseAmount(i.str)).find((n) => n !== null) ?? 0;
+        closingBalance = creditItems.map((i) => parseAmount(i.str)).find((n) => n !== null) ?? null;
         closingDate = date;
         continue;
       }

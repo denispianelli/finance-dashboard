@@ -66,7 +66,9 @@ describe('extractTransactions', () => {
       const result = extractTransactions(pages, LCL_MAPPING);
 
       expect(result.transactions).toHaveLength(46);
+      expect(result.openingBalance).not.toBeNull();
       expect(result.openingBalance).toBeCloseTo(2638.2, 2);
+      expect(result.closingBalance).not.toBeNull();
       expect(result.closingBalance).toBeCloseTo(1173.71, 2);
       expect(result.openingDate).toBe('2025-10-31');
       expect(result.closingDate).toBe('2025-12-02');
@@ -78,7 +80,7 @@ describe('extractTransactions', () => {
 
       // Arithmetic: opening + net = closing
       const net = result.transactions.reduce((sum, t) => sum + t.amount, 0);
-      expect(result.openingBalance + net).toBeCloseTo(result.closingBalance, 1);
+      expect(result.openingBalance! + net).toBeCloseTo(result.closingBalance!, 1);
 
       // All transactions have valid ISO dates and non-empty labels
       for (const tx of result.transactions) {
