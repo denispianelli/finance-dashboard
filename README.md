@@ -5,7 +5,7 @@
 
 ## Status
 
-🚧 **Phase 1 — Import Pipeline (in progress).** Foundation complete. Not yet usable end-to-end. Roadmap below.
+🚧 **Not yet usable end-to-end.** Live status and the current phase are tracked on the [GitHub Project board](https://github.com/users/denispianelli/projects/5) — the authoritative source.
 
 ## Promise
 
@@ -13,9 +13,9 @@ You import your bank statements (PDF / CSV / OFX). The app extracts transactions
 
 ## Stack
 
-**Current:** Electron · TypeScript · React · shadcn/ui · Tailwind · SQLite (`node:sqlite`) · `node-llama-cpp` · `Llama 3.2 3B Instruct Q4_K_M` · `pdfjs-dist`
+Electron · TypeScript · React · shadcn/ui · Tailwind · `pdfjs-dist`. Planned: Recharts, `papaparse`, `ofx-js`, `tesseract.js` (OCR, on-demand).
 
-**Planned:** Recharts · `papaparse` · `ofx-js` · `tesseract.js` (OCR, on-demand)
+> Persistence engine and the embedded LLM are deliberate decisions, not casual choices — the **[Architecture Decision Records](docs/adr/)** are authoritative (notably ADR-002 privacy, ADR-003 deterministic extraction, ADR-004 LLM model). This line is a high-level overview only; don't restate ADR specifics here.
 
 ## Documentation
 
@@ -28,17 +28,9 @@ You import your bank statements (PDF / CSV / OFX). The app extracts transactions
 
 ## Roadmap
 
-| Phase                               | Status         |
-| ----------------------------------- | -------------- |
-| Phase 0 — Foundation                | ✅ Done        |
-| Phase 1 — Import Pipeline           | 🟡 In progress |
-| Phase 2 — Dashboard                 | ⚪ Backlog     |
-| Phase 3 — Categorization & Rules    | ⚪ Backlog     |
-| Phase 4 — AI Features               | ⚪ Backlog     |
-| Phase 5 — Robustness (OCR + Backup) | ⚪ Backlog     |
-| Phase 6 — Distribution              | ⚪ Backlog     |
+Foundation → Import Pipeline → Dashboard → Categorization & Rules → AI Features → Robustness (OCR + Backup) → Distribution.
 
-Live tracking : [GitHub Project](https://github.com/users/denispianelli/projects/5).
+**Where we are now and what's in progress:** the [GitHub Project board](https://github.com/users/denispianelli/projects/5) is the single source of truth. Per-phase status is intentionally not duplicated here to avoid drift.
 
 ## License
 
