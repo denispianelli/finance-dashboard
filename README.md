@@ -13,7 +13,9 @@ You import your bank statements (PDF / CSV / OFX). The app extracts transactions
 
 ## Stack
 
-Electron · TypeScript · React · shadcn/ui · Tailwind · Recharts _(planned)_ · SQLite (`node:sqlite`) · `node-llama-cpp` · Llama 3.2 3B Instruct Q4*K_M · pdfjs-dist · papaparse *(planned)_ · ofx-js _(planned)_ · tesseract.js _(planned, on-demand)\_
+**Current:** Electron · TypeScript · React · shadcn/ui · Tailwind · SQLite (`node:sqlite`) · `node-llama-cpp` · `Llama 3.2 3B Instruct Q4_K_M` · `pdfjs-dist`
+
+**Planned:** Recharts · `papaparse` · `ofx-js` · `tesseract.js` (OCR, on-demand)
 
 ## Documentation
 
