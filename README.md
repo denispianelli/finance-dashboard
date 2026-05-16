@@ -5,7 +5,7 @@
 
 ## Status
 
-🚧 **Phase 0 — Foundation.** Not yet usable. Roadmap below.
+🚧 **Not yet usable end-to-end.** Live status and the current phase are tracked on the [GitHub Project board](https://github.com/users/denispianelli/projects/5) — the authoritative source.
 
 ## Promise
 
@@ -13,7 +13,9 @@ You import your bank statements (PDF / CSV / OFX). The app extracts transactions
 
 ## Stack
 
-Electron · TypeScript · React · shadcn/ui · Tailwind · Recharts · SQLite (`better-sqlite3`) · `node-llama-cpp` · Qwen2.5 3B Instruct · pdfjs-dist · papaparse · ofx-js · tesseract.js (on-demand)
+Electron · TypeScript · React · shadcn/ui · Tailwind · `pdfjs-dist`. Planned: Recharts, `papaparse`, `ofx-js`, `tesseract.js` (OCR, on-demand).
+
+> Persistence engine and the embedded LLM are deliberate decisions, not casual choices — the **[Architecture Decision Records](docs/adr/)** are authoritative (notably ADR-002 privacy, ADR-003 deterministic extraction, ADR-004 LLM model). This line is a high-level overview only; don't restate ADR specifics here.
 
 ## Documentation
 
@@ -26,17 +28,9 @@ Electron · TypeScript · React · shadcn/ui · Tailwind · Recharts · SQLite (
 
 ## Roadmap
 
-| Phase                               | Status         |
-| ----------------------------------- | -------------- |
-| Phase 0 — Foundation                | 🟡 In progress |
-| Phase 1 — Import Pipeline           | ⚪ Backlog     |
-| Phase 2 — Dashboard                 | ⚪ Backlog     |
-| Phase 3 — Categorization & Rules    | ⚪ Backlog     |
-| Phase 4 — AI Features               | ⚪ Backlog     |
-| Phase 5 — Robustness (OCR + Backup) | ⚪ Backlog     |
-| Phase 6 — Distribution              | ⚪ Backlog     |
+Foundation → Import Pipeline → Dashboard → Categorization & Rules → AI Features → Robustness (OCR + Backup) → Distribution.
 
-Live tracking : [GitHub Project](https://github.com/users/denispianelli/projects) (link added after Task 10).
+**Where we are now and what's in progress:** the [GitHub Project board](https://github.com/users/denispianelli/projects/5) is the single source of truth. Per-phase status is intentionally not duplicated here to avoid drift.
 
 ## License
 
