@@ -182,8 +182,9 @@ Decisions:
 - **Discriminated `{ ok: true | false }` results**, not exceptions crossing
   IPC. The renderer (#31b) pattern-matches on `error`. Genuinely unexpected
   exceptions still surface as a rejected promise.
-- `ArithmeticCheckResult` and `PeriodOverlapResult` are reused from their
-  modules — not redefined in the shared contract.
+- `ArithmeticCheckResult` / `PeriodOverlapResult` / `OverlappingImport`
+  live in `@shared/types/import`; the main modules re-export them so
+  `@shared` never depends on `@main` (see §3 layering fix).
 - `ReviewTransaction` carries no `category_id` / `confidence`: no LLM in this
   flow; those columns are `NULL` at INSERT.
 
