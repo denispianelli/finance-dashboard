@@ -5,6 +5,7 @@ export interface ArithmeticCheckResult {
   openingBalance: number | null;
   closingBalance: number | null;
   computedClosing: number | null;
+  /** computedClosing − statedClosing; negative means transactions sum to less than stated closing */
   delta: number | null;
 }
 
