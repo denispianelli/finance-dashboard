@@ -21,6 +21,8 @@ describe('verifyArithmetic — cannot_verify', () => {
   it('returns cannot_verify when closingBalance is null', () => {
     const r = verifyArithmetic([tx(-10)], 100, null);
     expect(r.status).toBe('cannot_verify');
+    expect(r.openingBalance).toBe(100);
+    expect(r.closingBalance).toBeNull();
     expect(r.computedClosing).toBeNull();
     expect(r.delta).toBeNull();
   });
