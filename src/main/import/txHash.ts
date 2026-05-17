@@ -27,10 +27,7 @@ export function computeTxHash(
   return createHash('sha256').update(input).digest('hex');
 }
 
-export interface TransactionWithHash {
-  date: string;
-  label: string;
-  amount: number;
+export interface TransactionWithHash extends ExtractedTransaction {
   tx_hash: string;
 }
 
@@ -44,9 +41,7 @@ export function assignTxHashes(
     const orderInImport = counters.get(baseKey) ?? 0;
     counters.set(baseKey, orderInImport + 1);
     return {
-      date: tx.date,
-      label: tx.label,
-      amount: tx.amount,
+      ...tx,
       tx_hash: computeTxHash(accountId, tx.date, tx.amount, tx.label, orderInImport),
     };
   });

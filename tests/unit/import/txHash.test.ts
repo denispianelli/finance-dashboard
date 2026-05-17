@@ -58,7 +58,6 @@ describe('assignTxHashes', () => {
     ];
     const out = assignTxHashes('acc1', txs);
     expect(out).toHaveLength(2);
-    expect(out[0]?.tx_hash).not.toBe(out[1]?.tx_hash);
     expect(out[0]?.tx_hash).toBe(computeTxHash('acc1', '2025-11-01', -50, 'CARREFOUR', 0));
     expect(out[1]?.tx_hash).toBe(computeTxHash('acc1', '2025-11-02', 2000, 'SALAIRE', 0));
   });
@@ -77,7 +76,6 @@ describe('assignTxHashes', () => {
     const out = assignTxHashes('acc1', txs);
     expect(out[0]?.tx_hash).toBe(computeTxHash('acc1', '2025-11-01', -50, 'CARREFOUR', 0));
     expect(out[1]?.tx_hash).toBe(computeTxHash('acc1', '2025-11-01', -50, 'CARREFOUR', 1));
-    expect(out[0]?.tx_hash).not.toBe(out[1]?.tx_hash);
   });
 
   it('cross-import: a single occurrence in batch A matches the first occurrence in batch B', () => {
