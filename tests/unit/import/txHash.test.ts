@@ -14,6 +14,9 @@ describe('normalizeLabel', () => {
   it('trims leading and trailing whitespace', () => {
     expect(normalizeLabel('  VIR SEPA  ')).toBe('VIR SEPA');
   });
+  it('handles combined accents, mixed whitespace and surrounding spaces', () => {
+    expect(normalizeLabel('  Crédit  \t Lyonnais  ')).toBe('CREDIT LYONNAIS');
+  });
 });
 
 describe('computeTxHash', () => {
@@ -27,9 +30,6 @@ describe('computeTxHash', () => {
     expect(h).toMatch(/^[0-9a-f]{64}$/);
   });
   it('canonicalizes amount: 1.1 and 1.100000001 hash the same', () => {
-    expect(computeTxHash('a', '2025-01-01', 1.1, 'X', 0)).toBe(
-      computeTxHash('a', '2025-01-01', 1.1, 'X', 0),
-    );
     expect(computeTxHash('a', '2025-01-01', 1.1, 'X', 0)).toBe(
       computeTxHash('a', '2025-01-01', 1.100000001, 'X', 0),
     );
