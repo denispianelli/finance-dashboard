@@ -11,7 +11,15 @@ import { isAlreadyImported, findExistingHashes } from './duplicateCheck';
 import { detectBank } from './detectBank';
 import { ImportError } from './importError';
 
+const PDF_MAGIC = Buffer.from('%PDF-');
+
 async function loadPages(content: Buffer): Promise<PdfPage[]> {
+  if (
+    content.length < PDF_MAGIC.length ||
+    !content.subarray(0, PDF_MAGIC.length).equals(PDF_MAGIC)
+  ) {
+    throw new ImportError('not_pdf');
+  }
   let res: Awaited<ReturnType<typeof extractPdfText>>;
   try {
     res = await extractPdfText(content);
