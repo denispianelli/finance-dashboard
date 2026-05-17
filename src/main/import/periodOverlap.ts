@@ -4,7 +4,7 @@ export interface OverlappingImport {
   id: string;
   date_range_start: string;
   date_range_end: string;
-  status: string;
+  status: 'validated' | 'pending_review';
 }
 
 export interface PeriodOverlapResult {
@@ -14,8 +14,9 @@ export interface PeriodOverlapResult {
 
 /**
  * Pre-insert contract: call BEFORE inserting the new import row, so the new
- * import never matches itself. Compares against imports that are 'validated'
- * or 'pending_review' for the same account; 'cancelled' imports are ignored.
+ * import never matches itself. Compares against imports with status 'validated' or 'pending_review' for the same
+ * account; 'cancelled' imports are ignored. If a new terminal status is added to the
+ * schema, update the SQL IN clause and this union type accordingly.
  * Boundaries are inclusive (end == start counts as an overlap). Non-blocking:
  * this only reports — the caller decides what to do.
  */

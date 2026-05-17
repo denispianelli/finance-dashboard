@@ -76,4 +76,25 @@ describe('checkPeriodOverlap', () => {
     expect(r.hasOverlap).toBe(false);
     db.close();
   });
+
+  it('flags a fully-contained range (new range inside existing)', () => {
+    const db = freshDb();
+    addImport(db, 'i1', 'a1', '2025-01-01', '2025-12-31', 'validated');
+    const r = checkPeriodOverlap(db, 'a1', '2025-03-01', '2025-04-30');
+    expect(r.hasOverlap).toBe(true);
+    expect(r.overlappingImports[0]?.id).toBe('i1');
+    db.close();
+  });
+
+  it('returns all overlapping imports when multiple exist', () => {
+    const db = freshDb();
+    addImport(db, 'i1', 'a1', '2025-01-01', '2025-01-31', 'validated');
+    addImport(db, 'i2', 'a1', '2025-01-15', '2025-02-15', 'pending_review');
+    const r = checkPeriodOverlap(db, 'a1', '2025-01-20', '2025-01-25');
+    expect(r.hasOverlap).toBe(true);
+    expect(r.overlappingImports).toHaveLength(2);
+    const ids = r.overlappingImports.map((i) => i.id).sort();
+    expect(ids).toEqual(['i1', 'i2']);
+    db.close();
+  });
 });
