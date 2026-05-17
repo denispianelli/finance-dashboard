@@ -29,6 +29,7 @@ export interface ExtractPayload {
   path: string;
   accountId: string;
 }
+
 export type ExtractResponse =
   | { ok: true; extraction: StatementExtraction }
   | { ok: false; error: 'unknown_bank' | 'no_text' | 'not_pdf' };
@@ -38,6 +39,7 @@ export interface ConfirmPayload {
   accountId: string;
   acknowledgedCannotVerify?: boolean;
 }
+
 export type ConfirmResponse =
   | { ok: true; importId: string; insertedCount: number; skippedCount: number }
   | {
