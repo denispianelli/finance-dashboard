@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeLabel, computeTxHash } from '../../../src/main/import/txHash';
+import { normalizeLabel, computeTxHash, assignTxHashes } from '../../../src/main/import/txHash';
+import type { ExtractedTransaction } from '../../../src/main/import/pdf/extractTransactions';
 
 describe('normalizeLabel', () => {
   it('removes accents', () => {
@@ -46,5 +47,50 @@ describe('computeTxHash', () => {
     expect(computeTxHash('a', '2025-01-01', 11, 'X', 0)).not.toBe(base);
     expect(computeTxHash('a', '2025-01-01', 10, 'Y', 0)).not.toBe(base);
     expect(computeTxHash('a', '2025-01-01', 10, 'X', 1)).not.toBe(base);
+  });
+});
+
+describe('assignTxHashes', () => {
+  it('assigns a distinct hash to each distinct transaction (all order 0)', () => {
+    const txs: ExtractedTransaction[] = [
+      { date: '2025-11-01', label: 'CARREFOUR', amount: -50 },
+      { date: '2025-11-02', label: 'SALAIRE', amount: 2000 },
+    ];
+    const out = assignTxHashes('acc1', txs);
+    expect(out).toHaveLength(2);
+    expect(out[0]?.tx_hash).not.toBe(out[1]?.tx_hash);
+    expect(out[0]?.tx_hash).toBe(computeTxHash('acc1', '2025-11-01', -50, 'CARREFOUR', 0));
+    expect(out[1]?.tx_hash).toBe(computeTxHash('acc1', '2025-11-02', 2000, 'SALAIRE', 0));
+  });
+
+  it('preserves date, label and amount unchanged', () => {
+    const txs: ExtractedTransaction[] = [{ date: '2025-11-01', label: 'CARREFOUR', amount: -50 }];
+    const out = assignTxHashes('acc1', txs);
+    expect(out[0]).toMatchObject({ date: '2025-11-01', label: 'CARREFOUR', amount: -50 });
+  });
+
+  it('disambiguates within-batch duplicates with incrementing orderInImport', () => {
+    const txs: ExtractedTransaction[] = [
+      { date: '2025-11-01', label: 'CARREFOUR', amount: -50 },
+      { date: '2025-11-01', label: 'CARREFOUR', amount: -50 },
+    ];
+    const out = assignTxHashes('acc1', txs);
+    expect(out[0]?.tx_hash).toBe(computeTxHash('acc1', '2025-11-01', -50, 'CARREFOUR', 0));
+    expect(out[1]?.tx_hash).toBe(computeTxHash('acc1', '2025-11-01', -50, 'CARREFOUR', 1));
+    expect(out[0]?.tx_hash).not.toBe(out[1]?.tx_hash);
+  });
+
+  it('cross-import: a single occurrence in batch A matches the first occurrence in batch B', () => {
+    const batchA: ExtractedTransaction[] = [
+      { date: '2025-11-01', label: 'CARREFOUR', amount: -50 },
+    ];
+    const batchB: ExtractedTransaction[] = [
+      { date: '2025-11-01', label: 'CARREFOUR', amount: -50 },
+      { date: '2025-11-01', label: 'CARREFOUR', amount: -50 },
+    ];
+    const a = assignTxHashes('acc1', batchA);
+    const b = assignTxHashes('acc1', batchB);
+    expect(a[0]?.tx_hash).toBe(b[0]?.tx_hash); // both order 0 → dedup
+    expect(a[0]?.tx_hash).not.toBe(b[1]?.tx_hash); // genuine 2nd purchase is new
   });
 });
