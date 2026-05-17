@@ -1,16 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
+import type { OverlappingImport, PeriodOverlapResult } from '@shared/types/import';
 
-export interface OverlappingImport {
-  id: string;
-  date_range_start: string;
-  date_range_end: string;
-  status: 'validated' | 'pending_review';
-}
-
-export interface PeriodOverlapResult {
-  hasOverlap: boolean;
-  overlappingImports: OverlappingImport[];
-}
+export type { OverlappingImport, PeriodOverlapResult };
 
 /**
  * Pre-insert contract: call BEFORE inserting the new import row, so the new

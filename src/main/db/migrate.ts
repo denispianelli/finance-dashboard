@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import sql001 from './migrations/001_initial.sql?raw';
 import sql002 from './migrations/002_seed_lcl.sql?raw';
+import sql003 from './migrations/003_seed_default_account.sql?raw';
 
 interface Migration {
   version: number;
@@ -10,6 +11,7 @@ interface Migration {
 const MIGRATIONS: Migration[] = [
   { version: 1, sql: sql001 },
   { version: 2, sql: sql002 },
+  { version: 3, sql: sql003 },
 ];
 
 export function runMigrations(db: DatabaseSync): void {
