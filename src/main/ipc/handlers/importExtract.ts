@@ -10,6 +10,9 @@ export async function handleImportExtract(payload: ExtractPayload): Promise<Extr
     const extraction = await extractStatement(getDb(), payload.accountId, content);
     return { ok: true, extraction };
   } catch (e) {
+    // Only parsing/file errors are reachable here; insert-phase codes
+    // (arithmetic_failed, cannot_verify_unacknowledged, already_imported)
+    // are surfaced as fields by extractStatement and handled in confirm.
     if (
       e instanceof ImportError &&
       (e.code === 'unknown_bank' || e.code === 'no_text' || e.code === 'not_pdf')
