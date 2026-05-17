@@ -25,6 +25,8 @@ export async function insertStatement(
   }
 
   const importId = randomUUID();
+  // BEGIN is intentionally outside try: if it throws, no transaction is active
+  // and the catch must not attempt to ROLLBACK a non-existent transaction.
   db.exec('BEGIN');
   try {
     db.prepare(
