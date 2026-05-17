@@ -32,4 +32,15 @@ describe('detectBank', () => {
     expect(result).toBeNull();
     db.close();
   });
+
+  it('returns null when the bank matches but has no v1 mapping', () => {
+    const db = new DatabaseSync(':memory:');
+    runMigrations(db);
+    db.prepare(
+      "INSERT INTO banks(id, name, detected_signature) VALUES('newbank','New Bank','NEW BANK HEADER')",
+    ).run();
+    const result = detectBank(db, [pageWith('PDF WITH NEW BANK HEADER')]);
+    expect(result).toBeNull();
+    db.close();
+  });
 });
