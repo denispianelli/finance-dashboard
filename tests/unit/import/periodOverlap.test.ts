@@ -17,7 +17,7 @@ function addImport(
   accountId: string,
   start: string,
   end: string,
-  status: string,
+  status: 'validated' | 'pending_review' | 'cancelled',
 ): void {
   db.prepare(
     `INSERT INTO imports(id,account_id,file_hash,source_type,date_range_start,date_range_end,status)
