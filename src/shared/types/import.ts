@@ -1,3 +1,5 @@
+export type ImportFileType = 'pdf' | 'csv' | 'ofx';
+
 export interface ArithmeticCheckResult {
   status: 'passed' | 'failed' | 'cannot_verify';
   openingBalance: number | null;

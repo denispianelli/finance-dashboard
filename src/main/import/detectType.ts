@@ -1,4 +1,4 @@
-import type { ImportFileType } from '@shared/types/ipc';
+import type { ImportFileType } from '@shared/types/import';
 
 export function detectType(content: Buffer, filename: string): ImportFileType | null {
   if (content.subarray(0, 5).toString('latin1') === '%PDF-') return 'pdf';
