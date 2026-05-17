@@ -1,0 +1,40 @@
+export interface ArithmeticCheckResult {
+  status: 'passed' | 'failed' | 'cannot_verify';
+  openingBalance: number | null;
+  closingBalance: number | null;
+  computedClosing: number | null;
+  /** computedClosing − statedClosing; negative means transactions sum to less than stated closing */
+  delta: number | null;
+}
+
+export interface OverlappingImport {
+  id: string;
+  date_range_start: string;
+  date_range_end: string;
+  status: 'validated' | 'pending_review';
+}
+
+export interface PeriodOverlapResult {
+  hasOverlap: boolean;
+  overlappingImports: OverlappingImport[];
+}
+
+export interface ReviewTransaction {
+  date: string;
+  label: string;
+  amount: number;
+  tx_hash: string;
+  isDuplicate: boolean; // already in DB for this account (Level 3)
+}
+
+export interface StatementExtraction {
+  transactions: ReviewTransaction[];
+  arithmetic: ArithmeticCheckResult;
+  periodOverlap: PeriodOverlapResult;
+  newCount: number;
+  duplicateCount: number;
+  fileHash: string;
+  alreadyImported: boolean; // Level 1
+  dateRangeStart: string;
+  dateRangeEnd: string;
+}

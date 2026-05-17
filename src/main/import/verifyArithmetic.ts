@@ -1,13 +1,7 @@
 import type { ExtractedTransaction } from './pdf/extractTransactions';
+import type { ArithmeticCheckResult } from '@shared/types/import';
 
-export interface ArithmeticCheckResult {
-  status: 'passed' | 'failed' | 'cannot_verify';
-  openingBalance: number | null;
-  closingBalance: number | null;
-  computedClosing: number | null;
-  /** computedClosing − statedClosing; negative means transactions sum to less than stated closing */
-  delta: number | null;
-}
+export type { ArithmeticCheckResult };
 
 export function verifyArithmetic(
   transactions: ExtractedTransaction[],
