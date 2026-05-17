@@ -1,4 +1,4 @@
-import type { StatementExtraction } from './import';
+import type { StatementExtraction, ImportFileType } from './import';
 
 export interface PingPayload {
   now: number;
@@ -9,8 +9,6 @@ export interface PingResponse {
   receivedAt: number;
   serverNow: number;
 }
-
-export type ImportFileType = 'pdf' | 'csv' | 'ofx';
 
 export type PickFilePayload = Record<string, never>;
 

@@ -1,8 +1,6 @@
 import type { ExtractedTransaction } from './pdf/extractTransactions';
 import type { ArithmeticCheckResult } from '@shared/types/import';
 
-export type { ArithmeticCheckResult };
-
 export function verifyArithmetic(
   transactions: ExtractedTransaction[],
   openingBalance: number | null,

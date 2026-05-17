@@ -1,8 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { OverlappingImport, PeriodOverlapResult } from '@shared/types/import';
 
-export type { OverlappingImport, PeriodOverlapResult };
-
 /**
  * Pre-insert contract: call BEFORE inserting the new import row, so the new
  * import never matches itself. Compares against imports with status 'validated' or 'pending_review' for the same
