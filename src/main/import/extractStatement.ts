@@ -7,7 +7,7 @@ import { assignTxHashes } from './txHash';
 import { verifyArithmetic } from './verifyArithmetic';
 import { checkPeriodOverlap } from './periodOverlap';
 import { hashFile } from './hashFile';
-import { isAlreadyImported } from './duplicateCheck';
+import { isAlreadyImported, findExistingHashes } from './duplicateCheck';
 import { detectBank } from './detectBank';
 import { ImportError } from './importError';
 
@@ -49,13 +49,7 @@ export async function extractStatement(
     extracted.closingDate,
   );
 
-  const existing = new Set(
-    (
-      db
-        .prepare('SELECT tx_hash FROM transactions WHERE account_id = ?')
-        .all(accountId) as unknown as { tx_hash: string }[]
-    ).map((row) => row.tx_hash),
-  );
+  const existing = findExistingHashes(db, accountId);
 
   const transactions: ReviewTransaction[] = withHashes.map((t) => ({
     date: t.date,
