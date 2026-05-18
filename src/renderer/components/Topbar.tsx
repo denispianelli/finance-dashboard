@@ -45,6 +45,8 @@ export function Topbar({ onImport }: { onImport: () => void }) {
       {meta.account ? (
         <button
           type="button"
+          disabled
+          aria-label="Changer de compte (bientôt disponible)"
           className="inline-flex items-center gap-2 rounded-md border border-line-2 bg-ink-2 px-3 py-[7px] font-sans text-xs font-medium text-paper-soft"
         >
           <span className="h-1.5 w-1.5 rounded-full bg-brass" />
