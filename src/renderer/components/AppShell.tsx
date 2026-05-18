@@ -16,7 +16,11 @@ export function AppShell() {
             setImportOpen(true);
           }}
         />
-        <main className="flex flex-1 flex-col gap-5 overflow-y-auto px-7 pb-8 pt-6">
+        {/* min-h-0 lets this flex child shrink to the viewport and scroll;
+            [&>*]:shrink-0 stops page sections from being vertically
+            compressed (which collapsed AccountTabs when the window
+            was short). Sections keep their natural height; main scrolls. */}
+        <main className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-7 pb-8 pt-6 [&>*]:shrink-0">
           <Outlet />
         </main>
       </div>
