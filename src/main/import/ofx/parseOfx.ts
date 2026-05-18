@@ -12,13 +12,16 @@ export interface ParsedOfx {
   transactions: OfxTransaction[];
 }
 
+const ENTITIES: Record<string, string> = {
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&apos;': "'",
+  '&quot;': '"',
+};
+
 function decodeEntities(s: string): string {
-  return s
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&apos;/g, "'")
-    .replace(/&quot;/g, '"');
+  return s.replace(/&(?:amp|lt|gt|apos|quot);/g, (m) => ENTITIES[m] ?? m);
 }
 
 function parseAmount(raw: string): number {
