@@ -18,7 +18,7 @@ export function AccountTabs({
   onSelect: (id: string) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-line-2 bg-ink-2">
+    <div className="overflow-x-auto rounded-lg border border-line-2 bg-ink-2">
       <div className="flex items-stretch">
         {accounts.map((a) => {
           const active = a.id === activeId;
@@ -30,7 +30,7 @@ export function AccountTabs({
                 onSelect(a.id);
               }}
               className={cn(
-                'flex min-w-[130px] flex-col gap-1 border-r border-line-2 px-4 py-3 text-left last:border-r-0',
+                'flex min-w-[130px] shrink-0 flex-col gap-1 border-r border-line-2 px-4 py-3 text-left last:border-r-0',
                 active && 'bg-ink-3',
               )}
             >
@@ -51,7 +51,7 @@ export function AccountTabs({
             </button>
           );
         })}
-        <div className="flex min-w-[80px] flex-col items-center justify-center gap-1 px-4 py-3 text-paper-dim">
+        <div className="flex min-w-[80px] shrink-0 flex-col items-center justify-center gap-1 px-4 py-3 text-paper-dim">
           <Plus size={16} strokeWidth={1.6} />
           <span className="font-sans text-[9px]">Ajouter</span>
         </div>
