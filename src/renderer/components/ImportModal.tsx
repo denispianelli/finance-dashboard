@@ -198,7 +198,14 @@ function ReviewView({
       />
 
       {extraction.periodOverlap.hasOverlap && !overlapDismissed && (
-        <div className="rounded-md border border-amber-400 bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+        <div
+          className="rounded-md border p-3 text-sm"
+          style={{
+            background: 'hsl(var(--flag-soft))',
+            color: 'hsl(var(--flag))',
+            borderColor: 'hsl(var(--flag))',
+          }}
+        >
           <div className="flex items-start justify-between gap-2">
             <span>
               Ce relevé chevauche un import existant (
@@ -208,7 +215,8 @@ function ReviewView({
             </span>
             <button
               type="button"
-              className="shrink-0 text-amber-600 hover:text-amber-900"
+              className="shrink-0 opacity-70 hover:opacity-100"
+              style={{ color: 'hsl(var(--flag))' }}
               onClick={onDismissOverlap}
               aria-label="Fermer"
             >

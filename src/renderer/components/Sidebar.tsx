@@ -1,11 +1,12 @@
 import { LayoutDashboard, Settings } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Separator } from './ui/separator';
 
 interface NavItem {
   path: string;
   label: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }
 
 const items: NavItem[] = [
