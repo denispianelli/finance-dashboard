@@ -9,7 +9,7 @@
 
 ## 1. Vision & Promesse Produit
 
-Application desktop personnelle de gestion financière. L'utilisateur importe ses relevés bancaires mensuels (PDF, CSV ou OFX). L'app extrait les transactions de manière déterministe, les catégorise automatiquement via un LLM embarqué, et fournit un tableau de bord multi-comptes, ainsi que des features IA (chat conversationnel, insights automatiques, projections).
+Application desktop personnelle de gestion financière. L'utilisateur importe ses relevés bancaires mensuels (PDF, CSV ou OFX). L'app extrait les transactions de manière déterministe, les catégorise automatiquement via un LLM embarqué (classifieur batch, cf. §9 + ADR-009), et fournit un tableau de bord multi-comptes : réconciliation prouvée, radar de récurrences, budgets et analyse rétrospective pluriannuelle — le tout **déterministe et vérifiable**, sans IA conversationnelle.
 
 **Promesse non négociable** : 100% local. Aucune donnée ne quitte la machine. Pas de login, pas de connexion bancaire, pas de serveur, pas de télémétrie.
 
@@ -19,21 +19,21 @@ Application desktop personnelle de gestion financière. L'utilisateur importe se
 
 ## 2. Stack Technique
 
-| Couche          | Choix                               | Raison                                                                         |
-| --------------- | ----------------------------------- | ------------------------------------------------------------------------------ |
-| Runtime         | Electron                            | Maturité, bibliothèques natives accessibles via Node, packaging cross-platform |
-| Langage         | TypeScript                          | Typage fort, partage de types main/renderer                                    |
-| UI              | React + shadcn/ui + Tailwind        | Components copy-paste, full ownership, design moderne                          |
-| Charts          | Recharts                            | S'intègre proprement avec shadcn, suffisant pour nos besoins                   |
-| Base de données | SQLite via `better-sqlite3`         | Synchrone, zero-config, fichier unique sur disque, parfait pour cet usage      |
-| LLM engine      | `node-llama-cpp`                    | Mature, bindings llama.cpp, intégration Node simple                            |
-| Modèle LLM      | Qwen2.5 3B Instruct (Q4_K_M, ~2 Go) | Bon FR, bon en extraction JSON, raisonnable en CPU                             |
-| PDF             | `pdfjs-dist`                        | Extraction texte + coordonnées (x,y)                                           |
-| CSV             | `papaparse`                         | Standard, gère les délimiteurs ambigus                                         |
-| OFX             | `ofx-js`                            | Format historique bancaire                                                     |
-| OCR (optionnel) | `tesseract.js`                      | Téléchargé à la demande pour les PDFs scannés                                  |
+| Couche          | Choix                                   | Raison                                                                         |
+| --------------- | --------------------------------------- | ------------------------------------------------------------------------------ |
+| Runtime         | Electron                                | Maturité, bibliothèques natives accessibles via Node, packaging cross-platform |
+| Langage         | TypeScript                              | Typage fort, partage de types main/renderer                                    |
+| UI              | React + shadcn/ui + Tailwind            | Components copy-paste, full ownership, design moderne                          |
+| Charts          | Recharts                                | S'intègre proprement avec shadcn, suffisant pour nos besoins                   |
+| Base de données | SQLite via `better-sqlite3`             | Synchrone, zero-config, fichier unique sur disque, parfait pour cet usage      |
+| LLM engine      | `node-llama-cpp`                        | Mature, bindings llama.cpp, intégration Node simple                            |
+| Modèle LLM      | Llama 3.2 3B Instruct (Q4_K_M, ~1.9 Go) | Choix figé au spike — FR 5/5, JSON 5/5 (cf. ADR-004)                           |
+| PDF             | `pdfjs-dist`                            | Extraction texte + coordonnées (x,y)                                           |
+| CSV             | `papaparse`                             | Standard, gère les délimiteurs ambigus                                         |
+| OFX             | `ofx-js`                                | Format historique bancaire                                                     |
+| OCR (optionnel) | `tesseract.js`                          | Téléchargé à la demande pour les PDFs scannés                                  |
 
-Le modèle final sera **confirmé par un spike** au début du projet (cf. §16).
+Le modèle a été **confirmé par le spike** (#12) : Llama 3.2 3B retenu, cf. ADR-004 (§16 conservé pour mémoire).
 
 ## 3. Architecture
 
