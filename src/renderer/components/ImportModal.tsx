@@ -4,7 +4,14 @@ import { useImport } from '../hooks/useImport';
 import { TransactionReviewTable } from './TransactionReviewTable';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
 import type { StatementExtraction } from '@shared/types/import';
 
 interface ImportModalProps {
@@ -70,6 +77,9 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Importer un relevé</DialogTitle>
+          <DialogDescription className="sr-only">
+            Sélectionnez un fichier OFX ou PDF, vérifiez les transactions, puis confirmez l'import.
+          </DialogDescription>
         </DialogHeader>
 
         {state.step === 'error' && <ErrorView message={state.message} onClose={handleClose} />}
