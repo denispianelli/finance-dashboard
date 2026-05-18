@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { StatementExtraction } from '@shared/types/import';
 import { ipc } from '@renderer/ipc/client';
 
@@ -27,7 +27,7 @@ export interface UseImport {
   reset: () => void;
 }
 
-const ERROR_MESSAGES: Record<string, string> = {
+const ERROR_MESSAGES: Partial<Record<string, string>> = {
   unsupported_format: 'Format non reconnu. Utilisez un fichier OFX ou PDF.',
   malformed_ofx: 'Fichier OFX invalide ou corrompu.',
   not_pdf: 'Le fichier ne semble pas être un PDF valide.',
@@ -40,23 +40,37 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 export function useImport(): UseImport {
   const [state, setState] = useState<ImportState>({ step: 'idle' });
+  const stateRef = useRef<ImportState>(state);
+
+  function setStateAndRef(next: ImportState | ((prev: ImportState) => ImportState)) {
+    if (typeof next === 'function') {
+      setState((prev) => {
+        const resolved = next(prev);
+        stateRef.current = resolved;
+        return resolved;
+      });
+    } else {
+      stateRef.current = next;
+      setState(next);
+    }
+  }
 
   async function pickAndExtract() {
-    setState({ step: 'picking' });
+    setStateAndRef({ step: 'picking' });
     const pickRes = await ipc.invoke('import:pickFile', {});
     if (pickRes.cancelled) {
-      setState({ step: 'idle' });
+      setStateAndRef({ step: 'idle' });
       return;
     }
 
-    setState({ step: 'extracting' });
+    setStateAndRef({ step: 'extracting' });
     const extractRes = await ipc.invoke('import:extract', {
       path: pickRes.path,
       accountId: 'acc-lcl-default',
     });
 
     if (!extractRes.ok) {
-      setState({
+      setStateAndRef({
         step: 'error',
         message: ERROR_MESSAGES[extractRes.error] ?? extractRes.error,
       });
@@ -67,7 +81,7 @@ export function useImport(): UseImport {
     const selected = new Set(
       extraction.transactions.filter((tx) => !tx.isDuplicate).map((tx) => tx.tx_hash),
     );
-    setState({
+    setStateAndRef({
       step: 'review',
       extraction,
       filePath: pickRes.path,
@@ -77,7 +91,7 @@ export function useImport(): UseImport {
   }
 
   function toggleTx(txHash: string) {
-    setState((prev) => {
+    setStateAndRef((prev) => {
       if (prev.step !== 'review') return prev;
       const next = new Set(prev.selected);
       if (next.has(txHash)) {
@@ -90,7 +104,7 @@ export function useImport(): UseImport {
   }
 
   function toggleAll() {
-    setState((prev) => {
+    setStateAndRef((prev) => {
       if (prev.step !== 'review') return prev;
       const nonDuplicateHashes = prev.extraction.transactions
         .filter((tx) => !tx.isDuplicate)
@@ -101,17 +115,18 @@ export function useImport(): UseImport {
   }
 
   function setAcknowledgedCannotVerify(value: boolean) {
-    setState((prev) => {
+    setStateAndRef((prev) => {
       if (prev.step !== 'review') return prev;
       return { ...prev, acknowledgedCannotVerify: value };
     });
   }
 
   async function confirm() {
-    if (state.step !== 'review') return;
-    const { extraction, filePath, selected, acknowledgedCannotVerify } = state;
+    const current = stateRef.current;
+    if (current.step !== 'review') return;
+    const { extraction, filePath, selected, acknowledgedCannotVerify } = current;
 
-    setState({ step: 'confirming' });
+    setStateAndRef({ step: 'confirming' });
 
     const ack = extraction.sourceType === 'ofx' ? true : acknowledgedCannotVerify;
     const res = await ipc.invoke('import:confirm', {
@@ -122,14 +137,14 @@ export function useImport(): UseImport {
     });
 
     if (res.ok) {
-      setState({ step: 'done', insertedCount: res.insertedCount });
+      setStateAndRef({ step: 'done', insertedCount: res.insertedCount });
     } else {
-      setState({ step: 'error', message: ERROR_MESSAGES[res.error] ?? res.error });
+      setStateAndRef({ step: 'error', message: ERROR_MESSAGES[res.error] ?? res.error });
     }
   }
 
   function reset() {
-    setState({ step: 'idle' });
+    setStateAndRef({ step: 'idle' });
   }
 
   return {
