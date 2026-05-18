@@ -15,6 +15,7 @@ export function Chip({
   return (
     <button
       type="button"
+      aria-pressed={active}
       onClick={onClick}
       className={cn(
         'inline-flex h-6 items-center gap-1.5 rounded-sm border px-[9px] font-sans text-[11px] font-medium transition-colors',
