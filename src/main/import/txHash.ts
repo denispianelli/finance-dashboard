@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { ExtractedTransaction } from './pdf/extractTransactions';
+import type { NormalizedTx } from '@shared/types/import';
 
 export function normalizeLabel(label: string): string {
   return label
@@ -10,39 +10,57 @@ export function normalizeLabel(label: string): string {
     .trim();
 }
 
-export function computeTxHash(
-  accountId: string,
-  date: string,
-  amount: number,
-  labelRaw: string,
-  orderInImport: number,
-): string {
-  const input = [
-    accountId,
-    date,
-    amount.toFixed(2),
-    normalizeLabel(labelRaw),
-    String(orderInImport),
-  ].join('|');
-  return createHash('sha256').update(input).digest('hex');
+export type TxHashInput =
+  | { kind: 'ofx'; accountId: string; fitid: string }
+  | {
+      kind: 'pdf';
+      accountId: string;
+      date: string;
+      amount: number;
+      label: string;
+      order: number;
+    };
+
+export function computeTxHash(input: TxHashInput): string {
+  const parts =
+    input.kind === 'ofx'
+      ? [input.accountId, 'ofx', input.fitid]
+      : [
+          input.accountId,
+          input.date,
+          input.amount.toFixed(2),
+          normalizeLabel(input.label),
+          String(input.order),
+        ];
+  return createHash('sha256').update(parts.join('|')).digest('hex');
 }
 
-export interface TransactionWithHash extends ExtractedTransaction {
+export interface TransactionWithHash extends NormalizedTx {
   tx_hash: string;
 }
 
 export function assignTxHashes(
   accountId: string,
-  transactions: ExtractedTransaction[],
+  transactions: NormalizedTx[],
 ): TransactionWithHash[] {
   const counters = new Map<string, number>();
   return transactions.map((tx) => {
+    if (tx.fitid !== null) {
+      return { ...tx, tx_hash: computeTxHash({ kind: 'ofx', accountId, fitid: tx.fitid }) };
+    }
     const baseKey = [accountId, tx.date, tx.amount.toFixed(2), normalizeLabel(tx.label)].join('|');
-    const orderInImport = counters.get(baseKey) ?? 0;
-    counters.set(baseKey, orderInImport + 1);
+    const order = counters.get(baseKey) ?? 0;
+    counters.set(baseKey, order + 1);
     return {
       ...tx,
-      tx_hash: computeTxHash(accountId, tx.date, tx.amount, tx.label, orderInImport),
+      tx_hash: computeTxHash({
+        kind: 'pdf',
+        accountId,
+        date: tx.date,
+        amount: tx.amount,
+        label: tx.label,
+        order,
+      }),
     };
   });
 }

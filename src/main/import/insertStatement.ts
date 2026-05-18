@@ -32,11 +32,12 @@ export async function insertStatement(
     db.prepare(
       `INSERT INTO imports
          (id, account_id, file_hash, source_type, date_range_start, date_range_end, status)
-       VALUES (?, ?, ?, 'pdf', ?, ?, 'validated')`,
+       VALUES (?, ?, ?, ?, ?, ?, 'validated')`,
     ).run(
       importId,
       accountId,
       extraction.fileHash,
+      extraction.sourceType,
       extraction.dateRangeStart,
       extraction.dateRangeEnd,
     );
@@ -44,8 +45,8 @@ export async function insertStatement(
       `INSERT INTO transactions
          (id, account_id, import_id, tx_hash, date, amount,
           label_raw, label_clean, category_id, confidence,
-          is_internal_transfer, user_modified)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 0)`,
+          is_internal_transfer, user_modified, fitid)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 0, ?)`,
     );
     for (const tx of extraction.transactions) {
       if (tx.isDuplicate) continue;
@@ -58,6 +59,7 @@ export async function insertStatement(
         tx.amount,
         tx.label,
         normalizeLabel(tx.label),
+        tx.fitid,
       );
     }
     db.exec('COMMIT');

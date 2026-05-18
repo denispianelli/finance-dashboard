@@ -26,6 +26,7 @@ export interface ReviewTransaction {
   label: string;
   amount: number;
   tx_hash: string;
+  fitid: string | null;
   isDuplicate: boolean; // already in DB for this account (Level 3)
 }
 
@@ -39,4 +40,21 @@ export interface StatementExtraction {
   alreadyImported: boolean; // Level 1
   dateRangeStart: string;
   dateRangeEnd: string;
+  sourceType: ImportFileType;
+}
+
+export interface NormalizedTx {
+  date: string; // ISO yyyy-mm-dd
+  label: string;
+  amount: number; // signed; debit negative, credit positive
+  fitid: string | null; // OFX bank-assigned id; null for PDF
+}
+
+export interface NormalizedStatement {
+  transactions: NormalizedTx[];
+  openingBalance: number | null;
+  closingBalance: number | null;
+  openingDate: string;
+  closingDate: string;
+  bankId: string;
 }

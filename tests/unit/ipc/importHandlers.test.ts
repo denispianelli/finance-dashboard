@@ -20,12 +20,12 @@ beforeEach(() => {
 });
 
 describe('handleImportExtract', () => {
-  it('returns ok:false not_pdf for a non-PDF file', async () => {
+  it('returns ok:false unsupported_format for a non-PDF non-OFX file', async () => {
     const res = await handleImportExtract({
       path: resolve('package.json'),
       accountId: 'acc-lcl-default',
     });
-    expect(res).toEqual({ ok: false, error: 'not_pdf' });
+    expect(res).toEqual({ ok: false, error: 'unsupported_format' });
   });
 
   it.skipIf(!existsSync(FIXTURE_PATH))(
@@ -57,11 +57,11 @@ describe('handleImportConfirm', () => {
     }
   });
 
-  it('returns ok:false not_pdf for a non-PDF file', async () => {
+  it('returns ok:false unsupported_format for a non-PDF non-OFX file', async () => {
     const res = await handleImportConfirm({
       path: resolve('package.json'),
       accountId: 'acc-lcl-default',
     });
-    expect(res).toEqual({ ok: false, error: 'not_pdf' });
+    expect(res).toEqual({ ok: false, error: 'unsupported_format' });
   });
 });
