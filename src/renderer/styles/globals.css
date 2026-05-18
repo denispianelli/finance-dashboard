@@ -4,25 +4,34 @@
 
 @layer base {
   :root {
-    --background: 240 24% 6%;
-    --foreground: 0 0% 98%;
-    --muted: 240 12% 16%;
-    --muted-foreground: 240 5% 64%;
-    --border: 240 12% 18%;
-    --primary: 263 80% 75%;
-    --primary-foreground: 240 24% 6%;
-    --card: 240 16% 10%;
-    --card-foreground: 0 0% 98%;
-    --input: 240 12% 18%;
-    --ring: 263 80% 75%;
-    --accent: 240 12% 16%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62% 50%;
-    --destructive-foreground: 0 0% 98%;
-    --secondary: 240 12% 16%;
-    --secondary-foreground: 0 0% 98%;
-    --radius: 0.5rem;
+    --background:             225 28% 6%;
+    --foreground:             42 28% 92%;
+    --card:                   222 27% 9%;
+    --card-foreground:        42 28% 92%;
+    --muted:                  222 18% 15%;
+    --muted-foreground:       45 10% 56%;
+    --border:                 224 16% 19%;
+    --input:                  224 16% 19%;
+    --primary:                41 56% 61%;
+    --primary-foreground:     225 28% 6%;
+    --secondary:              222 18% 15%;
+    --secondary-foreground:   42 28% 92%;
+    --accent:                 222 18% 15%;
+    --accent-foreground:      42 28% 92%;
+    --destructive:            7 70% 64%;
+    --destructive-foreground: 42 28% 92%;
+    --ring:                   41 56% 61%;
+    --radius:                 0.5rem;
+
+    /* Semantic palette — used in ImportModal and TransactionReviewTable */
+    --sage:      122 29% 60%;
+    --sage-soft: 134 22% 56% / 0.12;
+    --coral:     8 68% 63%;
+    --coral-soft:8 65% 64% / 0.12;
+    --flag:      41 68% 62%;
+    --flag-soft: 41 68% 62% / 0.14;
   }
+
   html,
   body,
   #root {
@@ -30,9 +39,11 @@
     background: hsl(var(--background));
     color: hsl(var(--foreground));
   }
+
   * {
     --tw-ring-offset-color: hsl(var(--background));
   }
+
   body {
     font-family:
       ui-sans-serif,
