@@ -38,6 +38,7 @@ export type ExtractResponse =
 export interface ConfirmPayload {
   path: string;
   accountId: string;
+  selectedHashes?: string[];
   acknowledgedCannotVerify?: boolean;
 }
 
