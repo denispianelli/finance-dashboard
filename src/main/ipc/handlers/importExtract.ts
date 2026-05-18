@@ -15,7 +15,11 @@ export async function handleImportExtract(payload: ExtractPayload): Promise<Extr
     // are surfaced as fields by extractStatement and handled in confirm.
     if (
       e instanceof ImportError &&
-      (e.code === 'unknown_bank' || e.code === 'no_text' || e.code === 'not_pdf')
+      (e.code === 'unknown_bank' ||
+        e.code === 'no_text' ||
+        e.code === 'not_pdf' ||
+        e.code === 'unsupported_format' ||
+        e.code === 'malformed_ofx')
     ) {
       return { ok: false, error: e.code };
     }

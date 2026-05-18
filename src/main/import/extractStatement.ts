@@ -1,34 +1,14 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { ReviewTransaction, StatementExtraction } from '@shared/types/import';
-import type { PdfPage } from './pdf/extract';
-import { extractPdfText } from './pdf/extract';
-import { extractTransactions } from './pdf/extractTransactions';
+import { detectType } from './detectType';
+import { extractPdf } from './extractPdf';
+import { extractOfx } from './ofx/extractOfx';
 import { assignTxHashes } from './txHash';
 import { verifyArithmetic } from './verifyArithmetic';
 import { checkPeriodOverlap } from './periodOverlap';
 import { hashFile } from './hashFile';
 import { isAlreadyImported, findExistingHashes } from './duplicateCheck';
-import { detectBank } from './detectBank';
 import { ImportError } from './importError';
-
-const PDF_MAGIC = Buffer.from('%PDF-');
-
-async function loadPages(content: Buffer): Promise<PdfPage[]> {
-  if (
-    content.length < PDF_MAGIC.length ||
-    !content.subarray(0, PDF_MAGIC.length).equals(PDF_MAGIC)
-  ) {
-    throw new ImportError('not_pdf');
-  }
-  let res: Awaited<ReturnType<typeof extractPdfText>>;
-  try {
-    res = await extractPdfText(content);
-  } catch {
-    throw new ImportError('not_pdf');
-  }
-  if (!res.hasText) throw new ImportError('no_text');
-  return res.pages;
-}
 
 export async function extractStatement(
   db: DatabaseSync,
@@ -38,25 +18,18 @@ export async function extractStatement(
   const fileHash = hashFile(content);
   const alreadyImported = isAlreadyImported(db, fileHash);
 
-  const pages = await loadPages(content);
+  const type = detectType(content, '');
+  const stmt =
+    type === 'pdf'
+      ? await extractPdf(db, accountId, content)
+      : type === 'ofx'
+        ? extractOfx(db, accountId, content)
+        : null;
+  if (stmt === null) throw new ImportError('unsupported_format');
 
-  const bank = detectBank(db, pages);
-  if (bank === null) throw new ImportError('unknown_bank');
-
-  const extracted = extractTransactions(pages, bank.mapping);
-  const withHashes = assignTxHashes(accountId, extracted.transactions);
-  const arithmetic = verifyArithmetic(
-    extracted.transactions,
-    extracted.openingBalance,
-    extracted.closingBalance,
-  );
-  const periodOverlap = checkPeriodOverlap(
-    db,
-    accountId,
-    extracted.openingDate,
-    extracted.closingDate,
-  );
-
+  const withHashes = assignTxHashes(accountId, stmt.transactions);
+  const arithmetic = verifyArithmetic(stmt.transactions, stmt.openingBalance, stmt.closingBalance);
+  const periodOverlap = checkPeriodOverlap(db, accountId, stmt.openingDate, stmt.closingDate);
   const existing = findExistingHashes(db, accountId);
 
   const transactions: ReviewTransaction[] = withHashes.map((t) => ({
@@ -64,6 +37,7 @@ export async function extractStatement(
     label: t.label,
     amount: t.amount,
     tx_hash: t.tx_hash,
+    fitid: t.fitid,
     isDuplicate: existing.has(t.tx_hash),
   }));
 
@@ -78,7 +52,7 @@ export async function extractStatement(
     duplicateCount,
     fileHash,
     alreadyImported,
-    dateRangeStart: extracted.openingDate,
-    dateRangeEnd: extracted.closingDate,
+    dateRangeStart: stmt.openingDate,
+    dateRangeEnd: stmt.closingDate,
   };
 }

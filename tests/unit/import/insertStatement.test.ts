@@ -19,8 +19,22 @@ function freshDb(): DatabaseSync {
 function baseExtraction(over: Partial<StatementExtraction> = {}): StatementExtraction {
   return {
     transactions: [
-      { date: '2025-11-01', label: 'A', amount: -10, tx_hash: 'h1', isDuplicate: false },
-      { date: '2025-11-02', label: 'B', amount: 20, tx_hash: 'h2', isDuplicate: false },
+      {
+        date: '2025-11-01',
+        label: 'A',
+        amount: -10,
+        tx_hash: 'h1',
+        fitid: null,
+        isDuplicate: false,
+      },
+      {
+        date: '2025-11-02',
+        label: 'B',
+        amount: 20,
+        tx_hash: 'h2',
+        fitid: null,
+        isDuplicate: false,
+      },
     ],
     arithmetic: {
       status: 'passed',
@@ -123,8 +137,22 @@ describe('insertStatement — atomicity', () => {
     extractMock.mockResolvedValue(
       baseExtraction({
         transactions: [
-          { date: '2025-11-01', label: 'A', amount: -10, tx_hash: 'dup', isDuplicate: false },
-          { date: '2025-11-02', label: 'B', amount: 20, tx_hash: 'dup', isDuplicate: false },
+          {
+            date: '2025-11-01',
+            label: 'A',
+            amount: -10,
+            tx_hash: 'dup',
+            fitid: null,
+            isDuplicate: false,
+          },
+          {
+            date: '2025-11-02',
+            label: 'B',
+            amount: 20,
+            tx_hash: 'dup',
+            fitid: null,
+            isDuplicate: false,
+          },
         ],
       }),
     );
@@ -141,8 +169,22 @@ describe('insertStatement — happy path', () => {
     extractMock.mockResolvedValue(
       baseExtraction({
         transactions: [
-          { date: '2025-11-01', label: 'Café', amount: -10, tx_hash: 'h1', isDuplicate: false },
-          { date: '2025-11-02', label: 'Salaire', amount: 20, tx_hash: 'h2', isDuplicate: true },
+          {
+            date: '2025-11-01',
+            label: 'Café',
+            amount: -10,
+            tx_hash: 'h1',
+            fitid: null,
+            isDuplicate: false,
+          },
+          {
+            date: '2025-11-02',
+            label: 'Salaire',
+            amount: 20,
+            tx_hash: 'h2',
+            fitid: null,
+            isDuplicate: true,
+          },
         ],
         newCount: 1,
         duplicateCount: 1,
