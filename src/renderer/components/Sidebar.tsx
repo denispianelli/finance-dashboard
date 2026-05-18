@@ -106,20 +106,22 @@ export function Sidebar() {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
-          padding: '20px 16px',
-          color: 'var(--brass)',
+          gap: 12,
+          padding: '20px 18px 18px',
         }}
       >
-        <BrandMark />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <span style={{ color: 'var(--brass)', display: 'flex' }}>
+          <BrandMark />
+        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, lineHeight: 1 }}>
           <span
             style={{
               fontFamily: 'var(--font-sans)',
               fontWeight: 500,
               fontSize: 13,
               lineHeight: 1,
-              color: 'var(--paper-soft)',
+              letterSpacing: '-0.015em',
+              color: 'var(--paper)',
             }}
           >
             Finance
@@ -130,8 +132,8 @@ export function Sidebar() {
               fontStyle: 'italic',
               fontWeight: 400,
               fontSize: 15,
-              lineHeight: 1.2,
-              color: 'var(--paper)',
+              lineHeight: 1,
+              color: 'var(--paper-soft)',
             }}
           >
             Dashboard
@@ -215,8 +217,8 @@ export function Sidebar() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '12px 16px',
-          borderTop: '1px solid var(--line-1)',
+          padding: '14px 18px',
+          borderTop: '1px solid var(--line-2)',
         }}
       >
         <span
@@ -224,8 +226,11 @@ export function Sidebar() {
             display: 'flex',
             alignItems: 'center',
             gap: 6,
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 500,
             fontSize: 11,
-            color: 'var(--paper-dim)',
+            lineHeight: 1,
+            color: 'var(--paper-mute)',
           }}
         >
           <span
@@ -239,7 +244,17 @@ export function Sidebar() {
           />
           local · privé
         </span>
-        <span style={{ fontSize: 11, color: 'var(--paper-dim)' }}>v{pkg.version}</span>
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 500,
+            fontSize: 11,
+            lineHeight: 1,
+            color: 'var(--paper-dim)',
+          }}
+        >
+          v{pkg.version}
+        </span>
       </div>
     </aside>
   );

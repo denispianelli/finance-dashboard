@@ -99,7 +99,7 @@
   }
 
   .nav-item:hover {
-    background: var(--brass-ghost);
-    color: var(--paper-soft);
+    background: var(--ink-3);
+    color: var(--paper);
   }
 }
