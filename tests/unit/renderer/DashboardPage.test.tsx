@@ -1,13 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-
-vi.mock('@renderer/components/ImportModal', () => ({
-  ImportModal: ({ open }: { open: boolean }) =>
-    open ? <div role="dialog" aria-label="ImportModal" /> : null,
-}));
 
 import { DashboardPage } from '@renderer/pages/DashboardPage';
 
@@ -24,19 +18,31 @@ function renderPage() {
 }
 
 describe('DashboardPage', () => {
-  it('renders the Importer button', () => {
+  it('renders account tabs with mock accounts', () => {
     renderPage();
-    expect(screen.getByRole('button', { name: /importer un relevé/i })).toBeInTheDocument();
+    expect(screen.getByText('Compte joint')).toBeInTheDocument();
+    expect(screen.getByText('Livret A')).toBeInTheDocument();
   });
 
-  it('modal is initially closed', () => {
+  it('renders KPI tiles', () => {
     renderPage();
-    expect(screen.queryByRole('dialog', { name: 'ImportModal' })).not.toBeInTheDocument();
+    expect(screen.getByText('Solde net')).toBeInTheDocument();
+    expect(screen.getByText(/Dépenses/)).toBeInTheDocument();
   });
 
-  it('opens modal when Importer button is clicked', async () => {
+  it('renders transaction table with mock rows', () => {
     renderPage();
-    await userEvent.click(screen.getByRole('button', { name: /importer un relevé/i }));
-    expect(screen.getByRole('dialog', { name: 'ImportModal' })).toBeInTheDocument();
+    expect(screen.getByText('Carrefour Market')).toBeInTheDocument();
+    expect(screen.getByText('Spotify')).toBeInTheDocument();
+  });
+
+  it('renders insight panel', () => {
+    renderPage();
+    expect(screen.getAllByText(/restaurants/i).length).toBeGreaterThan(0);
+  });
+
+  it('does not render ImportModal', () => {
+    renderPage();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
