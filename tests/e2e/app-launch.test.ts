@@ -13,6 +13,8 @@ test('app launches and renders dashboard', async () => {
     // Page title now lives in the Topbar as an <h1>, in French per the
     // design system copy rules ("Tableau de bord", not "Dashboard").
     await expect(window.getByRole('heading', { name: /tableau de bord/i })).toBeVisible();
+    await expect(window.getByText('Dernières transactions')).toBeVisible();
+    await expect(window.getByText('BOULANGER MARTIN')).toBeVisible();
   } finally {
     await app.close();
   }
