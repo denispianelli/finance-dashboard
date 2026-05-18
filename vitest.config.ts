@@ -5,10 +5,10 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   test: {
-    globals: true,
     include: ['tests/**/*.test.{ts,tsx}'],
     exclude: ['tests/e2e/**'],
     environment: 'node',
+    // @ts-expect-error — environmentMatchGlobs is a valid vitest option not yet typed in InlineConfig
     environmentMatchGlobs: [['tests/unit/renderer/**', 'jsdom']],
     setupFiles: ['tests/setup/renderer.ts'],
   },
