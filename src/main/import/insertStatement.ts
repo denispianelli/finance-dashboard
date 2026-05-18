@@ -44,8 +44,8 @@ export async function insertStatement(
       `INSERT INTO transactions
          (id, account_id, import_id, tx_hash, date, amount,
           label_raw, label_clean, category_id, confidence,
-          is_internal_transfer, user_modified)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 0)`,
+          is_internal_transfer, user_modified, fitid)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 0, ?)`,
     );
     for (const tx of extraction.transactions) {
       if (tx.isDuplicate) continue;
@@ -58,6 +58,7 @@ export async function insertStatement(
         tx.amount,
         tx.label,
         normalizeLabel(tx.label),
+        tx.fitid,
       );
     }
     db.exec('COMMIT');
