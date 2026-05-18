@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useImport } from '../hooks/useImport';
 import { TransactionReviewTable } from './TransactionReviewTable';
@@ -22,6 +22,11 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
     confirm,
     reset,
   } = useImport();
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   const [overlapDismissed, setOverlapDismissed] = useState(false);
 
   useEffect(() => {
@@ -31,11 +36,9 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
         duration: 3000,
       });
       reset();
-      onClose();
+      onCloseRef.current();
     }
-    // onClose and reset are stable references — only re-run when step changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.step]);
+  }, [state.step, reset]);
 
   function handleClose() {
     reset();
@@ -75,7 +78,6 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
           <ReviewView
             extraction={state.extraction}
             selected={state.selected}
-            selectedCount={state.selected.size}
             acknowledgedCannotVerify={state.acknowledgedCannotVerify}
             overlapDismissed={overlapDismissed}
             onDismissOverlap={() => {
@@ -138,7 +140,6 @@ function ErrorView({ message, onClose }: { message: string; onClose: () => void 
 interface ReviewViewProps {
   extraction: StatementExtraction;
   selected: Set<string>;
-  selectedCount: number;
   acknowledgedCannotVerify: boolean;
   overlapDismissed: boolean;
   onDismissOverlap: () => void;
@@ -153,7 +154,6 @@ interface ReviewViewProps {
 function ReviewView({
   extraction,
   selected,
-  selectedCount,
   acknowledgedCannotVerify,
   overlapDismissed,
   onDismissOverlap,
@@ -164,6 +164,8 @@ function ReviewView({
   onConfirm,
   confirmDisabled,
 }: ReviewViewProps) {
+  const selectedCount = selected.size;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="text-sm text-muted-foreground">
@@ -187,6 +189,7 @@ function ReviewView({
               doublons ci-dessous.
             </span>
             <button
+              type="button"
               className="shrink-0 text-amber-600 hover:text-amber-900"
               onClick={onDismissOverlap}
               aria-label="Fermer"

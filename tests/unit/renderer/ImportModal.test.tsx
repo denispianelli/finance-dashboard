@@ -263,6 +263,33 @@ describe('ImportModal — review state', () => {
     expect(screen.getByText(/chevauche/i)).toBeInTheDocument();
   });
 
+  it('dismisses period overlap banner when ✕ is clicked', async () => {
+    const state: ImportState = {
+      step: 'review',
+      extraction: makeReviewExtraction({
+        periodOverlap: {
+          hasOverlap: true,
+          overlappingImports: [
+            {
+              id: 'imp-1',
+              date_range_start: '2026-01-01',
+              date_range_end: '2026-01-31',
+              status: 'validated',
+            },
+          ],
+        },
+      }),
+      filePath: '/tmp/test.ofx',
+      selected: new Set(['h1']),
+      acknowledgedCannotVerify: false,
+    };
+    mockUseImport.mockReturnValue(makeHook(state));
+    render(<ImportModal open={true} onClose={vi.fn()} />);
+    expect(screen.getByText(/chevauche/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /fermer/i }));
+    expect(screen.queryByText(/chevauche/i)).not.toBeInTheDocument();
+  });
+
   it('calls confirm when Importer is clicked', async () => {
     const hook = makeHook({
       step: 'review',
@@ -287,6 +314,15 @@ describe('ImportModal — done state', () => {
     expect(mockToast).toHaveBeenCalledWith('3 transactions importées', expect.any(Object));
     expect(onClose).toHaveBeenCalled();
     expect(reset).toHaveBeenCalled();
+  });
+
+  it('calls toast with singular form when insertedCount is 1', () => {
+    const onClose = vi.fn();
+    const reset = vi.fn();
+    mockUseImport.mockReturnValue(makeHook({ step: 'done', insertedCount: 1 }, { reset }));
+    render(<ImportModal open={true} onClose={onClose} />);
+    expect(mockToast).toHaveBeenCalledWith('1 transaction importée', expect.any(Object));
+    expect(onClose).toHaveBeenCalled();
   });
 });
 
