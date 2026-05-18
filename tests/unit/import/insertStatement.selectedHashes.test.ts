@@ -63,6 +63,7 @@ describe('insertStatement — selectedHashes', () => {
     });
 
     expect(result.insertedCount).toBe(2);
+    expect(result.skippedCount).toBe(0); // duplicateCount only, not user-deselected h2
     const rows = db.prepare('SELECT tx_hash FROM transactions ORDER BY tx_hash').all() as {
       tx_hash: string;
     }[];

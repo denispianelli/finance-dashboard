@@ -48,10 +48,12 @@ export async function insertStatement(
           is_internal_transfer, user_modified, fitid)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 0, ?)`,
     );
+    const selectedSet =
+      opts.selectedHashes !== undefined ? new Set(opts.selectedHashes) : undefined;
     let insertedCount = 0;
     for (const tx of extraction.transactions) {
       if (tx.isDuplicate) continue;
-      if (opts.selectedHashes !== undefined && !opts.selectedHashes.includes(tx.tx_hash)) continue;
+      if (selectedSet !== undefined && !selectedSet.has(tx.tx_hash)) continue;
       insertTx.run(
         randomUUID(),
         accountId,
