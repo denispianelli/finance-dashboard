@@ -68,7 +68,7 @@ export function ChartCard() {
       </svg>
       <div className="flex gap-[18px] border-t border-line-2 pt-1.5">
         <div className="flex items-center gap-1.5 font-sans text-[11px] text-paper-mute">
-          <span className="h-0.5 w-3.5" style={{ background: 'var(--brass)' }} />
+          <span className="h-0.5 w-3.5 bg-brass" />
           Solde réel
         </div>
         <div className="flex items-center gap-1.5 font-sans text-[11px] text-paper-mute">
