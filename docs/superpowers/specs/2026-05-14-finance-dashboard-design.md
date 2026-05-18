@@ -207,44 +207,38 @@ V1 : multi-comptes simple pour un **utilisateur unique**.
 
 Le partage compte joint entre deux personnes utilisant chacune l'app est **hors scope v1** (cf. §13).
 
-## 9. Features IA
+## 9. Rôle de l'IA
 
-Même moteur LLM (Qwen2.5 3B chargé en mémoire au démarrage), plusieurs cas d'usage :
+> **Recadré par l'ADR-009.** Le LLM (Llama 3.2 3B, cf. ADR-004 — pas Qwen, choix figé au spike) est un **classifieur batch en arrière-plan, point**. Il ne converse jamais, ne raisonne jamais sur des montants côté utilisateur, ne narre rien. L'inférence mesurée (~57 s/appel CPU, ADR-004) interdit tout usage interactif. L'intelligence ressentie (réconciliation, récurrences, tendances) est **déterministe**, posée sur des données que l'IA a seulement étiquetées.
 
-### 9.1. Catégorisation automatique
+### 9.1. Catégorisation automatique — seul usage produit du LLM
 
-Cf. §7 — déjà décrite.
+Cf. §7. C'est la clé de voûte : sans étiquetage automatique fiable, l'analyse déterministe (fuites, budgets, rétrospectif) n'existe pas.
 
-### 9.2. Chat avec ses finances
+### 9.2. Mapping de colonnes
 
-Interface conversationnelle. Le LLM reçoit en contexte un résumé structuré des données pertinentes (selon la question). Exemples :
+Une fois par banque, à l'import (ADR-004 ; Epic Import Pipeline #23 → #32).
 
-- _"Combien j'ai dépensé en restau ce trimestre ?"_
-- _"Mes 5 plus grosses dépenses du mois ?"_
-- _"À ce rythme, combien j'aurai épargné fin décembre ?"_
+### 9.3. « Insights » — déterministes, pas générés
 
-Streaming des réponses vers le renderer pour l'UX.
+Plus aucune génération LLM sur les chiffres. La valeur insight est produite par des moteurs déterministes et vérifiables :
 
-### 9.3. Insights automatiques
+- Radar de récurrences (abonnements, loyer, salaire, frais) — Epic #72
+- Dérives / anomalies **calculées** et affichées, pas narrées par un modèle ("Restaurants +34 % vs mois dernier" = un calcul, pas une phrase de LLM)
+- Réconciliation prouvée contre le solde de clôture banque — Epic #71
 
-Au chargement du dashboard ou à la demande :
+### 9.4. Projections — déterministes
 
-- Dérives significatives ("dépenses Restaurants +34% vs mois dernier")
-- Abonnements détectés inactifs ou en hausse
-- Anomalies (transactions inhabituelles)
-- Recommandations simples ("3 abonnements similaires détectés")
+Épargne projetée et budget vs réel par extrapolation déterministe des tendances, sans LLM.
 
-### 9.4. Projections
-
-- Épargne projetée à fin d'année selon trends actuels
-- Budget par catégorie vs réel
+**Coupé v1 (ADR-009)** : chat conversationnel, recherche en langage naturel, résumés/insights générés. La recherche passe par filtres + recherches sauvegardées.
 
 ### Inférence
 
 - Modèle chargé en mémoire au démarrage (~3-5s)
 - File d'attente single-shot dans le main process pour éviter de saturer la machine
-- Streaming pour le chat
-- Mode "low power" désactivable : pas de catégorisations en lot, tout à la demande
+- Catégorisation en lot à l'import, en arrière-plan (jamais interactif — ~57 s/appel CPU, ADR-004)
+- Mode "low power" désactivable : tout à la demande
 
 ## 10. Schéma SQLite (vue conceptuelle)
 
@@ -358,6 +352,9 @@ Pour mémoire, **on ne fait pas** ces choses en v1, mais elles sont notées pour
 - Choix de modèle LLM configurable par l'utilisateur
 - Connexions bancaires PSD2 (et ce ne sera probablement jamais fait, c'est antinomique avec la promesse)
 - Cloud backup chiffré
+- **Suivi d'investissements / patrimoine** (PEA/CTO/ETF/crypto/immo) — valoriser exige des cours = appels réseau = antinomique avec la promesse 100 % local. Hors _identité_, pas seulement différé (ADR-009)
+- **Chat financier conversationnel, recherche en langage naturel, insights/résumés générés par LLM** — mur de latence ~57 s + hallucination de chiffres (ADR-009)
+- Multi-fenêtres (pas de cas d'usage réel pour une app locale mono-utilisateur)
 
 ## 14. Backup & Export
 
@@ -391,22 +388,29 @@ Sans ce spike, on grave dans le marbre des choix qui peuvent être fragiles.
 ## 17. Process projet
 
 - **Specs** dans Notion (page parent : 💰 Finance Dashboard)
-- **ADRs** (Architecture Decision Records) dans Notion sous "Architecture"
+- **ADRs** (Architecture Decision Records) dans `docs/adr/` (ce repo)
 - **Tickets** sur GitHub Issues avec labels `epic`, `story`, `task`, `spike`, `bug`
 - **Board** : GitHub Projects (Backlog → Sprint → In Progress → Review → Done)
 - **Branches** : `main` protégée, feature branches `feat/<epic>-<short>`, PR obligatoire
 - **Découpage** : Epic → User Story → Task. On crée les tasks détaillées uniquement pour l'Epic en cours, pas pour les 5 d'un coup.
 
-### Epics envisagés (à découper plus tard)
+### Epics — modèle resserré (ADR-009)
 
-1. **Setup & Foundation** — repo, CI/CD basique, Electron + React skeleton, IPC, SQLite, schéma initial, spike LLM
-2. **Import Pipeline** — détection format, extraction PDF déterministe, mapping LLM, parsing CSV/OFX, dédup, page Review
-3. **Dashboard** — KPIs, charts catégorie + tendance, navigation comptes, filtres temporels
-4. **Catégorisation & Règles** — CRUD catégories, cascade règle/historique/LLM, apprentissage continu
-5. **Features IA** — chat conversationnel, insights automatiques, projections
-6. **OCR & Edge cases** — Tesseract on-demand, banques non standard
-7. **Backup & Settings** — export/import `.fbk`, paramètres modèle, thèmes
-8. **Distribution** — packaging, code signing, auto-update
+> Le board GitHub (Project) est la source vivante. Étoile Nord : _un outil privé qui, minutes après un import, te dit une chose vraie sur ton argent que tu ignorais — et que tu peux vérifier — sans faire confiance à personne._ Toute feature qui ne sert pas cette phrase est coupée, pas parquée.
+
+**Fait** — Setup & Foundation (Epic #4), gros de l'Import Pipeline (#23 : ingestion, extraction PDF, dédup, vérif arithmétique, review, OFX #58), Design System (#65, #69).
+
+**Keystone (Phase 2, en cours) — prérequis de toute valeur** : finir #23 — #32 (détection banque + mapping), #29 (catégories + cascade), #34 (apprentissage continu), **#74 taxonomie de catégories stable versionnée**, **#75 backfill PDF historique**. Sans données catégorisées fiables sur plusieurs années, les trois piliers sont de la fiction.
+
+**Trois piliers de valeur** (sous l'étoile Nord) :
+
+1. **Trust & Verifiability** (Epic #71, Phase 3) — réconciliation prouvée, provenance jusqu'à la ligne source, catégorisation inspectable, mode privé vérifiable, coffre `.fbk` soigné. Ce que les concurrents cloud ne peuvent structurellement pas faire.
+2. **Recurring Detection & Budgets** (Epic #72, Phase 3) — moteur de récurrences déterministe, radar + alertes, budgets, objectifs, replay mensuel (seul "wow" retenu). Mode _opérationnel_.
+3. **Retrospective Analytics** (Epic #73, Phase 4) — tendances pluriannuelles, drill-down catégorie dans le temps, évolution revenus/épargne, year-over-year. Mode _rétrospectif_ (valeur perso prioritaire du mainteneur).
+
+**Transverses** : Design System & UI Polish (#66 — responsive #76, titlebar #68), OCR & edge cases (#33), Backup & Settings, Distribution (#42 + packaging).
+
+**Hors scope / coupé** : cf. §13 et ADR-009 (investissements, IA conversationnelle, recherche NL, insights générés, multi-fenêtres).
 
 ## 18. Risques identifiés
 
