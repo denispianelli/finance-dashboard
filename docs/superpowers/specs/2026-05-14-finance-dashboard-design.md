@@ -98,7 +98,8 @@ Le modèle a été **confirmé par le spike** (#12) : Llama 3.2 3B retenu, cf. A
 
 - Le mapping de colonnes (une fois par banque)
 - La catégorisation (avec score de confiance)
-- Les features IA en aval (chat, insights)
+
+Aucun usage IA en aval : chat / insights générés sont coupés (cf. §9 + ADR-009). Toute analyse downstream est déterministe.
 
 ## 5. Garde-fous Anti-hallucination
 
