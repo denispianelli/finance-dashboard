@@ -29,7 +29,12 @@ export function ChartCard() {
           ))}
         </div>
       </div>
-      <svg className="block h-[220px] w-full" viewBox="0 0 600 220" preserveAspectRatio="none">
+      <svg
+        className="block h-[220px] w-full"
+        viewBox="0 0 600 220"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
         <defs>
           <linearGradient id="dashFill" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" stopColor="#D4B062" stopOpacity="0.22" />
