@@ -12,6 +12,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "ignoreDeprecations": "6.0",
+    "types": ["@testing-library/jest-dom"],
     "baseUrl": "./",
     "paths": {
       "@main/*": ["src/main/*"],
@@ -19,6 +20,14 @@
       "@shared/*": ["src/shared/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "playwright.config.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "tests/setup/*.ts",
+    "playwright.config.ts",
+    "vitest.config.ts"
+  ],
   "exclude": ["node_modules", "dist", "out"]
 }
