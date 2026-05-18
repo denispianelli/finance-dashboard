@@ -2,13 +2,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 
 export function SettingsPage() {
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Paramètres</h1>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <Card>
         <CardHeader>
-          <CardTitle>À venir</CardTitle>
+          <CardTitle
+            style={{
+              fontFamily: 'var(--font-serif)',
+              fontStyle: 'italic',
+              fontWeight: 400,
+              fontSize: 18,
+              color: 'var(--paper)',
+            }}
+          >
+            À venir
+          </CardTitle>
         </CardHeader>
-        <CardContent className="text-muted-foreground">
+        <CardContent style={{ color: 'var(--paper-mute)', fontSize: 13 }}>
           Gestion des comptes, modèle LLM, OCR, thème, backup.
         </CardContent>
       </Card>

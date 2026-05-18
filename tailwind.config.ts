@@ -5,6 +5,10 @@ const config: Config = {
   content: ['./src/renderer/**/*.{ts,tsx,html}'],
   theme: {
     extend: {
+      fontFamily: {
+        serif: ['"Instrument Serif"', 'Cambria', '"Times New Roman"', 'serif'],
+        mono: ['"Geist Mono"', 'ui-monospace', 'Menlo', 'Consolas', 'monospace'],
+      },
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',

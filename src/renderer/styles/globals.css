@@ -1,46 +1,105 @@
+/* Self-hosted fonts — bundled via @fontsource, no CDN / no network request.
+   Keeps the app fully local (privé par défaut) and lets the CSP stay 'self'. */
+@import "@fontsource/geist-sans/300.css";
+@import "@fontsource/geist-sans/400.css";
+@import "@fontsource/geist-sans/500.css";
+@import "@fontsource/geist-sans/600.css";
+@import "@fontsource/geist-sans/700.css";
+@import "@fontsource/geist-mono/400.css";
+@import "@fontsource/geist-mono/500.css";
+@import "@fontsource/geist-mono/600.css";
+@import "@fontsource/instrument-serif/400.css";
+@import "@fontsource/instrument-serif/400-italic.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 240 24% 6%;
-    --foreground: 0 0% 98%;
-    --muted: 240 12% 16%;
-    --muted-foreground: 240 5% 64%;
-    --border: 240 12% 18%;
-    --primary: 263 80% 75%;
-    --primary-foreground: 240 24% 6%;
-    --card: 240 16% 10%;
-    --card-foreground: 0 0% 98%;
-    --input: 240 12% 18%;
-    --ring: 263 80% 75%;
-    --accent: 240 12% 16%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62% 50%;
-    --destructive-foreground: 0 0% 98%;
-    --secondary: 240 12% 16%;
-    --secondary-foreground: 0 0% 98%;
-    --radius: 0.5rem;
+    /* shadcn HSL contract — keep in sync with identity tokens below */
+    --background:             225 28% 6%;
+    --foreground:             42 28% 92%;
+    --card:                   222 27% 9%;
+    --card-foreground:        42 28% 92%;
+    --muted:                  222 18% 15%;
+    --muted-foreground:       45 10% 56%;
+    --border:                 224 16% 19%;
+    --input:                  224 16% 19%;
+    --primary:                41 56% 61%;
+    --primary-foreground:     225 28% 6%;
+    --secondary:              222 18% 15%;
+    --secondary-foreground:   42 28% 92%;
+    --accent:                 222 18% 15%;
+    --accent-foreground:      42 28% 92%;
+    --destructive:            7 70% 64%;
+    --destructive-foreground: 42 28% 92%;
+    --ring:                   41 56% 61%;
+    --radius:                 0.5rem;
+
+    /* Semantic palette (HSL — used by ImportModal / TransactionReviewTable via hsl(var())) */
+    --sage:       122 29% 60%;
+    --sage-soft:  134 22% 56% / 0.12;
+    --coral:      8 68% 63%;
+    --coral-soft: 8 65% 64% / 0.12;
+    --flag:       41 68% 62%;
+    --flag-soft:  41 68% 62% / 0.14;
+
+    /* Identity tokens — ink canvas */
+    --ink-0:  #07080B;
+    --ink-1:  #0B0D12;
+    --ink-2:  #11141B;
+    --ink-3:  #181C25;
+    --ink-4:  #21262F;
+    --line-1: #1C2029;
+    --line-2: #2A2F3A;
+    --line-3: #3A3F4A;
+
+    /* Identity tokens — warm cream text */
+    --paper:      #F2EFE6;
+    --paper-soft: #C9C4B6;
+    --paper-mute: #8B8775;
+    --paper-dim:  #5B5849;
+
+    /* Identity tokens — brass accent */
+    --brass:       #D4B062;
+    --brass-hi:    #E4C277;
+    --brass-lo:    #A8893F;
+    --brass-soft:  rgba(212, 176, 98, 0.12);
+    --brass-ghost: rgba(212, 176, 98, 0.06);
+
+    /* Fonts */
+    --font-serif: "Instrument Serif", Cambria, "Times New Roman", serif;
+    --font-sans:  "Geist Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono:  "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    /* Shadows */
+    --shadow-1: 0 1px 0 0 rgba(255,255,255,0.02) inset, 0 1px 2px 0 rgba(0,0,0,0.4);
+    --shadow-2: 0 4px 16px -4px rgba(0,0,0,0.5), 0 2px 4px -2px rgba(0,0,0,0.4);
   }
+
   html,
   body,
   #root {
     height: 100%;
-    background: hsl(var(--background));
-    color: hsl(var(--foreground));
+    background: var(--ink-1);
+    color: var(--paper);
   }
+
   * {
-    --tw-ring-offset-color: hsl(var(--background));
+    --tw-ring-offset-color: var(--ink-1);
   }
+
   body {
-    font-family:
-      ui-sans-serif,
-      system-ui,
-      -apple-system,
-      'Segoe UI',
-      Roboto,
-      sans-serif;
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .nav-item:hover {
+    background: var(--ink-3);
+    color: var(--paper);
   }
 }

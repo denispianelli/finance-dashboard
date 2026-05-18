@@ -13,7 +13,8 @@ function createWindow(): void {
     minWidth: 1024,
     minHeight: 640,
     title: 'Finance Dashboard',
-    backgroundColor: '#0f0f18',
+    backgroundColor: '#0B0D12', // --ink-1, avoids a wrong-colour flash before render
+    autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.cjs'),
       contextIsolation: true,

@@ -57,13 +57,32 @@ export function TransactionReviewTable({
               </td>
               <td className="px-3 py-2 tabular-nums">{tx.date}</td>
               <td className="px-3 py-2">{tx.label}</td>
-              <td className="px-3 py-2 text-right tabular-nums">
+              <td
+                className="px-3 py-2 text-right tabular-nums"
+                style={{ color: tx.amount < 0 ? 'hsl(var(--coral))' : 'hsl(var(--sage))' }}
+              >
                 {tx.amount.toLocaleString('fr-FR', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}
               </td>
-              <td className="px-3 py-2 text-center">{tx.isDuplicate ? 'Doublon' : '🆕'}</td>
+              <td className="px-3 py-2 text-center">
+                {tx.isDuplicate ? (
+                  <span
+                    className="rounded px-1.5 py-0.5 text-xs text-muted-foreground"
+                    style={{ background: 'hsl(var(--muted))' }}
+                  >
+                    Doublon
+                  </span>
+                ) : (
+                  <span
+                    className="rounded px-1.5 py-0.5 text-xs font-medium"
+                    style={{ background: 'hsl(var(--sage-soft))', color: 'hsl(var(--sage))' }}
+                  >
+                    Nouveau
+                  </span>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>
