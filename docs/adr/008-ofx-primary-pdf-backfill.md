@@ -36,3 +36,16 @@ The future PDF-backfill story conforms to this contract without rework.
 - Reliable ongoing imports; FITID makes re-import idempotent.
 - Epic #23's strategy section is superseded; see Story #58.
 - A nullable `fitid` column is added to `transactions` for traceability.
+
+## Spike outcome (2026-05-18)
+
+Verified against two real LCL OFX exports with overlapping periods
+(17/02/2026–17/05/2026 and 01/03/2026–17/05/2026):
+
+- FITIDs unique within a file: **yes** (no duplicates found)
+- FITIDs stable across overlapping exports: **yes** (122/122 transactions from
+  the shorter export matched exactly in the longer export)
+- Observed bank identifier: `<BANKID>30002` (no `<ORG>` tag present in these
+  exports)
+
+Identity model confirmed. Implementation may proceed.
