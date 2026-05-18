@@ -7,9 +7,8 @@ export function DashboardPage() {
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <Button
           onClick={() => {
             setModalOpen(true);
@@ -20,9 +19,19 @@ export function DashboardPage() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Bienvenue</CardTitle>
+          <CardTitle
+            style={{
+              fontFamily: 'var(--font-serif)',
+              fontStyle: 'italic',
+              fontWeight: 400,
+              fontSize: 18,
+              color: 'var(--paper)',
+            }}
+          >
+            Bienvenue
+          </CardTitle>
         </CardHeader>
-        <CardContent className="text-muted-foreground">
+        <CardContent style={{ color: 'var(--paper-mute)', fontSize: 13 }}>
           Le tableau de bord arrivera en Phase 2. Pour l'instant, c'est juste le shell.
         </CardContent>
       </Card>
