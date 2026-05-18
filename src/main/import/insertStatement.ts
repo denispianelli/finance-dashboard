@@ -14,7 +14,7 @@ export async function insertStatement(
   db: DatabaseSync,
   accountId: string,
   content: Buffer,
-  opts: { acknowledgedCannotVerify?: boolean } = {},
+  opts: { acknowledgedCannotVerify?: boolean; selectedHashes?: string[] } = {},
 ): Promise<InsertResult> {
   const extraction = await extractStatement(db, accountId, content);
 
@@ -48,8 +48,12 @@ export async function insertStatement(
           is_internal_transfer, user_modified, fitid)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 0, ?)`,
     );
+    const selectedSet =
+      opts.selectedHashes !== undefined ? new Set(opts.selectedHashes) : undefined;
+    let insertedCount = 0;
     for (const tx of extraction.transactions) {
       if (tx.isDuplicate) continue;
+      if (selectedSet !== undefined && !selectedSet.has(tx.tx_hash)) continue;
       insertTx.run(
         randomUUID(),
         accountId,
@@ -61,16 +65,12 @@ export async function insertStatement(
         normalizeLabel(tx.label),
         tx.fitid,
       );
+      insertedCount++;
     }
     db.exec('COMMIT');
+    return { importId, insertedCount, skippedCount: extraction.duplicateCount };
   } catch (e) {
     db.exec('ROLLBACK');
     throw e;
   }
-
-  return {
-    importId,
-    insertedCount: extraction.newCount,
-    skippedCount: extraction.duplicateCount,
-  };
 }

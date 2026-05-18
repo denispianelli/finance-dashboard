@@ -9,6 +9,7 @@ export async function handleImportConfirm(payload: ConfirmPayload): Promise<Conf
     const content = readFileSync(payload.path);
     const result = await insertStatement(getDb(), payload.accountId, content, {
       acknowledgedCannotVerify: payload.acknowledgedCannotVerify,
+      selectedHashes: payload.selectedHashes,
     });
     return { ok: true, ...result };
   } catch (e) {
