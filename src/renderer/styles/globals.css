@@ -86,4 +86,9 @@
     font-size: 14px;
     line-height: 1.5;
   }
+
+  .nav-item:hover {
+    background: var(--brass-ghost);
+    color: var(--paper-soft);
+  }
 }

@@ -11,6 +11,7 @@ export function Topbar() {
 
   return (
     <header
+      aria-label="En-tête de l'application"
       style={{
         height: 56,
         flexShrink: 0,

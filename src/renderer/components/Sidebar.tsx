@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { NavLink } from 'react-router-dom';
+import pkg from '../../../package.json';
 
 interface NavItem {
   path: string;
@@ -38,6 +39,24 @@ const GROUPS: { key: string; label: string; items: NavItem[] }[] = [
     ],
   },
 ];
+
+const ITEM_BASE: React.CSSProperties = {
+  position: 'relative',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  height: 36,
+  padding: '0 12px',
+  margin: '0 8px',
+  borderRadius: 6,
+  fontSize: 13,
+  textDecoration: 'none',
+  transition: 'color 120ms ease, background 120ms ease',
+  border: 'none',
+  width: 'calc(100% - 16px)',
+  cursor: 'pointer',
+  background: 'transparent',
+};
 
 function BrandMark() {
   return (
@@ -71,6 +90,7 @@ function BrandMark() {
 export function Sidebar() {
   return (
     <aside
+      aria-label="Barre latérale"
       style={{
         width: 232,
         flexShrink: 0,
@@ -122,7 +142,7 @@ export function Sidebar() {
       <div style={{ height: 1, background: 'var(--line-2)', margin: '0 16px' }} />
 
       {/* Nav groups */}
-      <nav style={{ flex: 1, padding: '8px 0' }}>
+      <nav aria-label="Navigation principale" style={{ flex: 1, padding: '8px 0' }}>
         {GROUPS.map((group) => (
           <div key={group.key} style={{ paddingBottom: 8 }}>
             <span
@@ -144,21 +164,11 @@ export function Sidebar() {
                   key={item.path}
                   to={item.path}
                   end={item.path === '/'}
+                  className="nav-item"
                   style={({ isActive }) => ({
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    height: 36,
-                    padding: '0 12px',
-                    margin: '0 8px',
-                    borderRadius: 6,
-                    cursor: 'pointer',
+                    ...ITEM_BASE,
                     color: isActive ? 'var(--paper)' : 'var(--paper-mute)',
                     background: isActive ? 'var(--brass-soft)' : 'transparent',
-                    fontSize: 13,
-                    textDecoration: 'none',
-                    transition: 'color 120ms ease, background 120ms ease',
                   })}
                 >
                   {({ isActive }) => (
@@ -180,26 +190,19 @@ export function Sidebar() {
                   )}
                 </NavLink>
               ) : (
-                <div
+                <button
                   key={item.path}
+                  disabled
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    height: 36,
-                    padding: '0 12px',
-                    margin: '0 8px',
-                    borderRadius: 6,
+                    ...ITEM_BASE,
                     color: 'var(--paper-dim)',
-                    fontSize: 13,
                     opacity: 0.5,
-                    cursor: 'not-allowed',
-                    userSelect: 'none',
+                    textAlign: 'left',
                   }}
                 >
                   <item.Icon size={14} strokeWidth={1.6} />
                   <span>{item.label}</span>
-                </div>
+                </button>
               ),
             )}
           </div>
@@ -236,7 +239,7 @@ export function Sidebar() {
           />
           local · privé
         </span>
-        <span style={{ fontSize: 11, color: 'var(--paper-dim)' }}>v0.1.0</span>
+        <span style={{ fontSize: 11, color: 'var(--paper-dim)' }}>v{pkg.version}</span>
       </div>
     </aside>
   );
