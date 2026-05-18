@@ -35,17 +35,17 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
   });
 
   const [overlapDismissed, setOverlapDismissed] = useState(false);
+  const insertedCount = state.step === 'done' ? state.insertedCount : 0;
 
   useEffect(() => {
-    if (state.step === 'done') {
-      const n = state.insertedCount;
-      toast(`${String(n)} transaction${n > 1 ? 's' : ''} importée${n > 1 ? 's' : ''}`, {
-        duration: 3000,
-      });
-      reset();
-      onCloseRef.current();
-    }
-  }, [state.step, reset]);
+    if (state.step !== 'done') return;
+    toast(
+      `${String(insertedCount)} transaction${insertedCount > 1 ? 's' : ''} importée${insertedCount > 1 ? 's' : ''}`,
+      { duration: 3000 },
+    );
+    reset();
+    onCloseRef.current();
+  }, [state.step, insertedCount, reset]);
 
   function handleClose() {
     reset();
