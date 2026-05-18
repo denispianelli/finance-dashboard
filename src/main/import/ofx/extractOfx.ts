@@ -28,11 +28,11 @@ export function extractOfx(
   }
 
   const dates = parsed.transactions.map((t) => t.date).sort((a, b) => a.localeCompare(b));
-  // parsed.transactions is non-empty (parseOfx throws when empty), so dates is
-  // guaranteed to have at least one element. We cast through unknown to satisfy
-  // strict no-non-null-assertion without a runtime guard that would be dead code.
-  const openingDate = dates[0] as unknown as string;
-  const closingDate = dates[dates.length - 1] as unknown as string;
+  const openingDate = dates[0];
+  const closingDate = dates[dates.length - 1];
+  if (openingDate === undefined || closingDate === undefined) {
+    throw new ImportError('malformed_ofx');
+  }
   return {
     transactions: parsed.transactions.map((t) => ({
       date: t.date,

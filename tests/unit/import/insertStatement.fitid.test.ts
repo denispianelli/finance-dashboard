@@ -29,6 +29,7 @@ vi.mock('../../../src/main/import/extractStatement', () => ({
       alreadyImported: false,
       dateRangeStart: '2026-02-03',
       dateRangeEnd: '2026-02-03',
+      sourceType: 'ofx',
     }),
 }));
 

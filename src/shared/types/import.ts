@@ -40,6 +40,7 @@ export interface StatementExtraction {
   alreadyImported: boolean; // Level 1
   dateRangeStart: string;
   dateRangeEnd: string;
+  sourceType: ImportFileType;
 }
 
 export interface NormalizedTx {

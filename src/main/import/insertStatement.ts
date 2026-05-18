@@ -32,11 +32,12 @@ export async function insertStatement(
     db.prepare(
       `INSERT INTO imports
          (id, account_id, file_hash, source_type, date_range_start, date_range_end, status)
-       VALUES (?, ?, ?, 'pdf', ?, ?, 'validated')`,
+       VALUES (?, ?, ?, ?, ?, ?, 'validated')`,
     ).run(
       importId,
       accountId,
       extraction.fileHash,
+      extraction.sourceType,
       extraction.dateRangeStart,
       extraction.dateRangeEnd,
     );

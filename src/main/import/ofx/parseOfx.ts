@@ -92,7 +92,10 @@ export function parseOfx(content: Buffer): ParsedOfx {
         if (cur) cur.amount = parseAmount(value);
         break;
       case 'FITID':
-        if (cur) cur.fitid = value;
+        if (cur) {
+          if (!value) throw new Error('OFX: empty FITID');
+          cur.fitid = value;
+        }
         break;
       case 'NAME':
         if (cur) cur.name = value;

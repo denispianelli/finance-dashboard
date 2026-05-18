@@ -18,14 +18,13 @@ export async function extractStatement(
   const fileHash = hashFile(content);
   const alreadyImported = isAlreadyImported(db, fileHash);
 
-  const type = detectType(content, '');
+  const detectedType = detectType(content, '');
+  if (detectedType !== 'pdf' && detectedType !== 'ofx') {
+    throw new ImportError('unsupported_format');
+  }
+  const type = detectedType;
   const stmt =
-    type === 'pdf'
-      ? await extractPdf(db, accountId, content)
-      : type === 'ofx'
-        ? extractOfx(db, accountId, content)
-        : null;
-  if (stmt === null) throw new ImportError('unsupported_format');
+    type === 'pdf' ? await extractPdf(db, accountId, content) : extractOfx(db, accountId, content);
 
   const withHashes = assignTxHashes(accountId, stmt.transactions);
   const arithmetic = verifyArithmetic(stmt.transactions, stmt.openingBalance, stmt.closingBalance);
@@ -54,5 +53,6 @@ export async function extractStatement(
     alreadyImported,
     dateRangeStart: stmt.openingDate,
     dateRangeEnd: stmt.closingDate,
+    sourceType: type,
   };
 }

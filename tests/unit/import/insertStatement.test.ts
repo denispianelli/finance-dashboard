@@ -50,6 +50,7 @@ function baseExtraction(over: Partial<StatementExtraction> = {}): StatementExtra
     alreadyImported: false,
     dateRangeStart: '2025-11-01',
     dateRangeEnd: '2025-11-02',
+    sourceType: 'pdf',
     ...over,
   };
 }
