@@ -30,7 +30,10 @@ export interface ExtractPayload {
 
 export type ExtractResponse =
   | { ok: true; extraction: StatementExtraction }
-  | { ok: false; error: 'unknown_bank' | 'no_text' | 'not_pdf' };
+  | {
+      ok: false;
+      error: 'unknown_bank' | 'no_text' | 'not_pdf' | 'unsupported_format' | 'malformed_ofx';
+    };
 
 export interface ConfirmPayload {
   path: string;
@@ -48,7 +51,9 @@ export type ConfirmResponse =
         | 'already_imported'
         | 'unknown_bank'
         | 'no_text'
-        | 'not_pdf';
+        | 'not_pdf'
+        | 'unsupported_format'
+        | 'malformed_ofx';
     };
 
 export interface IpcContract {

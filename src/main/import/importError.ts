@@ -4,7 +4,9 @@ export type ImportErrorCode =
   | 'not_pdf'
   | 'arithmetic_failed'
   | 'cannot_verify_unacknowledged'
-  | 'already_imported';
+  | 'already_imported'
+  | 'unsupported_format'
+  | 'malformed_ofx';
 
 export class ImportError extends Error {
   constructor(public readonly code: ImportErrorCode) {
