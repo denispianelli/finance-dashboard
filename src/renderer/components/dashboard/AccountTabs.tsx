@@ -19,9 +19,16 @@ export function AccountTabs({
 }) {
   return (
     <div className="overflow-hidden rounded-lg border border-line-2 bg-ink-2">
-      {/* Tabs flex-shrink to fit the available width so every account stays
-          visible at any window size — never clipped, never scrolled away. */}
-      <div className="flex items-stretch">
+      {/* Same mechanism as the KPI grid below: a CSS grid of equal
+          minmax(0,1fr) columns + one fixed "Ajouter" column. Columns
+          shrink together and never clip or collapse — every account
+          stays visible at any window width. */}
+      <div
+        className="grid items-stretch"
+        style={{
+          gridTemplateColumns: `repeat(${String(accounts.length)}, minmax(0, 1fr)) auto`,
+        }}
+      >
         {accounts.map((a) => {
           const active = a.id === activeId;
           return (
@@ -32,7 +39,7 @@ export function AccountTabs({
                 onSelect(a.id);
               }}
               className={cn(
-                'flex min-w-0 flex-1 flex-col gap-1 border-r border-line-2 px-4 py-3 text-left last:border-r-0',
+                'flex min-w-0 flex-col gap-1 border-r border-line-2 px-4 py-3 text-left',
                 active && 'bg-ink-3',
               )}
             >
@@ -53,7 +60,7 @@ export function AccountTabs({
             </button>
           );
         })}
-        <div className="flex shrink-0 flex-col items-center justify-center gap-1 px-4 py-3 text-paper-dim">
+        <div className="flex flex-col items-center justify-center gap-1 px-4 py-3 text-paper-dim">
           <Plus size={16} strokeWidth={1.6} />
           <span className="font-sans text-[9px]">Ajouter</span>
         </div>
