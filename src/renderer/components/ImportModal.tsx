@@ -1,3 +1,4 @@
+import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useImport } from '../hooks/useImport';
@@ -249,25 +250,43 @@ function ArithmeticBadge({
 
   if (arithmetic.status === 'passed') {
     return (
-      <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950 dark:text-green-200">
-        ✅ Solde vérifié —{' '}
-        {arithmetic.closingBalance?.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+      <div
+        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm"
+        style={{ background: 'hsl(var(--sage-soft))', color: 'hsl(var(--sage))' }}
+      >
+        <CheckCircle size={14} strokeWidth={1.6} />
+        <span>
+          Solde vérifié —{' '}
+          {arithmetic.closingBalance?.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+        </span>
       </div>
     );
   }
 
   if (arithmetic.status === 'failed') {
     return (
-      <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">
-        ❌ Écart de {arithmetic.delta?.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+      <div
+        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm"
+        style={{ background: 'hsl(var(--coral-soft))', color: 'hsl(var(--coral))' }}
+      >
+        <XCircle size={14} strokeWidth={1.6} />
+        <span>
+          Écart de {arithmetic.delta?.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+        </span>
       </div>
     );
   }
 
   if (sourceType === 'pdf') {
     return (
-      <div className="flex flex-col gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-        <span>⚠️ Solde non vérifiable</span>
+      <div
+        className="flex flex-col gap-2 rounded-md px-3 py-2 text-sm"
+        style={{ background: 'hsl(var(--flag-soft))', color: 'hsl(var(--flag))' }}
+      >
+        <div className="flex items-center gap-2">
+          <AlertTriangle size={14} strokeWidth={1.6} />
+          <span>Solde non vérifiable</span>
+        </div>
         <label className="flex cursor-pointer items-center gap-2">
           <Checkbox
             checked={acknowledgedCannotVerify}
