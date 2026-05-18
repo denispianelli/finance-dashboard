@@ -38,7 +38,10 @@ describe('DashboardPage', () => {
 
   it('renders insight panel', () => {
     renderPage();
-    expect(screen.getAllByText(/restaurants/i).length).toBeGreaterThan(0);
+    // Copy unique to the Insight panel (not the KPI "restaurants + 34 %" ctx),
+    // plus the panel's action button — guards the panel actually rendered.
+    expect(screen.getByText(/sorties du week-end/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Voir le détail' })).toBeInTheDocument();
   });
 
   it('does not render ImportModal', () => {

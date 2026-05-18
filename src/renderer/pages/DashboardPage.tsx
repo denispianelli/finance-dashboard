@@ -45,7 +45,7 @@ export function DashboardPage() {
           delta="stable"
           ctx="1 virement"
           spark="0,22 12,22 24,22 36,21 48,22 60,21 72,22 84,22"
-          sparkColor="var(--brass)"
+          sparkColor="var(--brass, #D4B062)"
         />
         <Kpi
           label="Épargne projetée"
