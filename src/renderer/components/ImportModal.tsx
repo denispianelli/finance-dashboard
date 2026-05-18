@@ -77,6 +77,7 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
         {state.step === 'review' && (
           <ReviewView
             extraction={state.extraction}
+            filePath={state.filePath}
             selected={state.selected}
             acknowledgedCannotVerify={state.acknowledgedCannotVerify}
             overlapDismissed={overlapDismissed}
@@ -139,6 +140,7 @@ function ErrorView({ message, onClose }: { message: string; onClose: () => void 
 
 interface ReviewViewProps {
   extraction: StatementExtraction;
+  filePath: string;
   selected: Set<string>;
   acknowledgedCannotVerify: boolean;
   overlapDismissed: boolean;
@@ -153,6 +155,7 @@ interface ReviewViewProps {
 
 function ReviewView({
   extraction,
+  filePath,
   selected,
   acknowledgedCannotVerify,
   overlapDismissed,
@@ -168,9 +171,13 @@ function ReviewView({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="text-sm text-muted-foreground">
-        {extraction.dateRangeStart} → {extraction.dateRangeEnd} · {extraction.transactions.length}{' '}
-        transaction{extraction.transactions.length > 1 ? 's' : ''}
+      <div>
+        <div className="text-sm font-medium">{filePath.split('/').pop() ?? filePath}</div>
+        <div className="text-sm text-muted-foreground">
+          {extraction.dateRangeStart} → {extraction.dateRangeEnd} · {extraction.transactions.length}{' '}
+          transaction
+          {extraction.transactions.length > 1 ? 's' : ''}
+        </div>
       </div>
 
       <ArithmeticBadge
