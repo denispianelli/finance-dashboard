@@ -10,7 +10,9 @@ async function launchApp() {
 test('app launches and renders dashboard', async () => {
   const { app, window } = await launchApp();
   try {
-    await expect(window.getByRole('heading', { name: /dashboard/i })).toBeVisible();
+    // Page title now lives in the Topbar as an <h1>, in French per the
+    // design system copy rules ("Tableau de bord", not "Dashboard").
+    await expect(window.getByRole('heading', { name: /tableau de bord/i })).toBeVisible();
   } finally {
     await app.close();
   }
