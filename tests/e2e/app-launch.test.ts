@@ -10,7 +10,7 @@ async function launchApp() {
 test('app launches and renders dashboard', async () => {
   const { app, window } = await launchApp();
   try {
-    await expect(window.locator('h1')).toContainText('Dashboard');
+    await expect(window.getByRole('heading', { name: /dashboard/i })).toBeVisible();
   } finally {
     await app.close();
   }
