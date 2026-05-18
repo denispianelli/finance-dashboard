@@ -27,7 +27,7 @@ export function Topbar() {
           fontFamily: 'var(--font-serif)',
           fontStyle: 'italic',
           fontWeight: 400,
-          fontSize: 22,
+          fontSize: 26,
           lineHeight: 1.05,
           letterSpacing: '-0.025em',
           color: 'var(--paper)',
