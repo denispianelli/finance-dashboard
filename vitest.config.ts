@@ -8,8 +8,6 @@ export default defineConfig({
     include: ['tests/**/*.test.{ts,tsx}'],
     exclude: ['tests/e2e/**'],
     environment: 'node',
-    // @ts-expect-error — environmentMatchGlobs is a valid vitest option not yet typed in InlineConfig
-    environmentMatchGlobs: [['tests/unit/renderer/**', 'jsdom']],
     setupFiles: ['tests/setup/renderer.ts'],
   },
   resolve: {
