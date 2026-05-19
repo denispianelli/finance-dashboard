@@ -36,6 +36,11 @@
     --destructive-foreground: 42 28% 92%;
     --ring:                   41 56% 61%;
     --radius:                 0.5rem;
+    --radius-xs:   2px;
+    --radius-sm:   4px;
+    --radius-md:   6px;
+    --radius-lg:   8px;
+    --radius-xl:   12px;
 
     /* Semantic palette (HSL — used by ImportModal / TransactionReviewTable via hsl(var())) */
     --sage:       122 29% 60%;
@@ -102,4 +107,11 @@
     background: var(--ink-3);
     color: var(--paper);
   }
+}
+
+@layer utilities {
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--line-3); }
+  ::-webkit-scrollbar-track { background: transparent; }
 }
