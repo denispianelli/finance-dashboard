@@ -22,3 +22,6 @@ playwright-report/
 .vscode/
 .idea/
 .worktrees/
+
+# Claude Code per-machine overrides (shared config lives in .claude/settings.json)
+.claude/settings.local.json
