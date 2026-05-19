@@ -33,6 +33,9 @@ tracking, multi-window. Do not re-propose them. The LLM is a background batch cl
 
 ## Git & process
 
+- **Branch naming + commit format: see `CONTRIBUTING.md` §Branch naming and §Commit messages.**
+  Branches follow `<type>/<issue-number>-<short-slug>` (e.g. `chore/88-claude-md-conventions-pointer`).
+  Commits follow Conventional Commits — enforced by `commitlint` via husky `commit-msg`.
 - GitHub Flow: feature/chore branch → PR → squash merge. `main` is protected.
 - **Claude never merges PRs.** Open the PR; the maintainer merges.
 - Every PR references an issue (`Closes #N` / `Refs #N`) — CI enforces this.
