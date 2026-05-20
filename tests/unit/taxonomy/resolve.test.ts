@@ -138,3 +138,66 @@ describe('resolveCategoryAsOf — as_of_now base (renames update in place)', () 
     db.close();
   });
 });
+
+describe('resolveCategoryAsOf — as_of_now merge recursion', () => {
+  it('returns target {id, name} when source was merged', () => {
+    const db = freshDb();
+    seedCategory(db, 'a', 'A');
+    seedCategory(db, 'a2', 'A2');
+    seedCategory(db, 'b', 'B');
+    db.prepare(
+      "INSERT INTO taxonomy_events (id, event_seq, kind, source_ids, target_ids, payload) VALUES ('e1', 1, 'merge', '[\"a\",\"a2\"]', '[\"b\"]', NULL)",
+    ).run();
+    db.prepare(
+      "UPDATE categories SET deprecated_at = datetime('now'), replaced_by_event_id = 'e1' WHERE id IN ('a','a2')",
+    ).run();
+    expect(resolveCategoryAsOf(db, 'a', 'as_of_now')).toEqual({ id: 'b', name: 'B' });
+    expect(resolveCategoryAsOf(db, 'a2', 'as_of_now')).toEqual({ id: 'b', name: 'B' });
+    db.close();
+  });
+
+  it('follows a rename of the merge target', () => {
+    const db = freshDb();
+    seedCategory(db, 'a', 'A');
+    seedCategory(db, 'b', 'B');
+    db.prepare(
+      "INSERT INTO taxonomy_events (id, event_seq, kind, source_ids, target_ids, payload) VALUES ('e1', 1, 'merge', '[\"a\"]', '[\"b\"]', NULL)",
+    ).run();
+    db.prepare(
+      "UPDATE categories SET deprecated_at = datetime('now'), replaced_by_event_id = 'e1' WHERE id = 'a'",
+    ).run();
+    db.prepare(
+      "INSERT INTO taxonomy_events (id, event_seq, kind, source_ids, target_ids, payload) VALUES ('e2', 2, 'rename', '[\"b\"]', '[\"b\"]', ?)",
+    ).run(JSON.stringify({ kind: 'rename', old_name: 'B', new_name: 'B-renamed' }));
+    db.prepare("UPDATE categories SET name = 'B-renamed' WHERE id = 'b'").run();
+    expect(resolveCategoryAsOf(db, 'a', 'as_of_now')).toEqual({ id: 'b', name: 'B-renamed' });
+    db.close();
+  });
+
+  it('walks chained merges A -> B -> C', () => {
+    const db = freshDb();
+    seedCategory(db, 'a', 'A');
+    seedCategory(db, 'b', 'B');
+    seedCategory(db, 'c', 'C');
+    // A and some-other merged into B
+    seedCategory(db, 'a2', 'A2');
+    db.prepare(
+      "INSERT INTO taxonomy_events (id, event_seq, kind, source_ids, target_ids, payload) VALUES ('e1', 1, 'merge', '[\"a\",\"a2\"]', '[\"b\"]', NULL)",
+    ).run();
+    db.prepare(
+      "UPDATE categories SET deprecated_at = datetime('now'), replaced_by_event_id = 'e1' WHERE id IN ('a','a2')",
+    ).run();
+    // B and some-other merged into C
+    seedCategory(db, 'b2', 'B2');
+    db.prepare(
+      "INSERT INTO taxonomy_events (id, event_seq, kind, source_ids, target_ids, payload) VALUES ('e2', 2, 'merge', '[\"b\",\"b2\"]', '[\"c\"]', NULL)",
+    ).run();
+    db.prepare(
+      "UPDATE categories SET deprecated_at = datetime('now'), replaced_by_event_id = 'e2' WHERE id IN ('b','b2')",
+    ).run();
+
+    expect(resolveCategoryAsOf(db, 'a', 'as_of_now')).toEqual({ id: 'c', name: 'C' });
+    expect(resolveCategoryAsOf(db, 'b', 'as_of_now')).toEqual({ id: 'c', name: 'C' });
+    db.close();
+  });
+});

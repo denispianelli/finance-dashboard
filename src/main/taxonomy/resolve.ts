@@ -19,7 +19,7 @@ export function resolveCategoryAsOf(
     }
     return resolvePeriod(db, categoryId, date, cat.name);
   }
-  return { id: categoryId, name: cat.name };
+  return resolveNow(db, categoryId, cat.name, new Set());
 }
 
 function resolvePeriod(
@@ -28,7 +28,6 @@ function resolvePeriod(
   date: string,
   currentName: string,
 ): ResolvedCategory {
-  // §5.2 — most recent rename at or before `date` wins
   const renameLe = db
     .prepare(
       `SELECT payload FROM taxonomy_events
@@ -43,9 +42,6 @@ function resolvePeriod(
     const payload = JSON.parse(renameLe.payload) as { new_name: string };
     return { id: categoryId, name: payload.new_name };
   }
-  // No rename ≤ date. If a rename > date exists, the name at `date` was that
-  // event's `old_name`. Otherwise the category was never renamed and current
-  // name is also the name at `date`.
   const renameGt = db
     .prepare(
       `SELECT payload FROM taxonomy_events
@@ -60,5 +56,46 @@ function resolvePeriod(
     const payload = JSON.parse(renameGt.payload) as { old_name: string };
     return { id: categoryId, name: payload.old_name };
   }
+  return { id: categoryId, name: currentName };
+}
+
+function resolveNow(
+  db: DatabaseSync,
+  categoryId: string,
+  currentName: string,
+  visited: Set<string>,
+): ResolvedCategory {
+  if (visited.has(categoryId)) {
+    throw new Error(`resolveCategoryAsOf: cycle detected at ${categoryId}`);
+  }
+  visited.add(categoryId);
+  // Earliest split/merge event with this category as source
+  const event = db
+    .prepare(
+      `SELECT kind, target_ids FROM taxonomy_events
+       WHERE (kind = 'split' OR kind = 'merge')
+         AND EXISTS (SELECT 1 FROM json_each(source_ids) WHERE value = ?)
+       ORDER BY occurred_at ASC, event_seq ASC
+       LIMIT 1`,
+    )
+    .get(categoryId) as unknown as { kind: string; target_ids: string } | undefined;
+  if (!event) {
+    return { id: categoryId, name: currentName };
+  }
+  const targetIds = JSON.parse(event.target_ids) as string[];
+  if (event.kind === 'merge') {
+    const targetId = targetIds[0];
+    if (targetId === undefined) {
+      throw new Error(`resolveCategoryAsOf: merge event with no target for ${categoryId}`);
+    }
+    const targetCat = db
+      .prepare('SELECT name FROM categories WHERE id = ?')
+      .get(targetId) as unknown as { name: string } | undefined;
+    if (!targetCat) {
+      throw new Error(`resolveCategoryAsOf: merge target ${targetId} not found`);
+    }
+    return resolveNow(db, targetId, targetCat.name, visited);
+  }
+  // split — Task 5
   return { id: categoryId, name: currentName };
 }
