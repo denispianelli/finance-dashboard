@@ -1,5 +1,10 @@
 import type { DatabaseSync } from 'node:sqlite';
-import type { AggregationBucket, AggregationMode, ResolvedCategory } from '@shared/types/taxonomy';
+import type {
+  AggregationBucket,
+  AggregationMode,
+  MappingRule,
+  ResolvedCategory,
+} from '@shared/types/taxonomy';
 
 export function resolveCategoryAsOf(
   db: DatabaseSync,
@@ -69,9 +74,29 @@ function routeTransaction(
     // as_of_period never returns splitInto per spec §5.2
     return { id: r.id, name: r.name };
   }
-  // as_of_now — Task 7 handles split routing
-  const r = resolveCategoryAsOf(db, tx.category_id, 'as_of_now');
-  return { id: r.id, name: r.name };
+  // as_of_now — walk through chained splits per spec §6.2 step 4.
+  let currentId = tx.category_id;
+  let resolved = resolveCategoryAsOf(db, currentId, 'as_of_now');
+  while ('splitInto' in resolved) {
+    const splitEvent = db
+      .prepare(
+        "SELECT payload FROM taxonomy_events WHERE kind = 'split' AND json_extract(source_ids, '$[0]') = ? LIMIT 1",
+      )
+      .get(currentId) as unknown as { payload: string } | undefined;
+    if (!splitEvent) {
+      throw new Error(`aggregateByCategory: missing split event for ${currentId}`);
+    }
+    const rule = JSON.parse(splitEvent.payload) as MappingRule;
+    const match = rule.rules.find((r) => compilePattern(r.pattern).test(tx.label_clean));
+    if (!match) {
+      throw new Error(
+        `aggregateByCategory: exhaustive-rule invariant violated for ${currentId} (label="${tx.label_clean}")`,
+      );
+    }
+    currentId = match.target_id;
+    resolved = resolveCategoryAsOf(db, currentId, 'as_of_now');
+  }
+  return { id: resolved.id, name: resolved.name };
 }
 
 function resolvePeriod(
@@ -152,6 +177,18 @@ function resolveNow(
     return { id: r.id, name: r.name };
   });
   return { id: categoryId, name: currentName, splitInto };
+}
+
+/**
+ * Compile a mapping-rule pattern (spec §3.3) into a RegExp.
+ * Supports a leading `(?i)` PCRE-style flag for case-insensitive matching;
+ * everything else is passed straight to the native RegExp constructor.
+ */
+function compilePattern(pattern: string): RegExp {
+  if (pattern.startsWith('(?i)')) {
+    return new RegExp(pattern.slice(4), 'i');
+  }
+  return new RegExp(pattern);
 }
 
 function getName(db: DatabaseSync, categoryId: string): string {

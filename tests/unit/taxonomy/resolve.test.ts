@@ -326,14 +326,18 @@ describe('aggregateByCategory — as_of_period', () => {
     db.close();
   });
 
-  it('throws when mode is missing or invalid', () => {
+  it('throws when mode is missing or invalid (callers via untyped boundaries)', () => {
     const db = freshDb();
-    // @ts-expect-error — mode missing
-    expect(() => aggregateByCategory(db, { from: '2026-01-01', to: '2026-12-31' })).toThrow(/mode/);
-    // @ts-expect-error — mode invalid
-    expect(() =>
-      aggregateByCategory(db, { from: '2026-01-01', to: '2026-12-31', mode: 'magic' }),
-    ).toThrow(/mode/);
+    const noMode = { from: '2026-01-01', to: '2026-12-31' } as unknown as Parameters<
+      typeof aggregateByCategory
+    >[1];
+    expect(() => aggregateByCategory(db, noMode)).toThrow(/mode/);
+    const badMode = {
+      from: '2026-01-01',
+      to: '2026-12-31',
+      mode: 'magic',
+    } as unknown as Parameters<typeof aggregateByCategory>[1];
+    expect(() => aggregateByCategory(db, badMode)).toThrow(/mode/);
     db.close();
   });
 
@@ -387,6 +391,145 @@ describe('aggregateByCategory — as_of_period', () => {
       mode: 'as_of_period',
     });
     expect(buckets).toEqual([{ categoryId: 'c1', name: 'A', total: -10, count: 1 }]);
+    db.close();
+  });
+});
+
+describe('aggregateByCategory — as_of_now split routing', () => {
+  function seedSplitWithRule(
+    db: DatabaseSync,
+    eventId: string,
+    eventSeq: number,
+    sourceId: string,
+    targetIds: string[],
+    rules: { pattern: string; target_id: string }[],
+  ): void {
+    db.prepare(
+      'INSERT INTO taxonomy_events (id, event_seq, kind, source_ids, target_ids, payload, occurred_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    ).run(
+      eventId,
+      eventSeq,
+      'split',
+      JSON.stringify([sourceId]),
+      JSON.stringify(targetIds),
+      JSON.stringify({ kind: 'label-regex', rules }),
+      `2026-0${String(eventSeq)}-01`,
+    );
+    db.prepare(
+      `UPDATE categories SET deprecated_at = datetime('now'), replaced_by_event_id = ? WHERE id = ?`,
+    ).run(eventId, sourceId);
+  }
+
+  it('routes transactions to a split target via the mapping rule on label_clean', () => {
+    const db = freshDb();
+    seedCategory(db, 'food', 'Food');
+    seedCategory(db, 'delivery', 'Food delivery');
+    seedCategory(db, 'restaurants', 'Restaurants only');
+    seedSplitWithRule(
+      db,
+      'e1',
+      1,
+      'food',
+      ['delivery', 'restaurants'],
+      [
+        { pattern: '(?i)uber', target_id: 'delivery' },
+        { pattern: '.*', target_id: 'restaurants' },
+      ],
+    );
+    seedTx(db, 'tx1', '2025-06-01', -30, 'UBER EATS', 'food');
+    seedTx(db, 'tx2', '2025-06-15', -50, 'Bistro Paris', 'food');
+
+    const buckets = aggregateByCategory(db, {
+      from: '2025-01-01',
+      to: '2026-12-31',
+      mode: 'as_of_now',
+    });
+    expect(buckets).toHaveLength(2);
+    expect(buckets).toContainEqual({
+      categoryId: 'delivery',
+      name: 'Food delivery',
+      total: -30,
+      count: 1,
+    });
+    expect(buckets).toContainEqual({
+      categoryId: 'restaurants',
+      name: 'Restaurants only',
+      total: -50,
+      count: 1,
+    });
+    db.close();
+  });
+
+  it('walks chained splits (A→[B,C], then C→[D,E])', () => {
+    const db = freshDb();
+    seedCategory(db, 'a', 'A');
+    seedCategory(db, 'b', 'B');
+    seedCategory(db, 'c', 'C');
+    seedCategory(db, 'd', 'D');
+    seedCategory(db, 'e', 'E');
+    seedSplitWithRule(
+      db,
+      'e1',
+      1,
+      'a',
+      ['b', 'c'],
+      [
+        { pattern: '(?i)uber', target_id: 'b' },
+        { pattern: '.*', target_id: 'c' },
+      ],
+    );
+    seedSplitWithRule(
+      db,
+      'e2',
+      2,
+      'c',
+      ['d', 'e'],
+      [
+        { pattern: '(?i)lunch', target_id: 'd' },
+        { pattern: '.*', target_id: 'e' },
+      ],
+    );
+    seedTx(db, 'tx-uber', '2025-06-01', -10, 'Uber X', 'a'); // → b
+    seedTx(db, 'tx-lunch', '2025-06-02', -20, 'Lunch at X', 'a'); // → c → d
+    seedTx(db, 'tx-other', '2025-06-03', -30, 'something', 'a'); // → c → e
+
+    const buckets = aggregateByCategory(db, {
+      from: '2025-01-01',
+      to: '2026-12-31',
+      mode: 'as_of_now',
+    });
+    expect(buckets).toHaveLength(3);
+    expect(buckets).toContainEqual({ categoryId: 'b', name: 'B', total: -10, count: 1 });
+    expect(buckets).toContainEqual({ categoryId: 'd', name: 'D', total: -20, count: 1 });
+    expect(buckets).toContainEqual({ categoryId: 'e', name: 'E', total: -30, count: 1 });
+    db.close();
+  });
+
+  it('routes through a merge chain in as_of_now', () => {
+    const db = freshDb();
+    seedCategory(db, 'a', 'A');
+    seedCategory(db, 'b', 'B');
+    seedCategory(db, 'c', 'C');
+    db.prepare(
+      "INSERT INTO taxonomy_events (id, event_seq, kind, source_ids, target_ids, payload) VALUES ('e1', 1, 'merge', '[\"a\"]', '[\"b\"]', NULL)",
+    ).run();
+    db.prepare(
+      "UPDATE categories SET deprecated_at = datetime('now'), replaced_by_event_id = 'e1' WHERE id = 'a'",
+    ).run();
+    db.prepare(
+      "INSERT INTO taxonomy_events (id, event_seq, kind, source_ids, target_ids, payload) VALUES ('e2', 2, 'merge', '[\"b\"]', '[\"c\"]', NULL)",
+    ).run();
+    db.prepare(
+      "UPDATE categories SET deprecated_at = datetime('now'), replaced_by_event_id = 'e2' WHERE id = 'b'",
+    ).run();
+    seedTx(db, 'tx1', '2025-06-01', -10, 'x', 'a');
+
+    const buckets = aggregateByCategory(db, {
+      from: '2025-01-01',
+      to: '2026-12-31',
+      mode: 'as_of_now',
+    });
+    expect(buckets).toEqual([{ categoryId: 'c', name: 'C', total: -10, count: 1 }]);
     db.close();
   });
 });

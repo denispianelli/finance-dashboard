@@ -118,6 +118,13 @@ ambiguous or dropped transaction.
 
 First match wins. Patterns are applied to `transactions.label_clean`.
 
+**Pattern syntax:** native JavaScript `RegExp` syntax with **one** PCRE-style
+extension: a leading `(?i)` prefix enables case-insensitive matching (stripped
+and translated to the `i` flag at construction time, see
+`src/main/taxonomy/resolve.ts` `compilePattern`). Anything else is passed
+straight to `new RegExp(...)`. No other PCRE flag prefixes are recognised in
+v1; if a wider need arises, extend `compilePattern`.
+
 Rationale: this uses the same conceptual shape as `categorization_rules`
 (#29) — label match → category id — restricted to regex matching only for
 simplicity. The rule stays machine-applicable in pure JS without needing a
