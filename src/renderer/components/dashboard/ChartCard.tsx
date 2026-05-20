@@ -8,14 +8,14 @@ export function ChartCard() {
   const [range, setRange] = useState<string>('1A');
   return (
     <div className="flex flex-col gap-3.5 rounded-lg border border-line-2 bg-ink-2 px-[22px] pb-4 pt-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-y-2">
+        <div className="flex min-w-0 items-center gap-3.5">
           <Overline>— II</Overline>
-          <span className="font-sans text-sm font-medium tracking-[-0.012em]">
+          <span className="truncate font-sans text-sm font-medium tracking-[-0.012em]">
             Solde sur 12 mois
           </span>
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
           {RANGES.map((r) => (
             <Chip
               key={r}
@@ -30,7 +30,7 @@ export function ChartCard() {
         </div>
       </div>
       <svg
-        className="block h-[220px] w-full"
+        className="block aspect-[600/220] min-h-[160px] w-full xl:h-[220px]"
         viewBox="0 0 600 220"
         preserveAspectRatio="none"
         aria-hidden="true"
