@@ -102,3 +102,39 @@ describe('resolveCategoryAsOf — as_of_period rename walk', () => {
     db.close();
   });
 });
+
+describe('resolveCategoryAsOf — as_of_now base (renames update in place)', () => {
+  it('returns categories.name when no events touch the category', () => {
+    const db = freshDb();
+    seedCategory(db, 'c1', 'Restaurants');
+    expect(resolveCategoryAsOf(db, 'c1', 'as_of_now')).toEqual({ id: 'c1', name: 'Restaurants' });
+    db.close();
+  });
+
+  it('returns the current name after one rename (categories.name reflects it)', () => {
+    const db = freshDb();
+    seedCategory(db, 'c1', 'Restaurants');
+    db.prepare(
+      "INSERT INTO taxonomy_events (id, event_seq, kind, source_ids, target_ids, payload) VALUES ('e1', 1, 'rename', '[\"c1\"]', '[\"c1\"]', ?)",
+    ).run(JSON.stringify({ kind: 'rename', old_name: 'Restaurants', new_name: 'Food' }));
+    db.prepare("UPDATE categories SET name = 'Food' WHERE id = 'c1'").run();
+
+    expect(resolveCategoryAsOf(db, 'c1', 'as_of_now')).toEqual({ id: 'c1', name: 'Food' });
+    db.close();
+  });
+
+  it('returns the latest name after two renames', () => {
+    const db = freshDb();
+    seedCategory(db, 'c1', 'A');
+    db.prepare(
+      "INSERT INTO taxonomy_events (id, event_seq, kind, source_ids, target_ids, payload) VALUES ('e1', 1, 'rename', '[\"c1\"]', '[\"c1\"]', ?)",
+    ).run(JSON.stringify({ kind: 'rename', old_name: 'A', new_name: 'B' }));
+    db.prepare(
+      "INSERT INTO taxonomy_events (id, event_seq, kind, source_ids, target_ids, payload) VALUES ('e2', 2, 'rename', '[\"c1\"]', '[\"c1\"]', ?)",
+    ).run(JSON.stringify({ kind: 'rename', old_name: 'B', new_name: 'C' }));
+    db.prepare("UPDATE categories SET name = 'C' WHERE id = 'c1'").run();
+
+    expect(resolveCategoryAsOf(db, 'c1', 'as_of_now')).toEqual({ id: 'c1', name: 'C' });
+    db.close();
+  });
+});
