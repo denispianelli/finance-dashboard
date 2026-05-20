@@ -533,3 +533,32 @@ describe('aggregateByCategory — as_of_now split routing', () => {
     db.close();
   });
 });
+
+describe('aggregateByCategory — cross-check (no events)', () => {
+  it('returns identical buckets for as_of_period and as_of_now on a no-change window', () => {
+    const db = freshDb();
+    seedCategory(db, 'c1', 'Restaurants');
+    seedCategory(db, 'c2', 'Transport');
+    seedCategory(db, 'c3', 'Other');
+    seedTx(db, 'tx1', '2025-02-15', -42, 'Bistro', 'c1');
+    seedTx(db, 'tx2', '2025-04-10', -18, 'Metro', 'c2');
+    seedTx(db, 'tx3', '2025-06-22', -55, 'Resto X', 'c1');
+    seedTx(db, 'tx4', '2025-09-03', -7, 'Bus', 'c2');
+    seedTx(db, 'tx5', '2025-11-30', -123, 'Misc', 'c3');
+
+    const period = aggregateByCategory(db, {
+      from: '2025-01-01',
+      to: '2025-12-31',
+      mode: 'as_of_period',
+    });
+    const now = aggregateByCategory(db, {
+      from: '2025-01-01',
+      to: '2025-12-31',
+      mode: 'as_of_now',
+    });
+    const sort = (a: typeof period) =>
+      a.slice().sort((x, y) => x.categoryId.localeCompare(y.categoryId));
+    expect(sort(period)).toEqual(sort(now));
+    db.close();
+  });
+});
