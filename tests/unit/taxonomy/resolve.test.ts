@@ -201,3 +201,102 @@ describe('resolveCategoryAsOf — as_of_now merge recursion', () => {
     db.close();
   });
 });
+
+describe('resolveCategoryAsOf — as_of_now split (one level deep)', () => {
+  function seedSplit(
+    db: DatabaseSync,
+    eventId: string,
+    eventSeq: number,
+    sourceId: string,
+    targetIds: string[],
+  ): void {
+    db.prepare(
+      'INSERT INTO taxonomy_events (id, event_seq, kind, source_ids, target_ids, payload) VALUES (?, ?, ?, ?, ?, ?)',
+    ).run(
+      eventId,
+      eventSeq,
+      'split',
+      JSON.stringify([sourceId]),
+      JSON.stringify(targetIds),
+      JSON.stringify({
+        kind: 'label-regex',
+        rules: [{ pattern: '.*', target_id: targetIds[0] }],
+      }),
+    );
+    db.prepare(
+      `UPDATE categories SET deprecated_at = datetime('now'), replaced_by_event_id = ? WHERE id = ?`,
+    ).run(eventId, sourceId);
+  }
+
+  it('surfaces splitInto with terminal {id, name} entries', () => {
+    const db = freshDb();
+    seedCategory(db, 'a', 'A');
+    seedCategory(db, 'b', 'B');
+    seedCategory(db, 'c', 'C');
+    seedSplit(db, 'e1', 1, 'a', ['b', 'c']);
+    const r = resolveCategoryAsOf(db, 'a', 'as_of_now');
+    expect(r).toEqual({
+      id: 'a',
+      name: 'A',
+      splitInto: [
+        { id: 'b', name: 'B' },
+        { id: 'c', name: 'C' },
+      ],
+    });
+    db.close();
+  });
+
+  it('reflects a post-split rename of a target in splitInto', () => {
+    const db = freshDb();
+    seedCategory(db, 'a', 'A');
+    seedCategory(db, 'b', 'B');
+    seedCategory(db, 'c', 'C');
+    seedSplit(db, 'e1', 1, 'a', ['b', 'c']);
+    db.prepare(
+      "INSERT INTO taxonomy_events (id, event_seq, kind, source_ids, target_ids, payload) VALUES ('e2', 2, 'rename', '[\"b\"]', '[\"b\"]', ?)",
+    ).run(JSON.stringify({ kind: 'rename', old_name: 'B', new_name: 'B-new' }));
+    db.prepare("UPDATE categories SET name = 'B-new' WHERE id = 'b'").run();
+
+    const r = resolveCategoryAsOf(db, 'a', 'as_of_now');
+    expect(r).toEqual({
+      id: 'a',
+      name: 'A',
+      splitInto: [
+        { id: 'b', name: 'B-new' },
+        { id: 'c', name: 'C' },
+      ],
+    });
+    db.close();
+  });
+
+  it('chained split: outer surfaces inner target as terminal {id, name}, no nested splitInto', () => {
+    const db = freshDb();
+    seedCategory(db, 'a', 'A');
+    seedCategory(db, 'b', 'B');
+    seedCategory(db, 'c', 'C');
+    seedCategory(db, 'd', 'D');
+    seedCategory(db, 'e', 'E');
+    seedSplit(db, 'e1', 1, 'a', ['b', 'c']);
+    seedSplit(db, 'e2', 2, 'c', ['d', 'e']);
+    const r = resolveCategoryAsOf(db, 'a', 'as_of_now');
+    expect(r).toEqual({
+      id: 'a',
+      name: 'A',
+      splitInto: [
+        { id: 'b', name: 'B' },
+        { id: 'c', name: 'C' },
+      ],
+    });
+    // Caller would call resolveCategoryAsOf again on 'c' to walk further.
+    const rc = resolveCategoryAsOf(db, 'c', 'as_of_now');
+    expect(rc).toEqual({
+      id: 'c',
+      name: 'C',
+      splitInto: [
+        { id: 'd', name: 'D' },
+        { id: 'e', name: 'E' },
+      ],
+    });
+    db.close();
+  });
+});

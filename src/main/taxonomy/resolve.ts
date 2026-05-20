@@ -69,7 +69,6 @@ function resolveNow(
     throw new Error(`resolveCategoryAsOf: cycle detected at ${categoryId}`);
   }
   visited.add(categoryId);
-  // Earliest split/merge event with this category as source
   const event = db
     .prepare(
       `SELECT kind, target_ids FROM taxonomy_events
@@ -96,6 +95,20 @@ function resolveNow(
     }
     return resolveNow(db, targetId, targetCat.name, visited);
   }
-  // split — Task 5
-  return { id: categoryId, name: currentName };
+  // split — one level deep; caller walks further per spec §5.3 / §6.2 step 4
+  const splitInto = targetIds.map((tid) => {
+    const r = resolveNow(db, tid, getName(db, tid), new Set(visited));
+    return { id: r.id, name: r.name };
+  });
+  return { id: categoryId, name: currentName, splitInto };
+}
+
+function getName(db: DatabaseSync, categoryId: string): string {
+  const row = db.prepare('SELECT name FROM categories WHERE id = ?').get(categoryId) as unknown as
+    | { name: string }
+    | undefined;
+  if (!row) {
+    throw new Error(`resolveCategoryAsOf: split target ${categoryId} not found`);
+  }
+  return row.name;
 }
