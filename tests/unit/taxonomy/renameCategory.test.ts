@@ -6,6 +6,7 @@ import { renameCategory } from '../../../src/main/taxonomy/renameCategory';
 function freshDb(): DatabaseSync {
   const db = new DatabaseSync(':memory:');
   runMigrations(db);
+  db.exec('PRAGMA foreign_keys = ON');
   return db;
 }
 

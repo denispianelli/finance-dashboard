@@ -6,6 +6,7 @@ import { mergeCategories } from '../../../src/main/taxonomy/mergeCategories';
 function freshDb(): DatabaseSync {
   const db = new DatabaseSync(':memory:');
   runMigrations(db);
+  db.exec('PRAGMA foreign_keys = ON');
   return db;
 }
 
@@ -38,17 +39,21 @@ describe('mergeCategories', () => {
     expect(tgt.deprecated_at).toBeNull();
 
     const event = db
-      .prepare('SELECT kind, source_ids, target_ids, payload FROM taxonomy_events WHERE id = ?')
+      .prepare(
+        'SELECT kind, source_ids, target_ids, payload, event_seq FROM taxonomy_events WHERE id = ?',
+      )
       .get(eventId) as unknown as {
       kind: string;
       source_ids: string;
       target_ids: string;
       payload: string | null;
+      event_seq: number;
     };
     expect(event.kind).toBe('merge');
     expect(JSON.parse(event.source_ids)).toEqual(['s1', 's2']);
     expect(JSON.parse(event.target_ids)).toEqual(['tgt']);
     expect(event.payload).toBeNull();
+    expect(event.event_seq).toBe(1);
     db.close();
   });
 

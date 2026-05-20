@@ -7,6 +7,7 @@ import type { MappingRule } from '@shared/types/taxonomy';
 function freshDb(): DatabaseSync {
   const db = new DatabaseSync(':memory:');
   runMigrations(db);
+  db.exec('PRAGMA foreign_keys = ON');
   return db;
 }
 
@@ -43,17 +44,21 @@ describe('splitCategory', () => {
     expect(cat.replaced_by_event_id).toBe(eventId);
 
     const event = db
-      .prepare('SELECT kind, source_ids, target_ids, payload FROM taxonomy_events WHERE id = ?')
+      .prepare(
+        'SELECT kind, source_ids, target_ids, payload, event_seq FROM taxonomy_events WHERE id = ?',
+      )
       .get(eventId) as unknown as {
       kind: string;
       source_ids: string;
       target_ids: string;
       payload: string;
+      event_seq: number;
     };
     expect(event.kind).toBe('split');
     expect(JSON.parse(event.source_ids)).toEqual(['src']);
     expect(JSON.parse(event.target_ids)).toEqual(['t1', 't2']);
     expect(JSON.parse(event.payload)).toEqual(rule);
+    expect(event.event_seq).toBe(1);
     db.close();
   });
 
