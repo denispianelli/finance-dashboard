@@ -238,14 +238,17 @@ function resolveCategoryAsOf(
 Walks `taxonomy_events` involving `categoryId` in
 `(occurred_at, event_seq)` order to recover the state at `date`. Cases:
 
-- No `rename` events at or before `date` → `{ id, name }` with the current
-  `categories.name` (the category has never been renamed before `date`, so
-  its current name is what it was called then too).
 - One or more `rename` events at or before `date` → take the **most recent
   rename ≤ date** by `(occurred_at, event_seq)`, return `{ id, name }`
   where `name = that event's payload.new_name`. If the most recent rename
   is the LAST rename overall, the result matches the current
   `categories.name`; otherwise it is the historical name.
+- No rename at or before `date`, but at least one rename strictly **after**
+  `date` → return `{ id, name }` where `name` is the **oldest** post-`date`
+  rename's `payload.old_name` (that was the name at `date`, before the
+  first ever rename of this category).
+- No rename event on `categoryId` at any time → `{ id, name }` with the
+  current `categories.name` (category was never renamed).
 - A `split` / `merge` event with `categoryId` as source at a time strictly
   **after** `date` → the category was still active at `date`; return as
   above.
