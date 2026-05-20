@@ -300,3 +300,93 @@ describe('resolveCategoryAsOf — as_of_now split (one level deep)', () => {
     db.close();
   });
 });
+
+import { aggregateByCategory } from '../../../src/main/taxonomy/resolve';
+
+function seedTx(
+  db: DatabaseSync,
+  id: string,
+  date: string,
+  amount: number,
+  label: string,
+  categoryId: string | null,
+): void {
+  db.prepare(
+    `INSERT INTO transactions (id, account_id, tx_hash, date, amount, label_raw, label_clean, category_id)
+     VALUES (?, 'acc-lcl-default', ?, ?, ?, ?, ?, ?)`,
+  ).run(id, `h-${id}`, date, amount, label, label, categoryId);
+}
+
+describe('aggregateByCategory — as_of_period', () => {
+  it('returns empty array when no transactions in window', () => {
+    const db = freshDb();
+    expect(
+      aggregateByCategory(db, { from: '2026-01-01', to: '2026-12-31', mode: 'as_of_period' }),
+    ).toEqual([]);
+    db.close();
+  });
+
+  it('throws when mode is missing or invalid', () => {
+    const db = freshDb();
+    // @ts-expect-error — mode missing
+    expect(() => aggregateByCategory(db, { from: '2026-01-01', to: '2026-12-31' })).toThrow(/mode/);
+    // @ts-expect-error — mode invalid
+    expect(() =>
+      aggregateByCategory(db, { from: '2026-01-01', to: '2026-12-31', mode: 'magic' }),
+    ).toThrow(/mode/);
+    db.close();
+  });
+
+  it('buckets a single tx by its current category name when no events', () => {
+    const db = freshDb();
+    seedCategory(db, 'c1', 'Restaurants');
+    seedTx(db, 'tx1', '2026-05-01', -42.5, 'Bistro X', 'c1');
+    const buckets = aggregateByCategory(db, {
+      from: '2026-01-01',
+      to: '2026-12-31',
+      mode: 'as_of_period',
+    });
+    expect(buckets).toEqual([{ categoryId: 'c1', name: 'Restaurants', total: -42.5, count: 1 }]);
+    db.close();
+  });
+
+  it('separates buckets by historical name across a mid-period rename', () => {
+    const db = freshDb();
+    seedCategory(db, 'c1', 'Restaurants');
+    // tx before rename
+    seedTx(db, 'tx1', '2026-02-01', -10, 'Bistro A', 'c1');
+    // rename on 2026-03-01
+    db.prepare(
+      "INSERT INTO taxonomy_events (id, event_seq, kind, source_ids, target_ids, payload, occurred_at) VALUES ('e1', 1, 'rename', '[\"c1\"]', '[\"c1\"]', ?, '2026-03-01')",
+    ).run(JSON.stringify({ kind: 'rename', old_name: 'Restaurants', new_name: 'Food' }));
+    db.prepare("UPDATE categories SET name = 'Food' WHERE id = 'c1'").run();
+    // tx after rename
+    seedTx(db, 'tx2', '2026-04-01', -20, 'Bistro B', 'c1');
+
+    const buckets = aggregateByCategory(db, {
+      from: '2026-01-01',
+      to: '2026-12-31',
+      mode: 'as_of_period',
+    });
+    expect(buckets).toHaveLength(2);
+    expect(buckets).toContainEqual({ categoryId: 'c1', name: 'Restaurants', total: -10, count: 1 });
+    expect(buckets).toContainEqual({ categoryId: 'c1', name: 'Food', total: -20, count: 1 });
+    db.close();
+  });
+
+  it('ignores transactions outside the window and with null category_id', () => {
+    const db = freshDb();
+    seedCategory(db, 'c1', 'A');
+    seedTx(db, 'tx1', '2025-12-31', -5, 'x', 'c1'); // before window
+    seedTx(db, 'tx2', '2026-06-01', -10, 'x', 'c1');
+    seedTx(db, 'tx3', '2027-01-01', -15, 'x', 'c1'); // after window
+    seedTx(db, 'tx4', '2026-06-15', -20, 'x', null); // null category
+    const buckets = aggregateByCategory(db, {
+      from: '2026-01-01',
+      to: '2026-12-31',
+      mode: 'as_of_period',
+    });
+    expect(buckets).toEqual([{ categoryId: 'c1', name: 'A', total: -10, count: 1 }]);
+    db.close();
+  });
+});
