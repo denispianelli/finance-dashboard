@@ -20,10 +20,13 @@ describe('004_add_fitid', () => {
     const db = new DatabaseSync(':memory:');
     runMigrations(db);
     runMigrations(db);
-    const rows = db
-      .prepare('SELECT version FROM schema_migrations ORDER BY version')
-      .all() as unknown as { version: number }[];
-    expect(rows.map((r) => r.version)).toEqual([1, 2, 3, 4]);
+    const versions = (
+      db.prepare('SELECT version FROM schema_migrations ORDER BY version').all() as unknown as {
+        version: number;
+      }[]
+    ).map((r) => r.version);
+    expect(versions).toContain(4);
+    expect(new Set(versions).size).toBe(versions.length);
     db.close();
   });
 });
