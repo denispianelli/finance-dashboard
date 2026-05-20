@@ -1,7 +1,7 @@
 # ADR-010 — Versioned category taxonomy
 
-- **Status** : Proposed
-- **Date** : 2026-05-20
+- **Status** : Accepted
+- **Date** : 2026-05-20 (proposed) — 2026-05-20 (accepted)
 - **Category** : Data, Product
 - **Related** : ADR-009 (product scope realignment), ADR-006 (multi-level deduplication — same history-preservation philosophy)
 
@@ -72,3 +72,27 @@ Full implementation contract:
   omission.
 - The split mapping rule reuses the same label-regex shape as
   `categorization_rules` (#29), keeping the model conceptually unified.
+
+## Consequences delta (2026-05-20, on acceptance)
+
+The model shipped as described, with no semantic deviation from the proposal.
+Concrete landings:
+
+- Schema lives in migration `005_versioned_taxonomy.sql`: `taxonomy_events`
+  table + additive `deprecated_at` / `replaced_by_event_id` columns on
+  `categories`. No data rewrite.
+- Operations shipped in `src/main/taxonomy/{renameCategory,splitCategory,mergeCategories}.ts`,
+  each a pure function taking a `DatabaseSync` and returning the created
+  `event_id` in a single transaction.
+- `event_seq` (monotonic integer assigned at insert) is the deterministic
+  tiebreaker the resolver walks alongside `occurred_at` — confirms the
+  decision point in §3.2 of the design spec.
+- The exhaustive-rule invariant for split `payload` is enforced at
+  construction time (T2), so `as_of_now` aggregation can never drop a
+  transaction.
+
+Resolver, aggregation builder and IPC channels (T3, T4) land in follow-up
+PRs and do not invalidate this decision. The design spec
+(`docs/superpowers/specs/2026-05-20-versioned-taxonomy-design.md`) remains
+the implementation contract — consult it for the full operation, resolver
+and aggregation semantics.
