@@ -47,7 +47,7 @@ export function Topbar({ onImport }: { onImport: () => void }) {
           type="button"
           disabled
           aria-label="Changer de compte (bientôt disponible)"
-          className="hidden min-w-0 items-center gap-2 rounded-md border border-line-2 bg-ink-2 px-3 py-[7px] font-sans text-xs font-medium text-paper-soft md:inline-flex"
+          className="inline-flex min-w-0 items-center gap-2 rounded-md border border-line-2 bg-ink-2 px-3 py-[7px] font-sans text-xs font-medium text-paper-soft"
         >
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brass" />
           <span className="truncate">{meta.account}</span>

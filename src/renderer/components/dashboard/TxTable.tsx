@@ -51,9 +51,7 @@ export function TxTable({ rows }: { rows: TxRow[] }) {
             <span className="truncate font-sans text-[13px] font-medium leading-tight text-paper">
               {t.main}
             </span>
-            <span className="hidden font-mono text-[11px] tracking-[0.02em] text-paper-dim md:block">
-              {t.sub}
-            </span>
+            <span className="font-mono text-[11px] tracking-[0.02em] text-paper-dim">{t.sub}</span>
           </span>
           <span className={cn(CELL, 'group-hover:bg-ink-3')}>
             <span className="inline-flex items-center gap-1.5 font-sans text-[11px] font-medium text-paper-soft">

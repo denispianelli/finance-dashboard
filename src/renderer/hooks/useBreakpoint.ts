@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 
 export type Breakpoint = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
@@ -10,27 +10,26 @@ const BREAKPOINT_PX: Record<Breakpoint, number> = {
   '2xl': 1536,
 };
 
-function query(breakpoint: Breakpoint): string {
-  return `(min-width: ${String(BREAKPOINT_PX[breakpoint])}px)`;
+interface MediaQueryStore {
+  subscribe: (onChange: () => void) => () => void;
+  getSnapshot: () => boolean;
 }
 
-function subscribe(mediaQuery: string, onChange: () => void): () => void {
-  const mql = window.matchMedia(mediaQuery);
-  mql.addEventListener('change', onChange);
-  return () => {
-    mql.removeEventListener('change', onChange);
+function createMediaQueryStore(mediaQuery: string): MediaQueryStore {
+  return {
+    subscribe: (onChange) => {
+      const mql = window.matchMedia(mediaQuery);
+      mql.addEventListener('change', onChange);
+      return () => {
+        mql.removeEventListener('change', onChange);
+      };
+    },
+    getSnapshot: () => window.matchMedia(mediaQuery).matches,
   };
 }
 
-function getSnapshot(mediaQuery: string): boolean {
-  return window.matchMedia(mediaQuery).matches;
-}
-
 export function useBreakpoint(breakpoint: Breakpoint): boolean {
-  const mediaQuery = query(breakpoint);
-  return useSyncExternalStore(
-    (onChange) => subscribe(mediaQuery, onChange),
-    () => getSnapshot(mediaQuery),
-    () => false,
-  );
+  const mediaQuery = `(min-width: ${String(BREAKPOINT_PX[breakpoint])}px)`;
+  const store = useMemo(() => createMediaQueryStore(mediaQuery), [mediaQuery]);
+  return useSyncExternalStore(store.subscribe, store.getSnapshot, () => false);
 }

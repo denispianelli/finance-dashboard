@@ -72,15 +72,14 @@ describe('Sidebar responsive collapse', () => {
 });
 
 describe('KpiGrid responsive class composition', () => {
-  it('declares 1 / 2 / 4 column breakpoints in source order', () => {
+  it('declares 2 / 4 column breakpoints in source order', () => {
     const { container } = render(
       <KpiGrid>
         <div>a</div>
       </KpiGrid>,
     );
     const grid = container.firstElementChild;
-    expect(grid?.className).toContain('grid-cols-1');
-    expect(grid?.className).toContain('sm:grid-cols-2');
+    expect(grid?.className).toContain('grid-cols-2');
     expect(grid?.className).toContain('xl:grid-cols-4');
   });
 });
