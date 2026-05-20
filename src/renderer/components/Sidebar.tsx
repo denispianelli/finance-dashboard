@@ -10,6 +10,8 @@ import {
 import type { ComponentType } from 'react';
 import { NavLink } from 'react-router-dom';
 import pkg from '../../../package.json';
+import { cn } from '../lib/utils';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 
 interface NavItem {
   path: string;
@@ -40,24 +42,6 @@ const GROUPS: { key: string; label: string; items: NavItem[] }[] = [
   },
 ];
 
-const ITEM_BASE: React.CSSProperties = {
-  position: 'relative',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-  height: 36,
-  padding: '0 12px',
-  margin: '0 8px',
-  borderRadius: 6,
-  fontSize: 13,
-  textDecoration: 'none',
-  transition: 'color 120ms ease, background 120ms ease',
-  border: 'none',
-  width: 'calc(100% - 16px)',
-  cursor: 'pointer',
-  background: 'transparent',
-};
-
 function BrandMark() {
   return (
     <svg
@@ -87,174 +71,144 @@ function BrandMark() {
   );
 }
 
+interface NavRowProps {
+  item: NavItem;
+  collapsed: boolean;
+}
+
+const ROW_BASE =
+  'nav-item relative mx-2 flex h-9 items-center gap-2 rounded-md text-[13px] transition-colors';
+const ROW_EXPANDED = 'px-3';
+const ROW_COLLAPSED = 'justify-center px-0';
+
+function NavRow({ item, collapsed }: NavRowProps) {
+  const { Icon, label, path, enabled } = item;
+  const sharedTitle = collapsed ? label : undefined;
+  if (!enabled) {
+    return (
+      <button
+        type="button"
+        disabled
+        title={sharedTitle}
+        aria-label={collapsed ? label : undefined}
+        className={cn(
+          ROW_BASE,
+          collapsed ? ROW_COLLAPSED : ROW_EXPANDED,
+          'cursor-not-allowed border-0 bg-transparent text-left text-paper-dim opacity-50',
+        )}
+      >
+        <Icon size={14} strokeWidth={1.6} />
+        {collapsed ? null : <span>{label}</span>}
+      </button>
+    );
+  }
+  return (
+    <NavLink
+      to={path}
+      end={path === '/'}
+      title={sharedTitle}
+      aria-label={collapsed ? label : undefined}
+      className={({ isActive }) =>
+        cn(
+          ROW_BASE,
+          collapsed ? ROW_COLLAPSED : ROW_EXPANDED,
+          'no-underline',
+          isActive ? 'bg-brass-soft text-paper' : 'text-paper-mute',
+        )
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <span
+            className={cn(
+              'absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full',
+              isActive ? 'bg-brass' : 'bg-transparent',
+            )}
+          />
+          <Icon size={14} strokeWidth={1.6} />
+          {collapsed ? null : <span>{label}</span>}
+        </>
+      )}
+    </NavLink>
+  );
+}
+
 export function Sidebar() {
+  const expanded = useBreakpoint('xl');
+  const collapsed = !expanded;
+
   return (
     <aside
       aria-label="Barre latérale"
-      style={{
-        width: 232,
-        flexShrink: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'var(--ink-2)',
-        borderRight: '1px solid var(--line-2)',
-        height: '100%',
-      }}
+      data-collapsed={collapsed}
+      className={cn(
+        'flex h-full shrink-0 flex-col border-r border-line-2 bg-ink-2 transition-[width] duration-150',
+        collapsed ? 'w-[60px]' : 'w-[232px]',
+      )}
     >
-      {/* Brand */}
       <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          padding: '20px 18px 18px',
-        }}
+        className={cn(
+          'flex items-center gap-3 pb-[18px] pt-5',
+          collapsed ? 'justify-center px-0' : 'px-[18px]',
+        )}
       >
-        <span style={{ color: 'var(--brass)', display: 'flex' }}>
+        <span className="flex text-brass">
           <BrandMark />
         </span>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, lineHeight: 1 }}>
-          <span
-            style={{
-              fontFamily: 'var(--font-sans)',
-              fontWeight: 500,
-              fontSize: 13,
-              lineHeight: 1,
-              letterSpacing: '-0.015em',
-              color: 'var(--paper)',
-            }}
-          >
-            Finance
-          </span>
-          <span
-            style={{
-              fontFamily: 'var(--font-serif)',
-              fontStyle: 'italic',
-              fontWeight: 400,
-              fontSize: 15,
-              lineHeight: 1,
-              color: 'var(--paper-soft)',
-            }}
-          >
-            Dashboard
-          </span>
-        </div>
+        {collapsed ? null : (
+          <div className="flex flex-col gap-1 leading-none">
+            <span className="font-sans text-[13px] font-medium leading-none tracking-[-0.015em] text-paper">
+              Finance
+            </span>
+            <span className="font-serif text-[15px] italic font-normal leading-none text-paper-soft">
+              Dashboard
+            </span>
+          </div>
+        )}
       </div>
 
-      <div style={{ height: 1, background: 'var(--line-2)', margin: '0 16px' }} />
+      <div className="mx-4 h-px bg-line-2" />
 
-      {/* Nav groups */}
-      <nav aria-label="Navigation principale" style={{ flex: 1, padding: '8px 0' }}>
+      <nav aria-label="Navigation principale" className="flex-1 py-2">
         {GROUPS.map((group) => (
-          <div key={group.key} style={{ paddingBottom: 8 }}>
-            <span
-              style={{
-                display: 'block',
-                padding: '12px 16px 6px',
-                fontSize: 9,
-                fontWeight: 600,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
-                color: 'var(--paper-dim)',
-              }}
-            >
-              {group.label}
-            </span>
-            {group.items.map((item) =>
-              item.enabled ? (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  end={item.path === '/'}
-                  className="nav-item"
-                  style={({ isActive }) => ({
-                    ...ITEM_BASE,
-                    color: isActive ? 'var(--paper)' : 'var(--paper-mute)',
-                    background: isActive ? 'var(--brass-soft)' : 'transparent',
-                  })}
-                >
-                  {({ isActive }) => (
-                    <>
-                      <span
-                        style={{
-                          position: 'absolute',
-                          left: 0,
-                          top: 6,
-                          bottom: 6,
-                          width: 2,
-                          borderRadius: 9999,
-                          background: isActive ? 'var(--brass)' : 'transparent',
-                        }}
-                      />
-                      <item.Icon size={14} strokeWidth={1.6} />
-                      <span>{item.label}</span>
-                    </>
-                  )}
-                </NavLink>
-              ) : (
-                <button
-                  key={item.path}
-                  disabled
-                  style={{
-                    ...ITEM_BASE,
-                    color: 'var(--paper-dim)',
-                    opacity: 0.5,
-                    textAlign: 'left',
-                  }}
-                >
-                  <item.Icon size={14} strokeWidth={1.6} />
-                  <span>{item.label}</span>
-                </button>
-              ),
+          <div key={group.key} className="pb-2">
+            {collapsed ? (
+              <div className="mx-3 my-2 h-px bg-line-2/60 first:hidden" aria-hidden />
+            ) : (
+              <span className="block px-4 pb-1.5 pt-3 font-sans text-[9px] font-semibold uppercase tracking-[0.18em] text-paper-dim">
+                {group.label}
+              </span>
             )}
+            {group.items.map((item) => (
+              <NavRow key={item.path} item={item} collapsed={collapsed} />
+            ))}
           </div>
         ))}
       </nav>
 
-      {/* Footer */}
       <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '14px 18px',
-          borderTop: '1px solid var(--line-2)',
-        }}
+        className={cn(
+          'flex items-center border-t border-line-2 py-3.5',
+          collapsed ? 'justify-center px-0' : 'justify-between px-[18px]',
+        )}
       >
-        <span
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            fontFamily: 'var(--font-mono)',
-            fontWeight: 500,
-            fontSize: 11,
-            lineHeight: 1,
-            color: 'var(--paper-mute)',
-          }}
-        >
+        {collapsed ? (
           <span
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: 'var(--sage)',
-              flexShrink: 0,
-            }}
+            aria-label="local · privé"
+            title="local · privé"
+            className="h-1.5 w-1.5 shrink-0 rounded-full bg-sage"
           />
-          local · privé
-        </span>
-        <span
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontWeight: 500,
-            fontSize: 11,
-            lineHeight: 1,
-            color: 'var(--paper-dim)',
-          }}
-        >
-          v{pkg.version}
-        </span>
+        ) : (
+          <>
+            <span className="flex items-center gap-1.5 font-mono text-[11px] font-medium leading-none text-paper-mute">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sage" />
+              local · privé
+            </span>
+            <span className="font-mono text-[11px] font-medium leading-none text-paper-dim">
+              v{pkg.version}
+            </span>
+          </>
+        )}
       </div>
     </aside>
   );

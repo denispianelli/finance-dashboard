@@ -20,16 +20,20 @@ const HEAD =
   'font-sans text-[9px] font-semibold uppercase tracking-[0.18em] text-paper-mute pb-2.5 border-b border-line-2';
 const CELL = 'py-[11px] border-b border-line-1';
 
+const GRID_COLS =
+  'grid-cols-[72px_24px_1fr_max-content_max-content] ' +
+  'xl:grid-cols-[84px_28px_1fr_max-content_max-content_max-content_24px]';
+
 export function TxTable({ rows }: { rows: TxRow[] }) {
   return (
-    <div className="grid grid-cols-[84px_28px_1fr_max-content_max-content_max-content_24px] items-center gap-x-3.5">
+    <div className={cn('grid items-center gap-x-3 xl:gap-x-3.5', GRID_COLS)}>
       <span className={HEAD} />
       <span className={HEAD} />
       <span className={HEAD}>Description</span>
       <span className={HEAD}>Catégorie</span>
       <span className={cn(HEAD, 'text-right')}>Montant</span>
-      <span className={cn(HEAD, 'text-right')}>Conf.</span>
-      <span className={HEAD} />
+      <span className={cn(HEAD, 'hidden text-right xl:block')}>Conf.</span>
+      <span className={cn(HEAD, 'hidden xl:block')} />
       {rows.map((t, i) => (
         <div key={i} className="group contents">
           <span
@@ -47,7 +51,9 @@ export function TxTable({ rows }: { rows: TxRow[] }) {
             <span className="truncate font-sans text-[13px] font-medium leading-tight text-paper">
               {t.main}
             </span>
-            <span className="font-mono text-[11px] tracking-[0.02em] text-paper-dim">{t.sub}</span>
+            <span className="hidden font-mono text-[11px] tracking-[0.02em] text-paper-dim md:block">
+              {t.sub}
+            </span>
           </span>
           <span className={cn(CELL, 'group-hover:bg-ink-3')}>
             <span className="inline-flex items-center gap-1.5 font-sans text-[11px] font-medium text-paper-soft">
@@ -61,13 +67,18 @@ export function TxTable({ rows }: { rows: TxRow[] }) {
           <span
             className={cn(
               CELL,
-              'text-right font-mono text-[11px] font-medium group-hover:bg-ink-3',
+              'hidden text-right font-mono text-[11px] font-medium group-hover:bg-ink-3 xl:block',
               t.confLow ? 'text-flag' : 'text-paper-mute',
             )}
           >
             {t.conf}
           </span>
-          <span className={cn(CELL, 'flex justify-center text-paper-dim group-hover:bg-ink-3')}>
+          <span
+            className={cn(
+              CELL,
+              'hidden justify-center text-paper-dim group-hover:bg-ink-3 xl:flex',
+            )}
+          >
             <MoreHorizontal size={14} strokeWidth={1.6} />
           </span>
         </div>

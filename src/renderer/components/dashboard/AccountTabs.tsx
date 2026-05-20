@@ -22,11 +22,13 @@ export function AccountTabs({
       {/* Same mechanism as the KPI grid below: a CSS grid of equal
           minmax(0,1fr) columns + one fixed "Ajouter" column. Columns
           shrink together and never clip or collapse — every account
-          stays visible at any window width. */}
+          stays visible at any window width. At very narrow widths
+          (≥5 accounts on a 1024px window) the strip falls back to a
+          horizontal scroll so labels remain readable. */}
       <div
-        className="grid items-stretch"
+        className="grid min-w-full items-stretch overflow-x-auto"
         style={{
-          gridTemplateColumns: `repeat(${String(accounts.length)}, minmax(0, 1fr)) auto`,
+          gridTemplateColumns: `repeat(${String(accounts.length)}, minmax(140px, 1fr)) auto`,
         }}
       >
         {accounts.map((a) => {
@@ -60,9 +62,12 @@ export function AccountTabs({
             </button>
           );
         })}
-        <div className="flex flex-col items-center justify-center gap-1 px-4 py-3 text-paper-dim">
+        <div
+          aria-label="Ajouter un compte"
+          className="flex flex-col items-center justify-center gap-1 px-4 py-3 text-paper-dim"
+        >
           <Plus size={16} strokeWidth={1.6} />
-          <span className="font-sans text-[9px]">Ajouter</span>
+          <span className="hidden font-sans text-[9px] xl:inline">Ajouter</span>
         </div>
       </div>
     </div>

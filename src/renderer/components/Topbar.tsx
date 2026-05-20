@@ -24,11 +24,11 @@ export function Topbar({ onImport }: { onImport: () => void }) {
   return (
     <header
       aria-label="En-tête de l'application"
-      className="flex min-h-[70px] items-center gap-[18px] border-b border-line-2 bg-ink-1 px-7 py-[18px]"
+      className="flex min-h-[70px] items-center gap-3 border-b border-line-2 bg-ink-1 px-5 py-[18px] xl:gap-[18px] xl:px-7"
     >
-      <div className="flex flex-col gap-1.5">
+      <div className="flex min-w-0 flex-col gap-1.5">
         {meta.breadcrumb.length > 0 ? (
-          <span className="font-sans text-[10px] font-medium uppercase tracking-[0.12em] text-paper-mute">
+          <span className="hidden font-sans text-[10px] font-medium uppercase tracking-[0.12em] text-paper-mute xl:block">
             {meta.breadcrumb.map((b, i) => (
               <span key={b}>
                 {i > 0 ? <span className="mx-2 text-paper-dim">/</span> : null}
@@ -37,7 +37,7 @@ export function Topbar({ onImport }: { onImport: () => void }) {
             ))}
           </span>
         ) : null}
-        <h1 className="whitespace-nowrap font-serif text-[26px] italic leading-[1.05] tracking-[-0.02em] text-paper">
+        <h1 className="truncate font-serif text-[22px] italic leading-[1.05] tracking-[-0.02em] text-paper xl:text-[26px]">
           {meta.title}
         </h1>
       </div>
@@ -47,14 +47,16 @@ export function Topbar({ onImport }: { onImport: () => void }) {
           type="button"
           disabled
           aria-label="Changer de compte (bientôt disponible)"
-          className="inline-flex items-center gap-2 rounded-md border border-line-2 bg-ink-2 px-3 py-[7px] font-sans text-xs font-medium text-paper-soft"
+          className="hidden min-w-0 items-center gap-2 rounded-md border border-line-2 bg-ink-2 px-3 py-[7px] font-sans text-xs font-medium text-paper-soft md:inline-flex"
         >
-          <span className="h-1.5 w-1.5 rounded-full bg-brass" />
-          {meta.account}
-          <MoreHorizontal size={12} strokeWidth={1.6} />
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brass" />
+          <span className="truncate">{meta.account}</span>
+          <MoreHorizontal size={12} strokeWidth={1.6} className="shrink-0" />
         </button>
       ) : null}
-      <Button onClick={onImport}>Importer un relevé</Button>
+      <Button onClick={onImport} className="shrink-0">
+        Importer un relevé
+      </Button>
     </header>
   );
 }
