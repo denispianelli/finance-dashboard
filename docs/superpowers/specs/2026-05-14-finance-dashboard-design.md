@@ -304,7 +304,20 @@ CREATE TABLE categories (
   icon TEXT,
   color TEXT,
   is_default INT,
-  position INT
+  position INT,
+  -- Taxonomie versionnée (ADR-010, migration 005) :
+  deprecated_at TEXT NULL,
+  replaced_by_event_id TEXT NULL REFERENCES taxonomy_events(id)
+);
+
+CREATE TABLE taxonomy_events (
+  id TEXT PRIMARY KEY,
+  event_seq INTEGER NOT NULL UNIQUE,                       -- tiebreaker monotone, attribué à l'insertion
+  kind TEXT NOT NULL CHECK (kind IN ('rename', 'split', 'merge')),
+  source_ids TEXT NOT NULL,                                -- JSON array d'ids de catégories
+  target_ids TEXT NOT NULL,                                -- JSON array d'ids de catégories
+  payload TEXT,                                            -- JSON ; forme selon kind (mapping pour split, ancien/nouveau nom pour rename, NULL pour merge)
+  occurred_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE categorization_rules (
@@ -318,6 +331,22 @@ CREATE TABLE categorization_rules (
 ```
 
 Schéma final affiné en phase d'implémentation. Index et clés étrangères à préciser.
+
+### Résolution `as_of_period` vs `as_of_now`
+
+La taxonomie est versionnée via un journal d'événements (`taxonomy_events`) :
+chaque renommage, split ou merge est enregistré, et les catégories source
+d'un split ou d'un merge sont marquées `deprecated_at` + `replaced_by_event_id`
+sans jamais réécrire `transactions.category_id`. L'historique reste ancré.
+Toute agrégation par catégorie doit choisir explicitement son mode (pas de
+défaut — un défaut mentirait silencieusement après une mutation de la
+taxonomie) : `as_of_period` rejoue la taxonomie telle qu'elle était à la
+date de chaque transaction (vue fidèle à l'époque), tandis que `as_of_now`
+applique les événements postérieurs pour exprimer l'historique dans la
+taxonomie actuelle (vue rétrospective comparable dans le temps). Détails
+complets, sémantique du résolveur et règle de mapping exhaustive pour les
+splits : `docs/superpowers/specs/2026-05-20-versioned-taxonomy-design.md`
+(et ADR-010).
 
 ## 11. Pages & UI
 
