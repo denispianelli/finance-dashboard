@@ -1,15 +1,8 @@
 name: 🎯 Epic
-description: Phase-level work item. Mirrors a Notion EPIC entry.
+description: Phase-level work item. One phase of the roadmap.
 title: 'Epic — '
 labels: ['epic']
 body:
-  - type: input
-    id: notion
-    attributes:
-      label: Notion EPIC URL
-      placeholder: https://www.notion.so/...
-    validations:
-      required: true
   - type: dropdown
     id: phase
     attributes:
@@ -38,7 +31,6 @@ body:
       value: |
         - [ ] All linked stories closed
         - [ ] CI green on all OS
-        - [ ] Notion EPIC entry set to "Done"
         - [ ] Relevant ADRs created / updated
       render: markdown
     validations:

@@ -27,7 +27,3 @@ Silent auto-import after extraction — rejected because it would give the user 
 - One additional step in the import flow (intentional)
 - User retains full control
 - Corrections feed continuous learning of categorization rules
-
----
-
-_Mirrored from Notion : [ADR-005](https://www.notion.so/360e531ab5ff81f79e57ff667517b65e)_

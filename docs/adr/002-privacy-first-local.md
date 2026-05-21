@@ -25,7 +25,3 @@ Any cloud-connected or telemetry-enabled approach — rejected outright as antit
 - No bank connection (PSD2 — incompatible with the privacy promise)
 - No cloud backup (user manages `.fbk` exports)
 - Public source code (AGPL) so the user can verify the privacy promise
-
----
-
-_Mirrored from Notion : [ADR-002](https://www.notion.so/360e531ab5ff81a18649fb9c38a1a66c)_

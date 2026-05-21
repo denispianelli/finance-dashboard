@@ -62,28 +62,18 @@ A Story is **Done** when :
 - [ ] `npm run typecheck`, `npm run lint`, `npm test` pass
 - [ ] CI green on PR
 - [ ] Spec or ADR updated if architecture changed
-- [ ] Linked Notion entity (Epic / ADR / Decision) updated to reflect the new state
 
 ## Documentation
 
-- **Specs** (single source of truth) : Notion + mirrored in `docs/superpowers/specs/`
-- **ADRs** : Notion ADRs database + mirrored in `docs/adr/`
+- **Specs** (single source of truth) : `docs/superpowers/specs/`
+- **ADRs** (single source of truth) : `docs/adr/`
 - **Plans** : `docs/superpowers/plans/` (one per Epic or sub-project)
 
 ## Issue types
 
 Use the templates. Blank issues are disabled.
 
-- **Epic** — phase-level work, one per Epic in the Notion Epics database
+- **Epic** — phase-level work, one per phase of the roadmap
 - **Story** — user-facing slice of an Epic
 - **Bug** — something is broken
 - **Spike** — time-boxed research with a deliverable
-
-## Slash commands (Claude Code)
-
-Available at the start and end of each working session :
-
-- `/sync-notion-start` — audit drift between Notion and the repo
-- `/sync-notion-end` — propose Notion updates based on the session's commits
-
-The commands live in `.claude/commands/` and are project-scoped.

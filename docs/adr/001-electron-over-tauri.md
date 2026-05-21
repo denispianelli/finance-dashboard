@@ -31,7 +31,3 @@ Tauri was evaluated as the primary alternative. It offers a significantly smalle
 - Installer ~150 MB + 2 GB LLM model
 - Dependency on Chromium (security updates to track)
 - Native builds (`better-sqlite3`, `node-llama-cpp`) → multi-OS CI required from the start
-
----
-
-_Mirrored from Notion : [ADR-001](https://www.notion.so/360e531ab5ff81c298afcea39b597f09)_

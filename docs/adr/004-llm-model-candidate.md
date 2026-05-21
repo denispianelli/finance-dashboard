@@ -38,7 +38,3 @@ After the spike, move this ADR to Accepted or create a new ADR if the model chan
 
 - ~2 GB download on first launch
 - Must be benchmarked on a representative set of French bank PDFs before being accepted
-
----
-
-_Mirrored from Notion : [ADR-004](https://www.notion.so/360e531ab5ff81179b35d801413a1553)_
