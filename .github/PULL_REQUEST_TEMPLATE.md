@@ -28,7 +28,6 @@ Closes #
 - [ ] `npm test` passes
 - [ ] Spec / ADR updated if architecture changed
 - [ ] README updated if stack, phase, or an ADR decision changed (or N/A)
-- [ ] Notion (Epic / ADR / Decision / parent page) updated
 
 ## Screenshots (UI changes only)
 

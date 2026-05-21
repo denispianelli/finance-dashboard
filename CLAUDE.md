@@ -8,7 +8,7 @@ here.
 
 - **Product scope & north star:** `docs/adr/009-product-scope-realignment.md` (authoritative).
 - **Design spec:** `docs/superpowers/specs/2026-05-14-finance-dashboard-design.md`.
-- **Decisions:** `docs/adr/` (ADRs are here, not Notion).
+- **Decisions:** `docs/adr/`.
 - **Live roadmap / phase / status:** GitHub Project board ("Finance Dashboard"). The board is
   the live source; this file and the spec do not track current state.
 

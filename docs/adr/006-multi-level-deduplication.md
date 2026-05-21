@@ -26,7 +26,3 @@ Single-level deduplication (file hash only) — rejected because the same transa
 
 - Review page can display "Already imported on ..."
 - SQL UNIQUE constraint acts as a safety net if application logic has a bug
-
----
-
-_Mirrored from Notion : [ADR-006](https://www.notion.so/360e531ab5ff8185b300c0d56bdd15dc)_

@@ -28,7 +28,3 @@ Using an LLM to parse raw PDF text directly — rejected due to hallucination ri
 - Zero hallucination on figures (deterministic guarantee)
 - Requires text-based PDF (otherwise OCR via Tesseract on demand)
 - LLM column mapping must be cached durably
-
----
-
-_Mirrored from Notion : [ADR-003](https://www.notion.so/360e531ab5ff816a9bb8dc284a7f2d72)_

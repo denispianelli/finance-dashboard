@@ -417,7 +417,7 @@ Sans ce spike, on grave dans le marbre des choix qui peuvent être fragiles.
 
 ## 17. Process projet
 
-- **Specs** dans Notion (page parent : 💰 Finance Dashboard)
+- **Specs** dans `docs/superpowers/specs/` (ce repo)
 - **ADRs** (Architecture Decision Records) dans `docs/adr/` (ce repo)
 - **Tickets** sur GitHub Issues avec labels `epic`, `story`, `task`, `spike`, `bug`
 - **Board** : GitHub Projects (Backlog → Sprint → In Progress → Review → Done)
