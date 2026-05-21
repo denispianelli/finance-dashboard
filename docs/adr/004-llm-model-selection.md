@@ -3,7 +3,6 @@
 - **Status** : Accepted
 - **Date** : 2026-05-15
 - **Category** : LLM, Performance
-- **Supersedes** : ADR-004 (Proposed, in Notion)
 
 ## Context
 
