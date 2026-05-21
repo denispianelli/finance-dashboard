@@ -81,6 +81,19 @@ ranges; a transaction is covered if its date lies within any of them
 Same-source overlap (PDF↔PDF, OFX↔OFX) is **not** clipped — the
 `UNIQUE (account_id, tx_hash)` constraint already deduplicates it.
 
+### Relationship to `checkPeriodOverlap`
+
+`checkPeriodOverlap` already runs in the pipeline and reports — non-blocking —
+any existing import whose period overlaps the new one, regardless of source. On
+the PDF backfill path the clip supersedes it as the user-facing overlap
+mechanism: the clip report (what was skipped, and that OFX already covers it),
+together with the existing `findExistingHashes` duplicate report, tells the
+user everything. `checkPeriodOverlap`'s coarser "overlaps import X" warning is
+therefore **not surfaced for PDF imports** — showing both would be confusing
+double-signalling. It is unchanged for OFX imports, which have no clip. Whether
+`checkPeriodOverlap` is skipped entirely on the PDF path or simply computed and
+not surfaced is a wiring detail for T1/T2.
+
 ## 5. The import report
 
 Every PDF import surfaces a report (French, sentence case, `1 234,56 €`
