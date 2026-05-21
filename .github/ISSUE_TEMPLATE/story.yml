@@ -32,7 +32,7 @@ body:
     id: tasks
     attributes:
       label: Implementation outline
-      description: Bullet list of tasks. Detailed code lives in Plan B.
+      description: Bullet list of tasks. Detailed code lives in the implementation plan.
   - type: dropdown
     id: estimate
     attributes:
@@ -47,5 +47,5 @@ body:
   - type: input
     id: ref
     attributes:
-      label: Reference (Plan B task, spec section, ADR)
-      placeholder: 'Plan B — Task N · Spec §M'
+      label: Reference (plan task, spec section, ADR)
+      placeholder: 'Plan task T2 · Spec §M · ADR-NNN'
