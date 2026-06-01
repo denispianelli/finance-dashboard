@@ -5,4 +5,7 @@ export const CHANNELS = {
   importPickFile: 'import:pickFile',
   importExtract: 'import:extract',
   importConfirm: 'import:confirm',
+  dashboardGetAccounts: 'dashboard:getAccounts',
+  dashboardGetTransactions: 'dashboard:getTransactions',
+  dashboardAggregate: 'dashboard:aggregate',
 } as const satisfies Record<string, IpcChannel>;

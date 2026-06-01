@@ -1,4 +1,11 @@
 import type { StatementExtraction, ImportFileType } from './import';
+import type {
+  AccountSummary,
+  DashboardTransaction,
+  GetTransactionsQuery,
+  AggregateQuery,
+} from './dashboard';
+import type { AggregationBucket } from './taxonomy';
 
 export interface PingPayload {
   now: number;
@@ -62,6 +69,15 @@ export interface IpcContract {
   'import:pickFile': { payload: PickFilePayload; response: PickFileResponse };
   'import:extract': { payload: ExtractPayload; response: ExtractResponse };
   'import:confirm': { payload: ConfirmPayload; response: ConfirmResponse };
+  'dashboard:getAccounts': {
+    payload: Record<string, never>;
+    response: { accounts: AccountSummary[] };
+  };
+  'dashboard:getTransactions': {
+    payload: GetTransactionsQuery;
+    response: { transactions: DashboardTransaction[] };
+  };
+  'dashboard:aggregate': { payload: AggregateQuery; response: { buckets: AggregationBucket[] } };
 }
 
 export type IpcChannel = keyof IpcContract;

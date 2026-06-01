@@ -6,6 +6,9 @@ import { handlePing } from './handlers/ping';
 import { handlePickFile } from './handlers/importPickFile';
 import { handleImportExtract } from './handlers/importExtract';
 import { handleImportConfirm } from './handlers/importConfirm';
+import { handleDashboardGetAccounts } from './handlers/dashboardGetAccounts';
+import { handleDashboardGetTransactions } from './handlers/dashboardGetTransactions';
+import { handleDashboardAggregate } from './handlers/dashboardAggregate';
 
 type Handler<C extends IpcChannel> = (
   payload: IpcPayload<C>,
@@ -33,4 +36,7 @@ export function registerAllHandlers(): void {
   register(CHANNELS.importPickFile, () => handlePickFile());
   register(CHANNELS.importExtract, handleImportExtract);
   register(CHANNELS.importConfirm, handleImportConfirm);
+  register(CHANNELS.dashboardGetAccounts, () => handleDashboardGetAccounts());
+  register(CHANNELS.dashboardGetTransactions, handleDashboardGetTransactions);
+  register(CHANNELS.dashboardAggregate, handleDashboardAggregate);
 }
