@@ -1,7 +1,16 @@
 import {
   ArrowDownToLine,
+  ArrowLeftRight,
+  Briefcase,
   Car,
+  Film,
+  GraduationCap,
+  HeartPulse,
   House,
+  Landmark,
+  Plane,
+  Plug,
+  ShoppingBag,
   ShoppingCart,
   Tv,
   Utensils,
@@ -17,6 +26,15 @@ const MAP: Record<string, LucideIcon> = {
   utensils: Utensils,
   wallet: Wallet,
   tv: Tv,
+  plug: Plug,
+  plane: Plane,
+  health: HeartPulse,
+  education: GraduationCap,
+  shopping: ShoppingBag,
+  leisure: Film,
+  work: Briefcase,
+  bank: Landmark,
+  transfer: ArrowLeftRight,
 };
 
 export function CategoryIcon({ name }: { name: string }) {

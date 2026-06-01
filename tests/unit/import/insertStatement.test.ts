@@ -132,6 +132,53 @@ describe('insertStatement — guards', () => {
   });
 });
 
+describe('insertStatement — rule-based categorization', () => {
+  it('assigns category_id from a matching seeded rule and bumps its hit_count', async () => {
+    const db = freshDb();
+    extractMock.mockResolvedValue(
+      baseExtraction({
+        transactions: [
+          {
+            date: '2025-11-01',
+            label: 'CB CARREFOUR MARKET PARIS 11',
+            amount: -42,
+            tx_hash: 'h1',
+            fitid: null,
+            isDuplicate: false,
+          },
+          {
+            date: '2025-11-02',
+            label: 'PAIEMENT DIVERS XYZ',
+            amount: -7,
+            tx_hash: 'h2',
+            fitid: null,
+            isDuplicate: false,
+          },
+        ],
+        newCount: 2,
+        duplicateCount: 0,
+      }),
+    );
+    await insertStatement(db, 'acc-lcl-default', Buffer.from('x'));
+
+    const matched = db
+      .prepare('SELECT category_id FROM transactions WHERE tx_hash = ?')
+      .get('h1') as { category_id: string | null };
+    expect(matched.category_id).toBe('cat-alimentation');
+
+    const unmatched = db
+      .prepare('SELECT category_id FROM transactions WHERE tx_hash = ?')
+      .get('h2') as { category_id: string | null };
+    expect(unmatched.category_id).toBeNull();
+
+    const carrefourRule = db
+      .prepare('SELECT hit_count FROM categorization_rules WHERE match_value = ?')
+      .get('CARREFOUR') as { hit_count: number };
+    expect(carrefourRule.hit_count).toBe(1);
+    db.close();
+  });
+});
+
 describe('insertStatement — atomicity', () => {
   it('rolls back fully when a transaction insert violates UNIQUE mid-batch', async () => {
     const db = freshDb();

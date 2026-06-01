@@ -3,6 +3,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import { extractStatement } from './extractStatement';
 import { normalizeLabel } from './txHash';
 import { ImportError } from './importError';
+import { loadRules, matchRule } from '../categorize/rules';
 
 export interface InsertResult {
   importId: string;
@@ -46,14 +47,21 @@ export async function insertStatement(
          (id, account_id, import_id, tx_hash, date, amount,
           label_raw, label_clean, category_id, confidence,
           is_internal_transfer, user_modified, fitid)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 0, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 0, 0, ?)`,
     );
+    // Deterministic rule-based categorization (cascade level 1, design §7).
+    // confidence stays NULL — it is the LLM score, and no model has run.
+    const rules = loadRules(db);
+    const hits = new Map<string, number>();
     const selectedSet =
       opts.selectedHashes !== undefined ? new Set(opts.selectedHashes) : undefined;
     let insertedCount = 0;
     for (const tx of extraction.transactions) {
       if (tx.isDuplicate) continue;
       if (selectedSet !== undefined && !selectedSet.has(tx.tx_hash)) continue;
+      const labelClean = normalizeLabel(tx.label);
+      const rule = matchRule(rules, labelClean);
+      if (rule !== null) hits.set(rule.id, (hits.get(rule.id) ?? 0) + 1);
       insertTx.run(
         randomUUID(),
         accountId,
@@ -62,10 +70,17 @@ export async function insertStatement(
         tx.date,
         tx.amount,
         tx.label,
-        normalizeLabel(tx.label),
+        labelClean,
+        rule?.categoryId ?? null,
         tx.fitid,
       );
       insertedCount++;
+    }
+    const bumpHits = db.prepare(
+      'UPDATE categorization_rules SET hit_count = hit_count + ? WHERE id = ?',
+    );
+    for (const [ruleId, count] of hits) {
+      bumpHits.run(count, ruleId);
     }
     db.exec('COMMIT');
     return { importId, insertedCount, skippedCount: extraction.duplicateCount };
