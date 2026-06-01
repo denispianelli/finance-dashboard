@@ -5,10 +5,15 @@ import {
   type ElectronApplication,
   type Page,
 } from '@playwright/test';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 async function launchApp(): Promise<{ app: ElectronApplication; window: Page }> {
-  const app = await electron.launch({ args: [join(process.cwd(), 'out/main/index.js')] });
+  const userDataDir = mkdtempSync(join(tmpdir(), 'fd-e2e-'));
+  const app = await electron.launch({
+    args: [`--user-data-dir=${userDataDir}`, join(process.cwd(), 'out/main/index.js')],
+  });
   const window = await app.firstWindow();
   return { app, window };
 }
@@ -52,7 +57,8 @@ test.describe('responsive dashboard', () => {
       await resize(window, 1280, 700);
       await expect(window.getByText('Dernières transactions')).toBeVisible();
       await window.getByText('Dernières transactions').scrollIntoViewIfNeeded();
-      await expect(window.getByText('BOULANGER MARTIN')).toBeVisible();
+      // Fresh DB → the transactions card shows its empty state, reachable after scroll.
+      await expect(window.getByText(/Aucune transaction/i)).toBeVisible();
     } finally {
       await app.close();
     }
