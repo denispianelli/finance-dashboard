@@ -8,4 +8,5 @@ export const CHANNELS = {
   dashboardGetAccounts: 'dashboard:getAccounts',
   dashboardGetTransactions: 'dashboard:getTransactions',
   dashboardAggregate: 'dashboard:aggregate',
+  dashboardMetrics: 'dashboard:metrics',
 } as const satisfies Record<string, IpcChannel>;

@@ -16,9 +16,9 @@ describe('default categories + rules seed (migration 006)', () => {
   it('seeds a known category with its icon and color', () => {
     const db = new DatabaseSync(':memory:');
     runMigrations(db);
-    const row = db.prepare('SELECT name, icon, color FROM categories WHERE id = ?').get(
-      'cat-alimentation',
-    ) as { name: string; icon: string; color: string } | undefined;
+    const row = db
+      .prepare('SELECT name, icon, color FROM categories WHERE id = ?')
+      .get('cat-alimentation') as { name: string; icon: string; color: string } | undefined;
     expect(row).toMatchObject({ name: 'Alimentation', icon: 'shop' });
     expect(row?.color).toMatch(/^#[0-9A-Fa-f]{6}$/);
     db.close();

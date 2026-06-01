@@ -7,7 +7,11 @@ vi.mock('@renderer/ipc/client', () => ({ ipc: { invoke: vi.fn() } }));
 
 import { ipc } from '@renderer/ipc/client';
 import { DashboardPage } from '@renderer/pages/DashboardPage';
-import type { AccountSummary, DashboardTransaction } from '@shared/types/dashboard';
+import type {
+  AccountSummary,
+  DashboardMetrics,
+  DashboardTransaction,
+} from '@shared/types/dashboard';
 
 const mockInvoke = vi.mocked(ipc.invoke);
 
@@ -41,10 +45,19 @@ const TX: DashboardTransaction[] = [
   },
 ];
 
-function stubIpc(transactions: DashboardTransaction[]): void {
+const METRICS: DashboardMetrics = {
+  balance: 1487.32,
+  series: [
+    { month: '2026-04', income: 3000, expense: -2500, net: 500, balance: 987.32 },
+    { month: '2026-05', income: 3240, expense: -2740, net: 500, balance: 1487.32 },
+  ],
+};
+
+function stubIpc(transactions: DashboardTransaction[], metrics: DashboardMetrics = METRICS): void {
   mockInvoke.mockImplementation(((channel: string) => {
     if (channel === 'dashboard:getAccounts') return Promise.resolve({ accounts: ACCOUNTS });
     if (channel === 'dashboard:getTransactions') return Promise.resolve({ transactions });
+    if (channel === 'dashboard:metrics') return Promise.resolve(metrics);
     return Promise.resolve(undefined);
   }) as typeof ipc.invoke);
 }
@@ -90,9 +103,9 @@ describe('DashboardPage', () => {
   });
 
   it('shows an empty state when there are no transactions', async () => {
-    stubIpc([]);
+    stubIpc([], { balance: 0, series: [] });
     renderPage();
-    expect(await screen.findByText(/importez un relevé/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Aucune transaction/i)).toBeInTheDocument();
   });
 
   it('does not render ImportModal', () => {

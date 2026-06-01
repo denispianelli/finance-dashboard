@@ -47,3 +47,25 @@ export interface AggregateQuery {
   readonly to: string;
   readonly mode: AggregationMode;
 }
+
+/** One calendar month of activity for an account, with the running end-of-month balance. */
+export interface MonthPoint {
+  /** `yyyy-mm`. */
+  readonly month: string;
+  /** Sum of positive amounts (income) in the month. */
+  readonly income: number;
+  /** Sum of negative amounts (expenses) in the month — negative or zero. */
+  readonly expense: number;
+  /** `income + expense` — the month's net flow. */
+  readonly net: number;
+  /** Cumulative balance at the end of the month (sum of all amounts up to and including it). */
+  readonly balance: number;
+}
+
+/** Account-level totals + a monthly series, for the KPI tiles and the 12-month chart. */
+export interface DashboardMetrics {
+  /** Net of all transaction amounts for the account. */
+  readonly balance: number;
+  /** Up to the last 12 months that have activity, chronological. Empty when no transactions. */
+  readonly series: MonthPoint[];
+}

@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { AccountSummary, DashboardTransaction } from '@shared/types/dashboard';
+import type {
+  AccountSummary,
+  DashboardMetrics,
+  DashboardTransaction,
+} from '@shared/types/dashboard';
 import { ipc } from '@renderer/ipc/client';
+
+const EMPTY_METRICS: DashboardMetrics = { balance: 0, series: [] };
 
 export interface UseDashboard {
   accounts: AccountSummary[];
   transactions: DashboardTransaction[];
+  metrics: DashboardMetrics;
   selectedAccountId: string | null;
   selectAccount: (id: string) => void;
 }
@@ -16,6 +23,7 @@ export interface UseDashboard {
 export function useDashboard(refreshToken: number): UseDashboard {
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [transactions, setTransactions] = useState<DashboardTransaction[]>([]);
+  const [metrics, setMetrics] = useState<DashboardMetrics>(EMPTY_METRICS);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
   // Accounts: load on mount and on every refresh. Keep the current selection if
@@ -29,6 +37,7 @@ export function useDashboard(refreshToken: number): UseDashboard {
       if (first === undefined) {
         setSelectedAccountId(null);
         setTransactions([]);
+        setMetrics(EMPTY_METRICS);
         return;
       }
       setSelectedAccountId((prev) =>
@@ -40,8 +49,8 @@ export function useDashboard(refreshToken: number): UseDashboard {
     };
   }, [refreshToken]);
 
-  // Transactions: reload whenever the selected account or the refresh token
-  // changes. The no-account case is handled above (transactions cleared there).
+  // Transactions + metrics: reload whenever the selected account or the refresh
+  // token changes. The no-account case is handled above (state cleared there).
   useEffect(() => {
     if (selectedAccountId === null) return;
     let active = true;
@@ -50,6 +59,9 @@ export function useDashboard(refreshToken: number): UseDashboard {
       .then(({ transactions: next }) => {
         if (active) setTransactions(next);
       });
+    void ipc.invoke('dashboard:metrics', { accountId: selectedAccountId }).then((next) => {
+      if (active) setMetrics(next);
+    });
     return () => {
       active = false;
     };
@@ -59,5 +71,5 @@ export function useDashboard(refreshToken: number): UseDashboard {
     setSelectedAccountId(id);
   }, []);
 
-  return { accounts, transactions, selectedAccountId, selectAccount };
+  return { accounts, transactions, metrics, selectedAccountId, selectAccount };
 }

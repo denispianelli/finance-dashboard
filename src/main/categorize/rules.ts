@@ -36,7 +36,10 @@ export function loadRules(db: DatabaseSync): CategorizationRule[] {
  * case-insensitive; `match_value` is expected in normalized form (see
  * `normalizeLabel`), but we upper-case both sides defensively.
  */
-export function matchRule(rules: readonly CategorizationRule[], label: string): CategorizationRule | null {
+export function matchRule(
+  rules: readonly CategorizationRule[],
+  label: string,
+): CategorizationRule | null {
   const upper = label.toUpperCase();
   for (const rule of rules) {
     if (ruleMatches(rule, label, upper)) return rule;

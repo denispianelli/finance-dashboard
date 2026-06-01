@@ -4,6 +4,7 @@ import type {
   DashboardTransaction,
   GetTransactionsQuery,
   AggregateQuery,
+  DashboardMetrics,
 } from './dashboard';
 import type { AggregationBucket } from './taxonomy';
 
@@ -78,6 +79,7 @@ export interface IpcContract {
     response: { transactions: DashboardTransaction[] };
   };
   'dashboard:aggregate': { payload: AggregateQuery; response: { buckets: AggregationBucket[] } };
+  'dashboard:metrics': { payload: { accountId: string }; response: DashboardMetrics };
 }
 
 export type IpcChannel = keyof IpcContract;

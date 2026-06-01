@@ -9,12 +9,48 @@ import { ChartCard } from '../components/dashboard/ChartCard';
 import { Insight, Quote, QuoteNum } from '../components/dashboard/Insight';
 import { TxTable } from '../components/dashboard/TxTable';
 import { useDashboard } from '../hooks/useDashboard';
-import { toAccount, toTxRow } from '../lib/dashboardMap';
+import { toAccount, toTxRow, formatBalance } from '../lib/dashboardMap';
+import {
+  chartGeometry,
+  kpiDelta,
+  latestMonth,
+  monthLabelFr,
+  sparkPoints,
+  splitEuro,
+  topSpendingCategories,
+} from '../lib/dashboardCharts';
 import type { AppOutletContext } from '../lib/outletContext';
 
 export function DashboardPage() {
   const { refreshToken } = useOutletContext<AppOutletContext>();
-  const { accounts, transactions, selectedAccountId, selectAccount } = useDashboard(refreshToken);
+  const { accounts, transactions, metrics, selectedAccountId, selectAccount } =
+    useDashboard(refreshToken);
+
+  const { series, balance } = metrics;
+  const last = series.at(-1);
+  const prev = series.length >= 2 ? series[series.length - 2] : undefined;
+  const month = latestMonth(series);
+  const monthName = month !== null ? monthLabelFr(month) : '';
+  const ctxVsPrev = prev ? `vs ${monthLabelFr(prev.month)}` : '';
+
+  const soldeNet = splitEuro(balance);
+  const depenses = splitEuro(last ? Math.abs(last.expense) : 0);
+  const revenus = splitEuro(last ? last.income : 0);
+  const netMois = splitEuro(last ? last.net : 0);
+
+  const balanceDelta = last && prev ? kpiDelta(last.balance, prev.balance, true) : undefined;
+  const expenseDelta =
+    last && prev ? kpiDelta(Math.abs(last.expense), Math.abs(prev.expense), false) : undefined;
+  const incomeDelta = last && prev ? kpiDelta(last.income, prev.income, true) : undefined;
+
+  const geom = chartGeometry(series.map((s) => s.balance));
+  const accountCount = accounts.length;
+  const chartCaption =
+    month !== null
+      ? `${monthName} ${month.slice(0, 4)} · ${String(accountCount)} compte${accountCount > 1 ? 's' : ''}`
+      : undefined;
+
+  const [topCat, ...restCats] = month !== null ? topSpendingCategories(transactions, month) : [];
 
   return (
     <>
@@ -27,68 +63,63 @@ export function DashboardPage() {
       <KpiGrid>
         <Kpi
           label="Solde net"
-          value="12 847"
-          sub=",32 €"
-          delta="+ 4,2 %"
-          deltaDir="up"
-          ctx="vs. avril"
-          spark="0,28 12,22 24,24 36,18 48,16 60,20 72,12 84,8"
-          sparkColor="var(--sage, #7AB890)"
+          value={soldeNet.value}
+          sub={soldeNet.sub}
+          delta={balanceDelta?.delta}
+          deltaDir={balanceDelta?.deltaDir}
+          ctx={ctxVsPrev}
+          spark={sparkPoints(series.map((s) => s.balance))}
+          sparkColor="var(--sage)"
         />
         <Kpi
-          label="Dépenses · mai"
-          value="3 412"
-          sub=",18 €"
-          delta="+ 8,1 %"
-          deltaDir="down"
-          ctx="restaurants + 34 %"
-          spark="0,24 12,20 24,22 36,16 48,18 60,10 72,14 84,6"
-          sparkColor="var(--coral, #E07365)"
+          label={`Dépenses · ${monthName}`}
+          value={depenses.value}
+          sub={depenses.sub}
+          delta={expenseDelta?.delta}
+          deltaDir={expenseDelta?.deltaDir}
+          ctx={ctxVsPrev}
+          spark={sparkPoints(series.map((s) => Math.abs(s.expense)))}
+          sparkColor="var(--coral)"
         />
         <Kpi
-          label="Revenus · mai"
-          value="3 240"
-          sub=",00 €"
-          delta="stable"
-          ctx="1 virement"
-          spark="0,22 12,22 24,22 36,21 48,22 60,21 72,22 84,22"
-          sparkColor="var(--brass, #D4B062)"
+          label={`Revenus · ${monthName}`}
+          value={revenus.value}
+          sub={revenus.sub}
+          delta={incomeDelta?.delta}
+          deltaDir={incomeDelta?.deltaDir}
+          ctx={ctxVsPrev}
+          spark={sparkPoints(series.map((s) => s.income))}
+          sparkColor="var(--brass)"
         />
         <Kpi
-          label="Épargne projetée"
-          value="14 280"
-          sub=",00 €"
-          delta="fin 2026"
-          ctx="à ce rythme"
-          spark="0,28 12,26 24,22 36,20 48,16 60,12 72,8 84,4"
+          label={`Net · ${monthName}`}
+          value={netMois.value}
+          sub={netMois.sub}
+          ctx="revenus − dépenses"
+          spark={sparkPoints(series.map((s) => s.net))}
           sparkColor="#8D7DC4"
         />
       </KpiGrid>
 
       <Row2>
-        <ChartCard />
+        <ChartCard line={geom.line} area={geom.area} caption={chartCaption} />
         <Insight>
-          <Quote>
-            Tes <QuoteNum>restaurants</QuoteNum> sont à <QuoteNum>+34 %</QuoteNum> ce mois — porté
-            surtout par les sorties du week-end.
-          </Quote>
-          <span className="h-px bg-line-2" />
-          <Quote size={15}>
-            3 abonnements similaires détectés : <QuoteNum>Netflix</QuoteNum>,{' '}
-            <QuoteNum>Disney+</QuoteNum>, <QuoteNum>Apple TV+</QuoteNum>.
-          </Quote>
-          <span className="h-px bg-line-2" />
-          <Quote size={15}>
-            À ce rythme, ton épargne atteindra <QuoteNum>14 280 €</QuoteNum> fin 2026.
-          </Quote>
-          <div className="flex gap-2 pt-1">
-            <Button variant="secondary" size="sm">
-              Voir le détail
-            </Button>
-            <Button variant="ghost" size="sm">
-              Masquer
-            </Button>
-          </div>
+          {topCat ? (
+            <>
+              <Quote>
+                Ce mois, ta plus grosse dépense est <QuoteNum>{topCat.name}</QuoteNum> à{' '}
+                <QuoteNum>{formatBalance(topCat.total)} €</QuoteNum>.
+              </Quote>
+              {restCats.length > 0 && (
+                <>
+                  <span className="h-px bg-line-2" />
+                  <Quote size={15}>Suivie de {restCats.map((c) => c.name).join(', ')}.</Quote>
+                </>
+              )}
+            </>
+          ) : (
+            <Quote size={15}>Importez un relevé pour voir où part votre argent ce mois.</Quote>
+          )}
         </Insight>
       </Row2>
 

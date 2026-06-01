@@ -39,7 +39,9 @@ describe('matchRule', () => {
   });
 
   it('supports regex match', () => {
-    const rules = [rule({ matchType: 'regex', matchValue: 'SNCF|RATP', categoryId: 'cat-transport' })];
+    const rules = [
+      rule({ matchType: 'regex', matchValue: 'SNCF|RATP', categoryId: 'cat-transport' }),
+    ];
     expect(matchRule(rules, 'paiement ratp')?.categoryId).toBe('cat-transport');
   });
 
