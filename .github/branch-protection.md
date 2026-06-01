@@ -1,5 +1,10 @@
 # Branch protection — `main`
 
+> **STATUS: SUSPENDED during MVP mode (since 2026-06-01).** Protection is intentionally off so
+> work can land directly on `main` while we race to a functional model (see §MVP mode in
+> `CONTRIBUTING.md`). This file is the runbook to **re-apply** it in the post-MVP polish phase —
+> run the `gh api -X PUT` call below.
+
 This file documents the GitHub branch-protection ruleset applied to `main`
 and the exact commands used to apply or re-apply it. Edit this file when
 adjusting rules, then re-run the `gh api` call to keep the live config and

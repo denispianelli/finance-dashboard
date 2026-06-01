@@ -2,6 +2,29 @@
 
 This project follows a structured workflow even though it currently has a single contributor. The rigor exists so the project remains legible and maintainable, and so it can serve as a portfolio piece.
 
+> ## ⚡ MVP mode (current — since 2026-06-01)
+>
+> To reach a working model fast, the full process below is **temporarily relaxed**. The rigor
+> gets restored once the MVP is functional (the polish phase).
+>
+> **Suspended for now:**
+>
+> - **Branch + PR per task.** Commit directly to `main` for routine work (branch protection is
+>   off — re-apply via `.github/branch-protection.md`). Branch + open a PR only when a change is
+>   risky or genuinely worth a review trail.
+> - **Epic → Story → Task decomposition** and the DoR ceremony. Work off a lightweight TODO.
+> - **Notion / GitHub Project board sync** (`/sync-notion-*`). Don't gate work on board state.
+>
+> **Still in force (cheap, high value):**
+>
+> - Conventional Commits + `commitlint`/husky hooks, and the DoD's green-bar checks
+>   (`typecheck` / `lint` / `test`, `npm run build`).
+> - ADRs/specs for **hard-to-reverse** decisions only — not for every change.
+> - Review agents (`pr-review-toolkit:*`, `/code-review`) on code that matters.
+> - Privacy invariants (ADR-002) — never relaxed.
+>
+> Everything below is the **target process** for the post-MVP phase; keep it for reference.
+
 ## Workflow overview
 
 ```

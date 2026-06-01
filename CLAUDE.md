@@ -9,8 +9,8 @@ here.
 - **Product scope & north star:** `docs/adr/009-product-scope-realignment.md` (authoritative).
 - **Design spec:** `docs/superpowers/specs/2026-05-14-finance-dashboard-design.md`.
 - **Decisions:** `docs/adr/`.
-- **Live roadmap / phase / status:** GitHub Project board ("Finance Dashboard"). The board is
-  the live source; this file and the spec do not track current state.
+- **Live roadmap / phase / status:** lightweight TODO during MVP (board/Notion sync paused —
+  see MVP mode under §Git & process). ADR-009 still bounds product scope.
 
 ## Privacy is non-negotiable
 
@@ -33,16 +33,22 @@ tracking, multi-window. Do not re-propose them. The LLM is a background batch cl
 
 ## Git & process
 
-- **Branch naming + commit format: see `CONTRIBUTING.md` §Branch naming and §Commit messages.**
-  Branches follow `<type>/<issue-number>-<short-slug>` (e.g. `chore/88-claude-md-conventions-pointer`).
-  Commits follow Conventional Commits — enforced by `commitlint` via husky `commit-msg`.
-- GitHub Flow: feature/chore branch → PR → squash merge. `main` is protected.
-- **Claude never merges PRs.** Open the PR; the maintainer merges.
-- Every PR references an issue (`Closes #N` / `Refs #N`) — CI enforces this.
+> **MVP mode (since 2026-06-01).** Process is deliberately lightened to reach a working model
+> fast, then tighten the rigor back afterwards. **Suspended:** PR-per-task + branch protection
+> (commit directly to `main`), Epic→Story→Task decomposition, Notion/board sync. **Kept:**
+> ADRs/specs for genuinely hard-to-reverse decisions, review agents on code that matters, and
+> the husky/commitlint gates (they cost nothing). The full process stays documented in
+> `CONTRIBUTING.md` for when we restore it post-MVP.
+
+- **Commit directly to `main`** during MVP — no branch/PR required for routine work. Still
+  branch + PR for anything risky or worth a review trail.
+- **Branch naming + commit format (when you do branch): see `CONTRIBUTING.md`.** Commits
+  follow Conventional Commits — enforced by `commitlint` via husky `commit-msg`.
 - Commit subjects and PR/issue/ADR/code text: **English**, imperative present
-  ("add X", "fix Y" — not noun phrases). In a Task-1-style first commit, `git add` the plan
-  file in that commit; never leave it untracked.
-- Decomposition: Epic → Story → Task. Only decompose the **current** epic, not future ones.
+  ("add X", "fix Y" — not noun phrases). When a change has a plan file, `git add` it in the
+  same commit; never leave it untracked.
+- **No formal Epic→Story→Task decomposition** during MVP — work off a lightweight TODO. Write
+  an ADR/spec only for decisions that are hard to reverse.
 - Husky: pre-commit runs eslint --fix + prettier (lint-staged); pre-push runs typecheck +
   tests. Expect staged files to be reformatted — re-add and retry the commit.
 
@@ -55,4 +61,4 @@ tracking, multi-window. Do not re-propose them. The LLM is a background batch cl
 ## Definition of done
 
 Lint clean, `tsc --noEmit` clean, unit tests green, E2E green where relevant, `npm run build`
-succeeds. Verify before opening a PR.
+succeeds. Verify before pushing to `main` (pre-push runs typecheck + tests).
