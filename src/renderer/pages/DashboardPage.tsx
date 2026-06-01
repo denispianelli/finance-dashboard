@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Overline } from '../components/ui/overline';
@@ -8,14 +8,21 @@ import { Kpi } from '../components/dashboard/Kpi';
 import { ChartCard } from '../components/dashboard/ChartCard';
 import { Insight, Quote, QuoteNum } from '../components/dashboard/Insight';
 import { TxTable } from '../components/dashboard/TxTable';
-import { MOCK_ACCOUNTS, MOCK_TX } from '../components/dashboard/mockDashboard';
+import { useDashboard } from '../hooks/useDashboard';
+import { toAccount, toTxRow } from '../lib/dashboardMap';
+import type { AppOutletContext } from '../lib/outletContext';
 
 export function DashboardPage() {
-  const [account, setAccount] = useState('joint');
+  const { refreshToken } = useOutletContext<AppOutletContext>();
+  const { accounts, transactions, selectedAccountId, selectAccount } = useDashboard(refreshToken);
 
   return (
     <>
-      <AccountTabs accounts={MOCK_ACCOUNTS} activeId={account} onSelect={setAccount} />
+      <AccountTabs
+        accounts={accounts.map(toAccount)}
+        activeId={selectedAccountId ?? ''}
+        onSelect={selectAccount}
+      />
 
       <KpiGrid>
         <Kpi
@@ -95,7 +102,13 @@ export function DashboardPage() {
             Tout voir →
           </Button>
         </CardHeader>
-        <TxTable rows={MOCK_TX} />
+        {transactions.length > 0 ? (
+          <TxTable rows={transactions.map(toTxRow)} />
+        ) : (
+          <p className="py-8 text-center text-sm text-paper-mute">
+            Aucune transaction — importez un relevé pour commencer.
+          </p>
+        )}
       </Card>
     </>
   );

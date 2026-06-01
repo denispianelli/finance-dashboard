@@ -18,9 +18,11 @@ import type { StatementExtraction } from '@shared/types/import';
 interface ImportModalProps {
   open: boolean;
   onClose: () => void;
+  /** Fired once after a successful import (transactions persisted). */
+  onImported?: () => void;
 }
 
-export function ImportModal({ open, onClose }: ImportModalProps) {
+export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
   const {
     state,
     pickAndExtract,
@@ -31,8 +33,10 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
     reset,
   } = useImport();
   const onCloseRef = useRef(onClose);
+  const onImportedRef = useRef(onImported);
   useEffect(() => {
     onCloseRef.current = onClose;
+    onImportedRef.current = onImported;
   });
 
   const [overlapDismissed, setOverlapDismissed] = useState(false);
@@ -45,6 +49,7 @@ export function ImportModal({ open, onClose }: ImportModalProps) {
       { duration: 3000 },
     );
     reset();
+    onImportedRef.current?.();
     onCloseRef.current();
   }, [state.step, insertedCount, reset]);
 
