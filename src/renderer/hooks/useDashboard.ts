@@ -27,12 +27,26 @@ export interface UseDashboard {
   createCategory: (input: CreateCategoryInput) => Promise<CategoryDTO>;
 }
 
+export interface UseDashboardOptions {
+  /**
+   * Max transactions to fetch for the selected account. Omitted on the dashboard
+   * (backend default of 100, enough for the preview + the monthly insight). The full
+   * Transactions page passes a high value to load the whole history for client-side
+   * filtering.
+   */
+  readonly transactionLimit?: number;
+}
+
 /**
  * Loads accounts, categories, and the selected account's transactions + metrics
  * over IPC. Refetches on `refreshToken` (import) or the internal tick (after a
  * reassignment / category creation).
  */
-export function useDashboard(refreshToken: number): UseDashboard {
+export function useDashboard(
+  refreshToken: number,
+  options: UseDashboardOptions = {},
+): UseDashboard {
+  const { transactionLimit } = options;
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [transactions, setTransactions] = useState<DashboardTransaction[]>([]);
   const [metrics, setMetrics] = useState<DashboardMetrics>(EMPTY_METRICS);
@@ -86,7 +100,10 @@ export function useDashboard(refreshToken: number): UseDashboard {
     if (selectedAccountId === null) return;
     let active = true;
     void ipc
-      .invoke('dashboard:getTransactions', { accountId: selectedAccountId })
+      .invoke('dashboard:getTransactions', {
+        accountId: selectedAccountId,
+        ...(transactionLimit !== undefined && { limit: transactionLimit }),
+      })
       .then(({ transactions: next }) => {
         if (active) setTransactions(next);
       });
@@ -96,7 +113,7 @@ export function useDashboard(refreshToken: number): UseDashboard {
     return () => {
       active = false;
     };
-  }, [selectedAccountId, refreshToken, tick]);
+  }, [selectedAccountId, refreshToken, tick, transactionLimit]);
 
   const selectAccount = useCallback((id: string) => {
     setSelectedAccountId(id);

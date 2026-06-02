@@ -26,7 +26,7 @@ const GROUPS: { key: string; label: string; items: NavItem[] }[] = [
     label: 'Vue',
     items: [
       { path: '/', label: 'Tableau de bord', Icon: LayoutDashboard, enabled: true },
-      { path: '/transactions', label: 'Transactions', Icon: ArrowLeftRight, enabled: false },
+      { path: '/transactions', label: 'Transactions', Icon: ArrowLeftRight, enabled: true },
       { path: '/categories', label: 'Catégories', Icon: Tags, enabled: true },
       { path: '/reports', label: 'Rapports', Icon: LineChart, enabled: false },
     ],
