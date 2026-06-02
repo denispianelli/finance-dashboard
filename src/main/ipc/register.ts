@@ -10,6 +10,13 @@ import { handleDashboardGetAccounts } from './handlers/dashboardGetAccounts';
 import { handleDashboardGetTransactions } from './handlers/dashboardGetTransactions';
 import { handleDashboardAggregate } from './handlers/dashboardAggregate';
 import { handleDashboardMetrics } from './handlers/dashboardMetrics';
+import {
+  handleCategoriesList,
+  handleCategoriesRename,
+  handleRulesList,
+  handleRulesCreate,
+  handleRulesDelete,
+} from './handlers/categories';
 
 type Handler<C extends IpcChannel> = (
   payload: IpcPayload<C>,
@@ -41,4 +48,9 @@ export function registerAllHandlers(): void {
   register(CHANNELS.dashboardGetTransactions, handleDashboardGetTransactions);
   register(CHANNELS.dashboardAggregate, handleDashboardAggregate);
   register(CHANNELS.dashboardMetrics, handleDashboardMetrics);
+  register(CHANNELS.categoriesList, () => handleCategoriesList());
+  register(CHANNELS.categoriesRename, handleCategoriesRename);
+  register(CHANNELS.rulesList, () => handleRulesList());
+  register(CHANNELS.rulesCreate, handleRulesCreate);
+  register(CHANNELS.rulesDelete, handleRulesDelete);
 }
