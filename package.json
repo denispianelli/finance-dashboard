@@ -10,7 +10,7 @@
     "url": "https://github.com/denispianelli/finance-dashboard.git"
   },
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=24"
   },
   "private": true,
   "type": "module",
