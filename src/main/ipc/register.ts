@@ -13,9 +13,6 @@ import { handleDashboardMetrics } from './handlers/dashboardMetrics';
 import {
   handleCategoriesList,
   handleCategoriesRename,
-  handleRulesList,
-  handleRulesCreate,
-  handleRulesDelete,
   handleCategoriesCreate,
   handleCategoriesDelete,
   handleTransactionsSetCategory,
@@ -53,9 +50,6 @@ export function registerAllHandlers(): void {
   register(CHANNELS.dashboardMetrics, handleDashboardMetrics);
   register(CHANNELS.categoriesList, () => handleCategoriesList());
   register(CHANNELS.categoriesRename, handleCategoriesRename);
-  register(CHANNELS.rulesList, () => handleRulesList());
-  register(CHANNELS.rulesCreate, handleRulesCreate);
-  register(CHANNELS.rulesDelete, handleRulesDelete);
   register(CHANNELS.categoriesCreate, handleCategoriesCreate);
   register(CHANNELS.categoriesDelete, handleCategoriesDelete);
   register(CHANNELS.transactionsSetCategory, handleTransactionsSetCategory);

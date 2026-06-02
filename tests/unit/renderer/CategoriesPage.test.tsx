@@ -7,7 +7,7 @@ vi.mock('@renderer/ipc/client', () => ({ ipc: { invoke: vi.fn() } }));
 
 import { ipc } from '@renderer/ipc/client';
 import { CategoriesPage } from '@renderer/pages/CategoriesPage';
-import type { CategoryDTO, RuleDTO } from '@shared/types/category';
+import type { CategoryDTO } from '@shared/types/category';
 
 const mockInvoke = vi.mocked(ipc.invoke);
 
@@ -31,24 +31,14 @@ const CATEGORIES: CategoryDTO[] = [
     position: 1,
   },
 ];
-const RULES: RuleDTO[] = [
-  {
-    id: 'cr-060',
-    matchType: 'contains',
-    matchValue: 'CARREFOUR',
-    categoryId: 'cat-alimentation',
-    categoryName: 'Alimentation',
-    hitCount: 4,
-  },
-];
 
 beforeEach(() => {
   mockInvoke.mockReset();
   mockInvoke.mockImplementation(((channel: string) => {
     if (channel === 'categories:list') return Promise.resolve({ categories: CATEGORIES });
-    if (channel === 'rules:list') return Promise.resolve({ rules: RULES });
-    if (channel === 'rules:create') return Promise.resolve({ rule: RULES[0] });
+    if (channel === 'categories:create') return Promise.resolve({ category: CATEGORIES[0] });
     if (channel === 'categories:delete') return Promise.resolve({ uncategorizedCount: 0 });
+    if (channel === 'categories:rename') return Promise.resolve({ categories: CATEGORIES });
     return Promise.resolve({ ok: true });
   }) as typeof ipc.invoke);
 });
@@ -66,49 +56,41 @@ function renderPage() {
 }
 
 describe('CategoriesPage', () => {
-  it('lists categories and rules loaded over IPC', async () => {
+  it('lists categories loaded over IPC', async () => {
     renderPage();
-    // 'CARREFOUR' is unique to the rule row; the rename buttons are unique per category.
-    expect(await screen.findByText('CARREFOUR')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Renommer Alimentation/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Renommer Logement/i })).toBeInTheDocument();
+    expect(await screen.findByText('Alimentation')).toBeInTheDocument();
+    expect(screen.getByText('Logement')).toBeInTheDocument();
   });
 
-  it('creates a rule from the add form', async () => {
+  it('does not show any rule-management surface', async () => {
     renderPage();
-    await screen.findByText('CARREFOUR');
+    await screen.findByText('Alimentation');
+    expect(screen.queryByText(/Règles de catégorisation/i)).not.toBeInTheDocument();
+  });
 
-    fireEvent.change(screen.getByPlaceholderText(/Libellé contient/i), {
-      target: { value: 'IKEA' },
+  it('creates a category from the form', async () => {
+    renderPage();
+    await screen.findByText('Alimentation');
+    fireEvent.click(screen.getByRole('button', { name: /Nouvelle catégorie/i }));
+    fireEvent.change(screen.getByPlaceholderText('Nom de la catégorie'), {
+      target: { value: 'Animaux' },
     });
-    fireEvent.change(screen.getByLabelText('Catégorie'), { target: { value: 'cat-logement' } });
-    fireEvent.click(screen.getByRole('button', { name: /Ajouter/i }));
-
+    fireEvent.click(screen.getByRole('button', { name: /Créer la catégorie/i }));
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('rules:create', {
-        matchType: 'contains',
-        matchValue: 'IKEA',
-        categoryId: 'cat-logement',
-      });
+      expect(mockInvoke).toHaveBeenCalledWith(
+        'categories:create',
+        expect.objectContaining({ name: 'Animaux' }),
+      );
     });
   });
 
   it('deletes a category after inline confirmation', async () => {
     renderPage();
-    await screen.findByText('CARREFOUR');
+    await screen.findByText('Alimentation');
     fireEvent.click(screen.getByRole('button', { name: /Supprimer Alimentation/i }));
     fireEvent.click(screen.getByRole('button', { name: /^Supprimer$/ }));
     await waitFor(() => {
       expect(mockInvoke).toHaveBeenCalledWith('categories:delete', { id: 'cat-alimentation' });
-    });
-  });
-
-  it('deletes a rule', async () => {
-    renderPage();
-    await screen.findByText('CARREFOUR');
-    fireEvent.click(screen.getByRole('button', { name: /Supprimer la règle CARREFOUR/i }));
-    await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('rules:delete', { id: 'cr-060' });
     });
   });
 });

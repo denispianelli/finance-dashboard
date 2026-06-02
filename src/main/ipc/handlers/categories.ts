@@ -1,17 +1,12 @@
 import type {
   CategoryDTO,
   CreateCategoryInput,
-  CreateRuleInput,
   RenameCategoryInput,
-  RuleDTO,
   SetTransactionCategoryInput,
 } from '@shared/types/category';
 import { getDb } from '../../db';
 import {
   listCategories,
-  listRules,
-  createRule,
-  deleteRule,
   createCategory,
   deleteCategory,
   setTransactionCategory,
@@ -28,19 +23,6 @@ export function handleCategoriesRename(payload: RenameCategoryInput): {
   const db = getDb();
   renameCategory(db, { id: payload.id, newName: payload.newName });
   return { categories: listCategories(db) };
-}
-
-export function handleRulesList(): { rules: RuleDTO[] } {
-  return { rules: listRules(getDb()) };
-}
-
-export function handleRulesCreate(payload: CreateRuleInput): { rule: RuleDTO } {
-  return { rule: createRule(getDb(), payload) };
-}
-
-export function handleRulesDelete(payload: { id: string }): { ok: true } {
-  deleteRule(getDb(), payload.id);
-  return { ok: true };
 }
 
 export function handleCategoriesCreate(payload: CreateCategoryInput): { category: CategoryDTO } {

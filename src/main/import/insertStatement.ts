@@ -4,6 +4,7 @@ import { extractStatement } from './extractStatement';
 import { normalizeLabel } from './txHash';
 import { ImportError } from './importError';
 import { loadRules, matchRule } from '../categorize/rules';
+import { findHistoryCategory } from '../categorize/history';
 
 export interface InsertResult {
   importId: string;
@@ -49,7 +50,8 @@ export async function insertStatement(
           is_internal_transfer, user_modified, fitid)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 0, 0, ?)`,
     );
-    // Deterministic rule-based categorization (cascade level 1, design §7).
+    // Deterministic categorization cascade (design §7): history (a previously
+    // seen / user-corrected label) wins, then the under-the-hood seed rules.
     // confidence stays NULL — it is the LLM score, and no model has run.
     const rules = loadRules(db);
     const hits = new Map<string, number>();
@@ -60,8 +62,14 @@ export async function insertStatement(
       if (tx.isDuplicate) continue;
       if (selectedSet !== undefined && !selectedSet.has(tx.tx_hash)) continue;
       const labelClean = normalizeLabel(tx.label);
-      const rule = matchRule(rules, labelClean);
-      if (rule !== null) hits.set(rule.id, (hits.get(rule.id) ?? 0) + 1);
+      let categoryId = findHistoryCategory(db, labelClean);
+      if (categoryId === null) {
+        const rule = matchRule(rules, labelClean);
+        if (rule !== null) {
+          categoryId = rule.categoryId;
+          hits.set(rule.id, (hits.get(rule.id) ?? 0) + 1);
+        }
+      }
       insertTx.run(
         randomUUID(),
         accountId,
@@ -71,7 +79,7 @@ export async function insertStatement(
         tx.amount,
         tx.label,
         labelClean,
-        rule?.categoryId ?? null,
+        categoryId,
         tx.fitid,
       );
       insertedCount++;

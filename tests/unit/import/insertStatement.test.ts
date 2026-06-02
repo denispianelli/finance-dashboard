@@ -179,6 +179,40 @@ describe('insertStatement — rule-based categorization', () => {
   });
 });
 
+describe('insertStatement — history cascade', () => {
+  it('reuses a previously-seen user category, overriding the seed rule', async () => {
+    const db = freshDb();
+    // A past CARREFOUR transaction the user manually moved to Loisirs (not the
+    // default Alimentation rule).
+    db.prepare(
+      `INSERT INTO transactions (id, account_id, tx_hash, date, amount, label_raw, label_clean, category_id, user_modified)
+       VALUES ('prior', 'acc-lcl-default', 'prior', '2026-04-01', -10, 'CB CARREFOUR', 'CB CARREFOUR', 'cat-loisirs', 1)`,
+    ).run();
+    extractMock.mockResolvedValue(
+      baseExtraction({
+        transactions: [
+          {
+            date: '2026-05-01',
+            label: 'CB CARREFOUR',
+            amount: -12,
+            tx_hash: 'new1',
+            fitid: null,
+            isDuplicate: false,
+          },
+        ],
+        newCount: 1,
+        duplicateCount: 0,
+      }),
+    );
+    await insertStatement(db, 'acc-lcl-default', Buffer.from('x'));
+    const row = db.prepare("SELECT category_id FROM transactions WHERE tx_hash = 'new1'").get() as {
+      category_id: string | null;
+    };
+    expect(row.category_id).toBe('cat-loisirs');
+    db.close();
+  });
+});
+
 describe('insertStatement — atomicity', () => {
   it('rolls back fully when a transaction insert violates UNIQUE mid-batch', async () => {
     const db = freshDb();

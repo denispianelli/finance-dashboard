@@ -3,9 +3,6 @@ import { DatabaseSync } from 'node:sqlite';
 import { runMigrations } from '../../../src/main/db/migrate';
 import {
   listCategories,
-  listRules,
-  createRule,
-  deleteRule,
   createCategory,
   deleteCategory,
   setTransactionCategory,
@@ -34,95 +31,10 @@ describe('listCategories', () => {
 
   it('excludes deprecated categories', () => {
     const db = freshDb();
-    db.prepare("UPDATE categories SET deprecated_at = '2026-01-01' WHERE id = 'cat-voyages'").run();
-    expect(listCategories(db).find((c) => c.id === 'cat-voyages')).toBeUndefined();
-    db.close();
-  });
-});
-
-describe('listRules', () => {
-  it('joins the category name and exposes hit counts in creation order', () => {
-    const db = freshDb();
-    const rules = listRules(db);
-    expect(rules.length).toBeGreaterThan(0);
-    const carrefour = rules.find((r) => r.matchValue === 'CARREFOUR');
-    expect(carrefour).toMatchObject({
-      categoryId: 'cat-alimentation',
-      categoryName: 'Alimentation',
-      hitCount: 0,
-    });
-    // UBER EATS precedes UBER (precedence preserved)
-    const eats = rules.findIndex((r) => r.matchValue === 'UBER EATS');
-    const uber = rules.findIndex((r) => r.matchValue === 'UBER');
-    expect(eats).toBeLessThan(uber);
-    db.close();
-  });
-});
-
-describe('createRule', () => {
-  it('inserts a valid rule and returns it', () => {
-    const db = freshDb();
-    const before = listRules(db).length;
-    const rule = createRule(db, {
-      matchType: 'contains',
-      matchValue: 'leroy merlin',
-      categoryId: 'cat-logement',
-    });
-    expect(rule).toMatchObject({
-      matchValue: 'leroy merlin',
-      categoryId: 'cat-logement',
-      hitCount: 0,
-    });
-    expect(listRules(db)).toHaveLength(before + 1);
-    db.close();
-  });
-
-  it('trims the match value', () => {
-    const db = freshDb();
-    const rule = createRule(db, {
-      matchType: 'contains',
-      matchValue: '  IKEA  ',
-      categoryId: 'cat-logement',
-    });
-    expect(rule.matchValue).toBe('IKEA');
-    db.close();
-  });
-
-  it('rejects an empty match value', () => {
-    const db = freshDb();
-    expect(() =>
-      createRule(db, { matchType: 'contains', matchValue: '   ', categoryId: 'cat-logement' }),
-    ).toThrow(/empty/);
-    db.close();
-  });
-
-  it('rejects a malformed regex up front', () => {
-    const db = freshDb();
-    expect(() =>
-      createRule(db, { matchType: 'regex', matchValue: '(', categoryId: 'cat-logement' }),
-    ).toThrow(/regular expression/);
-    db.close();
-  });
-
-  it('rejects an unknown category', () => {
-    const db = freshDb();
-    expect(() =>
-      createRule(db, { matchType: 'contains', matchValue: 'X', categoryId: 'nope' }),
-    ).toThrow(/not found/);
-    db.close();
-  });
-});
-
-describe('deleteRule', () => {
-  it('removes a rule by id', () => {
-    const db = freshDb();
-    const rule = createRule(db, {
-      matchType: 'contains',
-      matchValue: 'CASTORAMA',
-      categoryId: 'cat-logement',
-    });
-    deleteRule(db, rule.id);
-    expect(listRules(db).find((r) => r.id === rule.id)).toBeUndefined();
+    db.prepare(
+      "UPDATE categories SET deprecated_at = '2026-01-01' WHERE id = 'cat-transport'",
+    ).run();
+    expect(listCategories(db).find((c) => c.id === 'cat-transport')).toBeUndefined();
     db.close();
   });
 });
@@ -139,7 +51,6 @@ describe('createCategory', () => {
     });
     expect(cat.id.startsWith('cat-')).toBe(true);
     expect(listCategories(db)).toHaveLength(11);
-    // appended after the 10 seeded ones
     expect(cat.position).toBeGreaterThan(10);
     db.close();
   });
@@ -166,7 +77,10 @@ describe('deleteCategory', () => {
 
     expect(result.uncategorizedCount).toBe(1);
     expect(listCategories(db).find((c) => c.id === 'cat-alimentation')).toBeUndefined();
-    expect(listRules(db).some((r) => r.categoryId === 'cat-alimentation')).toBe(false);
+    const rules = db
+      .prepare("SELECT COUNT(*) n FROM categorization_rules WHERE category_id = 'cat-alimentation'")
+      .get() as { n: number };
+    expect(rules.n).toBe(0);
     const tx = db.prepare('SELECT category_id FROM transactions WHERE id = ?').get('t1') as {
       category_id: string | null;
     };

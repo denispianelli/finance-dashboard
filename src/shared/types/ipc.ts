@@ -9,8 +9,6 @@ import type {
 import type { AggregationBucket } from './taxonomy';
 import type {
   CategoryDTO,
-  RuleDTO,
-  CreateRuleInput,
   RenameCategoryInput,
   CreateCategoryInput,
   SetTransactionCategoryInput,
@@ -90,9 +88,6 @@ export interface IpcContract {
   'dashboard:metrics': { payload: { accountId: string }; response: DashboardMetrics };
   'categories:list': { payload: Record<string, never>; response: { categories: CategoryDTO[] } };
   'categories:rename': { payload: RenameCategoryInput; response: { categories: CategoryDTO[] } };
-  'rules:list': { payload: Record<string, never>; response: { rules: RuleDTO[] } };
-  'rules:create': { payload: CreateRuleInput; response: { rule: RuleDTO } };
-  'rules:delete': { payload: { id: string }; response: { ok: true } };
   'categories:create': { payload: CreateCategoryInput; response: { category: CategoryDTO } };
   'categories:delete': { payload: { id: string }; response: { uncategorizedCount: number } };
   'transactions:setCategory': { payload: SetTransactionCategoryInput; response: { ok: true } };
