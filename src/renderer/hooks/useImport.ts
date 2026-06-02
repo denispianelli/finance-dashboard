@@ -33,7 +33,8 @@ const ERROR_MESSAGES: Partial<Record<string, string>> = {
   malformed_ofx: 'Fichier OFX invalide ou corrompu.',
   not_pdf: 'Le fichier ne semble pas être un PDF valide.',
   no_text: 'Ce PDF ne contient pas de texte extractible (scan image ?).',
-  unknown_bank: 'Banque non reconnue. Seuls les relevés LCL sont supportés.',
+  unknown_bank:
+    'Banque non reconnue pour ce PDF (seul LCL est géré en PDF). Pour une autre banque, importez un relevé OFX.',
   arithmetic_failed: 'Le solde ne correspond pas aux transactions. Import bloqué.',
   cannot_verify_unacknowledged: 'Vérification du solde non confirmée.',
   already_imported: 'Ce fichier a déjà été importé.',
