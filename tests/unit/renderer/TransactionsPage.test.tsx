@@ -61,6 +61,10 @@ const TX: DashboardTransaction[] = [
   tx({ id: 'c', labelClean: 'Pharmacie', amount: -15, categoryId: null }),
 ];
 
+const MANY: DashboardTransaction[] = Array.from({ length: 30 }, (_, i) =>
+  tx({ id: `m${String(i)}`, labelClean: `Op ${String(i).padStart(2, '0')}`, amount: -(i + 1) }),
+);
+
 function stubIpc(transactions: DashboardTransaction[] = TX): void {
   mockInvoke.mockImplementation(((channel: string) => {
     if (channel === 'dashboard:getAccounts') return Promise.resolve({ accounts: ACCOUNTS });
@@ -145,5 +149,53 @@ describe('TransactionsPage', () => {
     stubIpc([]);
     renderPage();
     expect(await screen.findByText(/importez un relevé/i)).toBeInTheDocument();
+  });
+
+  it('paginates: renders only the first 25 rows and shows the page indicator', async () => {
+    stubIpc(MANY);
+    renderPage();
+    expect(await screen.findByText('Op 00')).toBeInTheDocument();
+    expect(screen.getByText('Op 24')).toBeInTheDocument();
+    expect(screen.queryByText('Op 25')).not.toBeInTheDocument();
+    expect(screen.getByText('Page 1 / 2')).toBeInTheDocument();
+  });
+
+  it('navigates to the next page with Suivant', async () => {
+    stubIpc(MANY);
+    renderPage();
+    await screen.findByText('Op 00');
+    fireEvent.click(screen.getByRole('button', { name: /Suivant/ }));
+    expect(screen.getByText('Op 25')).toBeInTheDocument();
+    expect(screen.getByText('Op 29')).toBeInTheDocument();
+    expect(screen.queryByText('Op 00')).not.toBeInTheDocument();
+    expect(screen.getByText('Page 2 / 2')).toBeInTheDocument();
+  });
+
+  it('disables Précédent on the first page and Suivant on the last page', async () => {
+    stubIpc(MANY);
+    renderPage();
+    await screen.findByText('Op 00');
+    expect(screen.getByRole('button', { name: /Précédent/ })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: /Suivant/ }));
+    expect(screen.getByRole('button', { name: /Suivant/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Précédent/ })).not.toBeDisabled();
+  });
+
+  it('resets to page 1 when a filter changes', async () => {
+    stubIpc(MANY);
+    renderPage();
+    await screen.findByText('Op 00');
+    fireEvent.click(screen.getByRole('button', { name: /Suivant/ }));
+    expect(screen.getByText('Page 2 / 2')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Rechercher'), { target: { value: 'Op' } });
+    expect(screen.getByText('Page 1 / 2')).toBeInTheDocument();
+    expect(screen.getByText('Op 00')).toBeInTheDocument();
+  });
+
+  it('renders no pagination controls when results fit on one page', async () => {
+    renderPage();
+    await screen.findByText('Carrefour');
+    expect(screen.queryByRole('button', { name: /Suivant/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Page \d+ \//)).not.toBeInTheDocument();
   });
 });
