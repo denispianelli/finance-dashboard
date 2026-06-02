@@ -14,4 +14,6 @@ export const CHANNELS = {
   rulesList: 'rules:list',
   rulesCreate: 'rules:create',
   rulesDelete: 'rules:delete',
+  categoriesCreate: 'categories:create',
+  transactionsSetCategory: 'transactions:setCategory',
 } as const satisfies Record<string, IpcChannel>;

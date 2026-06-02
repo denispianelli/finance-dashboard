@@ -16,6 +16,8 @@ import {
   handleRulesList,
   handleRulesCreate,
   handleRulesDelete,
+  handleCategoriesCreate,
+  handleTransactionsSetCategory,
 } from './handlers/categories';
 
 type Handler<C extends IpcChannel> = (
@@ -53,4 +55,6 @@ export function registerAllHandlers(): void {
   register(CHANNELS.rulesList, () => handleRulesList());
   register(CHANNELS.rulesCreate, handleRulesCreate);
   register(CHANNELS.rulesDelete, handleRulesDelete);
+  register(CHANNELS.categoriesCreate, handleCategoriesCreate);
+  register(CHANNELS.transactionsSetCategory, handleTransactionsSetCategory);
 }

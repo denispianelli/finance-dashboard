@@ -7,7 +7,14 @@ import type {
   DashboardMetrics,
 } from './dashboard';
 import type { AggregationBucket } from './taxonomy';
-import type { CategoryDTO, RuleDTO, CreateRuleInput, RenameCategoryInput } from './category';
+import type {
+  CategoryDTO,
+  RuleDTO,
+  CreateRuleInput,
+  RenameCategoryInput,
+  CreateCategoryInput,
+  SetTransactionCategoryInput,
+} from './category';
 
 export interface PingPayload {
   now: number;
@@ -86,6 +93,8 @@ export interface IpcContract {
   'rules:list': { payload: Record<string, never>; response: { rules: RuleDTO[] } };
   'rules:create': { payload: CreateRuleInput; response: { rule: RuleDTO } };
   'rules:delete': { payload: { id: string }; response: { ok: true } };
+  'categories:create': { payload: CreateCategoryInput; response: { category: CategoryDTO } };
+  'transactions:setCategory': { payload: SetTransactionCategoryInput; response: { ok: true } };
 }
 
 export type IpcChannel = keyof IpcContract;

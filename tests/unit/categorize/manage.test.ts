@@ -6,6 +6,8 @@ import {
   listRules,
   createRule,
   deleteRule,
+  createCategory,
+  setTransactionCategory,
 } from '../../../src/main/categorize/manage';
 
 function freshDb(): DatabaseSync {
@@ -120,6 +122,65 @@ describe('deleteRule', () => {
     });
     deleteRule(db, rule.id);
     expect(listRules(db).find((r) => r.id === rule.id)).toBeUndefined();
+    db.close();
+  });
+});
+
+describe('createCategory', () => {
+  it('appends a non-default category and returns it', () => {
+    const db = freshDb();
+    const cat = createCategory(db, { name: '  Animaux  ', color: '#7AB890', icon: 'wallet' });
+    expect(cat).toMatchObject({
+      name: 'Animaux',
+      color: '#7AB890',
+      icon: 'wallet',
+      isDefault: false,
+    });
+    expect(cat.id.startsWith('cat-')).toBe(true);
+    expect(listCategories(db)).toHaveLength(17);
+    // appended after the 16 seeded ones
+    expect(cat.position).toBeGreaterThan(16);
+    db.close();
+  });
+
+  it('rejects an empty name and a bad color', () => {
+    const db = freshDb();
+    expect(() => createCategory(db, { name: ' ', color: '#7AB890', icon: 'wallet' })).toThrow(
+      /name/,
+    );
+    expect(() => createCategory(db, { name: 'X', color: 'red', icon: 'wallet' })).toThrow(/color/);
+    db.close();
+  });
+});
+
+describe('setTransactionCategory', () => {
+  function seedTx(db: DatabaseSync): void {
+    db.prepare(
+      `INSERT INTO transactions (id, account_id, tx_hash, date, amount, label_raw, label_clean, category_id)
+       VALUES ('t1', 'acc-lcl-default', 't1', '2026-05-01', -10, 'x', 'X', NULL)`,
+    ).run();
+  }
+
+  it('assigns the category and marks the row user_modified', () => {
+    const db = freshDb();
+    seedTx(db);
+    setTransactionCategory(db, { transactionId: 't1', categoryId: 'cat-alimentation' });
+    const row = db
+      .prepare('SELECT category_id, user_modified FROM transactions WHERE id = ?')
+      .get('t1') as { category_id: string; user_modified: number };
+    expect(row).toMatchObject({ category_id: 'cat-alimentation', user_modified: 1 });
+    db.close();
+  });
+
+  it('throws on unknown category or transaction', () => {
+    const db = freshDb();
+    seedTx(db);
+    expect(() => {
+      setTransactionCategory(db, { transactionId: 't1', categoryId: 'nope' });
+    }).toThrow(/not found/);
+    expect(() => {
+      setTransactionCategory(db, { transactionId: 'ghost', categoryId: 'cat-alimentation' });
+    }).toThrow(/not found/);
     db.close();
   });
 });

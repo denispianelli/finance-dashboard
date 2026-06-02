@@ -30,3 +30,14 @@ export interface RenameCategoryInput {
   readonly id: string;
   readonly newName: string;
 }
+
+export interface CreateCategoryInput {
+  readonly name: string;
+  readonly color: string;
+  readonly icon: string;
+}
+
+export interface SetTransactionCategoryInput {
+  readonly transactionId: string;
+  readonly categoryId: string;
+}

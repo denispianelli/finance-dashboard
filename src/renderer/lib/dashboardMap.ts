@@ -43,6 +43,7 @@ export function toAccount(summary: AccountSummary): Account {
 
 export function toTxRow(tx: DashboardTransaction): TxRow {
   return {
+    id: tx.id,
     date: formatTxDate(tx.date),
     icon: tx.categoryIcon ?? 'wallet',
     main: tx.labelClean,

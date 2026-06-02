@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import type { CategoryDTO, CreateRuleInput, RuleDTO } from '@shared/types/category';
+import type {
+  CategoryDTO,
+  CreateCategoryInput,
+  CreateRuleInput,
+  RuleDTO,
+} from '@shared/types/category';
 import { ipc } from '@renderer/ipc/client';
 
 export interface UseCategories {
   categories: CategoryDTO[];
   rules: RuleDTO[];
+  createCategory: (input: CreateCategoryInput) => Promise<void>;
   createRule: (input: CreateRuleInput) => Promise<void>;
   deleteRule: (id: string) => Promise<void>;
   renameCategory: (id: string, newName: string) => Promise<void>;
@@ -49,6 +55,19 @@ export function useCategories(): UseCategories {
     };
   }, []);
 
+  const createCategory = useCallback(
+    async (input: CreateCategoryInput) => {
+      try {
+        const { category } = await ipc.invoke('categories:create', input);
+        await reload();
+        toast.success(`Catégorie « ${category.name} » créée`);
+      } catch (e) {
+        toast.error(`Catégorie non créée : ${message(e)}`);
+      }
+    },
+    [reload],
+  );
+
   const createRule = useCallback(
     async (input: CreateRuleInput) => {
       try {
@@ -87,5 +106,5 @@ export function useCategories(): UseCategories {
     [reload],
   );
 
-  return { categories, rules, createRule, deleteRule, renameCategory };
+  return { categories, rules, createCategory, createRule, deleteRule, renameCategory };
 }

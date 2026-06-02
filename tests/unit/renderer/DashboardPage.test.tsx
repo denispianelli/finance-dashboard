@@ -58,6 +58,7 @@ function stubIpc(transactions: DashboardTransaction[], metrics: DashboardMetrics
     if (channel === 'dashboard:getAccounts') return Promise.resolve({ accounts: ACCOUNTS });
     if (channel === 'dashboard:getTransactions') return Promise.resolve({ transactions });
     if (channel === 'dashboard:metrics') return Promise.resolve(metrics);
+    if (channel === 'categories:list') return Promise.resolve({ categories: [] });
     return Promise.resolve(undefined);
   }) as typeof ipc.invoke);
 }

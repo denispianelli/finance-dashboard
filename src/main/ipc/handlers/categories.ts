@@ -1,11 +1,20 @@
 import type {
   CategoryDTO,
+  CreateCategoryInput,
   CreateRuleInput,
   RenameCategoryInput,
   RuleDTO,
+  SetTransactionCategoryInput,
 } from '@shared/types/category';
 import { getDb } from '../../db';
-import { listCategories, listRules, createRule, deleteRule } from '../../categorize/manage';
+import {
+  listCategories,
+  listRules,
+  createRule,
+  deleteRule,
+  createCategory,
+  setTransactionCategory,
+} from '../../categorize/manage';
 import { renameCategory } from '../../taxonomy/renameCategory';
 
 export function handleCategoriesList(): { categories: CategoryDTO[] } {
@@ -30,5 +39,14 @@ export function handleRulesCreate(payload: CreateRuleInput): { rule: RuleDTO } {
 
 export function handleRulesDelete(payload: { id: string }): { ok: true } {
   deleteRule(getDb(), payload.id);
+  return { ok: true };
+}
+
+export function handleCategoriesCreate(payload: CreateCategoryInput): { category: CategoryDTO } {
+  return { category: createCategory(getDb(), payload) };
+}
+
+export function handleTransactionsSetCategory(payload: SetTransactionCategoryInput): { ok: true } {
+  setTransactionCategory(getDb(), payload);
   return { ok: true };
 }

@@ -1,8 +1,16 @@
 import { randomUUID } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
-import type { CategoryDTO, CreateRuleInput, RuleDTO, RuleMatchType } from '@shared/types/category';
+import type {
+  CategoryDTO,
+  CreateCategoryInput,
+  CreateRuleInput,
+  RuleDTO,
+  RuleMatchType,
+  SetTransactionCategoryInput,
+} from '@shared/types/category';
 
 const MATCH_TYPES: readonly RuleMatchType[] = ['contains', 'exact', 'regex'];
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
 interface CategoryRow {
   id: string;
@@ -97,4 +105,40 @@ export function createRule(db: DatabaseSync, input: CreateRuleInput): RuleDTO {
 
 export function deleteRule(db: DatabaseSync, id: string): void {
   db.prepare('DELETE FROM categorization_rules WHERE id = ?').run(id);
+}
+
+/** Create a user category (not a default). Appended after existing categories. */
+export function createCategory(db: DatabaseSync, input: CreateCategoryInput): CategoryDTO {
+  const name = input.name.trim();
+  if (name === '') throw new Error('createCategory: name is empty');
+  if (!HEX_COLOR.test(input.color)) throw new Error('createCategory: invalid color');
+  const icon = input.icon.trim() || 'wallet';
+
+  const id = `cat-${randomUUID()}`;
+  const nextPos = (
+    db.prepare('SELECT COALESCE(MAX(position), 0) + 1 AS pos FROM categories').get() as unknown as {
+      pos: number;
+    }
+  ).pos;
+  db.prepare(
+    `INSERT INTO categories (id, parent_id, name, icon, color, is_default, position)
+     VALUES (?, NULL, ?, ?, ?, 0, ?)`,
+  ).run(id, name, icon, input.color, nextPos);
+
+  const created = listCategories(db).find((c) => c.id === id);
+  if (!created) throw new Error('createCategory: category vanished after insert');
+  return created;
+}
+
+/** Reassign a transaction's category. Marks it user_modified so a future
+ *  automatic pass won't override the manual choice (design §5). */
+export function setTransactionCategory(db: DatabaseSync, input: SetTransactionCategoryInput): void {
+  const cat = db.prepare('SELECT id FROM categories WHERE id = ?').get(input.categoryId);
+  if (!cat) throw new Error(`setTransactionCategory: category ${input.categoryId} not found`);
+  const res = db
+    .prepare('UPDATE transactions SET category_id = ?, user_modified = 1 WHERE id = ?')
+    .run(input.categoryId, input.transactionId);
+  if (res.changes === 0) {
+    throw new Error(`setTransactionCategory: transaction ${input.transactionId} not found`);
+  }
 }

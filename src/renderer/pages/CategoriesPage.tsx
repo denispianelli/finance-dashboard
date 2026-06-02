@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { Chip } from '../components/ui/chip';
 import { Overline } from '../components/ui/overline';
 import { CategoryIcon } from '../lib/categoryIcon';
+import { CategoryForm } from '../components/categories/CategoryForm';
 import { useCategories } from '../hooks/useCategories';
 import { cn } from '../lib/utils';
 
@@ -18,7 +19,9 @@ const MATCH_LABELS: Record<RuleMatchType, string> = {
 };
 
 export function CategoriesPage() {
-  const { categories, rules, createRule, deleteRule, renameCategory } = useCategories();
+  const { categories, rules, createCategory, createRule, deleteRule, renameCategory } =
+    useCategories();
+  const [adding, setAdding] = useState(false);
 
   return (
     <>
@@ -28,10 +31,29 @@ export function CategoriesPage() {
             <Overline>— I</Overline>
             <CardTitle>Catégories</CardTitle>
           </div>
-          <span className="font-sans text-[11px] text-paper-dim">
-            {categories.length} catégories
-          </span>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setAdding((a) => !a);
+            }}
+          >
+            <Plus size={14} strokeWidth={1.8} />
+            Nouvelle catégorie
+          </Button>
         </CardHeader>
+        {adding && (
+          <div className="mb-2 rounded-md border border-line-2 bg-ink-2/60 p-3">
+            <CategoryForm
+              autoFocus
+              submitLabel="Créer la catégorie"
+              onSubmit={(input) => {
+                void createCategory(input);
+                setAdding(false);
+              }}
+            />
+          </div>
+        )}
         <div className="flex flex-col">
           {categories.map((c) => (
             <CategoryRow key={c.id} category={c} onRename={renameCategory} />

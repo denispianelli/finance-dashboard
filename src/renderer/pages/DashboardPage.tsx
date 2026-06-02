@@ -23,8 +23,16 @@ import type { AppOutletContext } from '../lib/outletContext';
 
 export function DashboardPage() {
   const { refreshToken } = useOutletContext<AppOutletContext>();
-  const { accounts, transactions, metrics, selectedAccountId, selectAccount } =
-    useDashboard(refreshToken);
+  const {
+    accounts,
+    transactions,
+    metrics,
+    categories,
+    selectedAccountId,
+    selectAccount,
+    reassign,
+    createCategory,
+  } = useDashboard(refreshToken);
 
   const { series, balance } = metrics;
   const last = series.at(-1);
@@ -134,7 +142,14 @@ export function DashboardPage() {
           </Button>
         </CardHeader>
         {transactions.length > 0 ? (
-          <TxTable rows={transactions.map(toTxRow)} />
+          <TxTable
+            rows={transactions.map(toTxRow)}
+            categories={categories}
+            onReassign={(txId, catId) => {
+              void reassign(txId, catId);
+            }}
+            onCreateCategory={createCategory}
+          />
         ) : (
           <p className="py-8 text-center text-sm text-paper-mute">
             Aucune transaction — importez un relevé pour commencer.
