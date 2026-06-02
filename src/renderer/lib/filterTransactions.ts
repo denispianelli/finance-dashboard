@@ -26,8 +26,8 @@ function normalize(s: string): string {
     .toLowerCase();
 }
 
-/** Format a local Date as ISO `yyyy-mm-dd` without UTC conversion. */
-function toLocalISODate(d: Date): string {
+/** Format a Date as a LOCAL-time ISO `yyyy-mm-dd` (no UTC shift). */
+export function toLocalISODate(d: Date): string {
   const y = String(d.getFullYear());
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');

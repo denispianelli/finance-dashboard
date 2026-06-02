@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { filterTransactions, periodStart } from '@renderer/lib/filterTransactions';
+import { filterTransactions, periodStart, toLocalISODate } from '@renderer/lib/filterTransactions';
 import type { DashboardTransaction } from '@shared/types/dashboard';
 
 function tx(over: Partial<DashboardTransaction> = {}): DashboardTransaction {
@@ -36,6 +36,12 @@ describe('periodStart', () => {
   });
   it('returns today minus 3 months for "3m"', () => {
     expect(periodStart('3m', TODAY)).toBe('2026-03-03');
+  });
+});
+
+describe('toLocalISODate', () => {
+  it('formats a Date as local-time yyyy-mm-dd', () => {
+    expect(toLocalISODate(new Date(2026, 0, 5))).toBe('2026-01-05');
   });
 });
 
