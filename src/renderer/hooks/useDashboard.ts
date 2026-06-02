@@ -40,17 +40,14 @@ export function useDashboard(refreshToken: number): UseDashboard {
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
 
-  // Accounts + categories: load on mount, on refresh, and on each internal tick.
+  // Accounts: the core dashboard data. Loaded independently so that a failure
+  // elsewhere (e.g. categories) can never blank out accounts/transactions.
   useEffect(() => {
     let active = true;
-    void Promise.all([
-      ipc.invoke('dashboard:getAccounts', {}),
-      ipc.invoke('categories:list', {}),
-    ]).then(([acc, cats]) => {
+    void ipc.invoke('dashboard:getAccounts', {}).then(({ accounts: next }) => {
       if (!active) return;
-      setAccounts(acc.accounts);
-      setCategories(cats.categories);
-      const first = acc.accounts[0];
+      setAccounts(next);
+      const first = next[0];
       if (first === undefined) {
         setSelectedAccountId(null);
         setTransactions([]);
@@ -58,9 +55,27 @@ export function useDashboard(refreshToken: number): UseDashboard {
         return;
       }
       setSelectedAccountId((prev) =>
-        prev !== null && acc.accounts.some((a) => a.id === prev) ? prev : first.id,
+        prev !== null && next.some((a) => a.id === prev) ? prev : first.id,
       );
     });
+    return () => {
+      active = false;
+    };
+  }, [refreshToken, tick]);
+
+  // Categories: only needed for the reassign picker — its failure must not
+  // affect the rest of the dashboard, so it loads in its own effect.
+  useEffect(() => {
+    let active = true;
+    void ipc
+      .invoke('categories:list', {})
+      .then(({ categories: next }) => {
+        if (active) setCategories(next);
+      })
+      .catch(() => {
+        // Categories are optional here (only the reassign picker needs them).
+        // On failure the picker simply shows no choices; the dashboard stays up.
+      });
     return () => {
       active = false;
     };

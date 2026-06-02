@@ -109,6 +109,20 @@ describe('DashboardPage', () => {
     expect(await screen.findByText(/Aucune transaction/i)).toBeInTheDocument();
   });
 
+  it('still renders transactions when the categories fetch fails', async () => {
+    // Regression: categories loaded independently, so its failure must not
+    // blank out accounts/transactions (previously coupled via Promise.all).
+    mockInvoke.mockImplementation(((channel: string) => {
+      if (channel === 'dashboard:getAccounts') return Promise.resolve({ accounts: ACCOUNTS });
+      if (channel === 'dashboard:getTransactions') return Promise.resolve({ transactions: TX });
+      if (channel === 'dashboard:metrics') return Promise.resolve(METRICS);
+      if (channel === 'categories:list') return Promise.reject(new Error('no handler'));
+      return Promise.resolve(undefined);
+    }) as typeof ipc.invoke);
+    renderPage();
+    expect(await screen.findByText('Carrefour Market')).toBeInTheDocument();
+  });
+
   it('does not render ImportModal', () => {
     renderPage();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
