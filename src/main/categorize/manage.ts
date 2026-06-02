@@ -130,6 +130,29 @@ export function createCategory(db: DatabaseSync, input: CreateCategoryInput): Ca
   return created;
 }
 
+/**
+ * Delete a category. Detaches it first so the foreign keys stay valid:
+ * referencing transactions become uncategorized (category_id NULL) and rules
+ * pointing to it are removed. Returns how many transactions were uncategorized.
+ */
+export function deleteCategory(db: DatabaseSync, id: string): { uncategorizedCount: number } {
+  db.exec('BEGIN');
+  try {
+    const cat = db.prepare('SELECT id FROM categories WHERE id = ?').get(id);
+    if (!cat) throw new Error(`deleteCategory: category ${id} not found`);
+    const res = db
+      .prepare('UPDATE transactions SET category_id = NULL WHERE category_id = ?')
+      .run(id);
+    db.prepare('DELETE FROM categorization_rules WHERE category_id = ?').run(id);
+    db.prepare('DELETE FROM categories WHERE id = ?').run(id);
+    db.exec('COMMIT');
+    return { uncategorizedCount: Number(res.changes) };
+  } catch (e) {
+    db.exec('ROLLBACK');
+    throw e;
+  }
+}
+
 /** Reassign a transaction's category. Marks it user_modified so a future
  *  automatic pass won't override the manual choice (design §5). */
 export function setTransactionCategory(db: DatabaseSync, input: SetTransactionCategoryInput): void {

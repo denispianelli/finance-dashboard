@@ -3,13 +3,13 @@ import { DatabaseSync } from 'node:sqlite';
 import { runMigrations } from '../../../src/main/db/migrate';
 
 describe('default categories + rules seed (migration 006)', () => {
-  it('seeds the 16 default categories', () => {
+  it('seeds the 10 default categories', () => {
     const db = new DatabaseSync(':memory:');
     runMigrations(db);
     const { n } = db.prepare('SELECT count(*) n FROM categories WHERE is_default = 1').get() as {
       n: number;
     };
-    expect(n).toBe(16);
+    expect(n).toBe(10);
     db.close();
   });
 
@@ -49,7 +49,7 @@ describe('default categories + rules seed (migration 006)', () => {
     const { n } = db.prepare('SELECT count(*) n FROM categories WHERE is_default = 1').get() as {
       n: number;
     };
-    expect(n).toBe(16);
+    expect(n).toBe(10);
     db.close();
   });
 });

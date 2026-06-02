@@ -12,6 +12,7 @@ export interface UseCategories {
   categories: CategoryDTO[];
   rules: RuleDTO[];
   createCategory: (input: CreateCategoryInput) => Promise<void>;
+  deleteCategory: (id: string) => Promise<void>;
   createRule: (input: CreateRuleInput) => Promise<void>;
   deleteRule: (id: string) => Promise<void>;
   renameCategory: (id: string, newName: string) => Promise<void>;
@@ -68,6 +69,23 @@ export function useCategories(): UseCategories {
     [reload],
   );
 
+  const deleteCategory = useCallback(
+    async (id: string) => {
+      try {
+        const { uncategorizedCount } = await ipc.invoke('categories:delete', { id });
+        await reload();
+        toast.success(
+          uncategorizedCount > 0
+            ? `Catégorie supprimée — ${String(uncategorizedCount)} transaction(s) en « non catégorisé »`
+            : 'Catégorie supprimée',
+        );
+      } catch (e) {
+        toast.error(`Suppression impossible : ${message(e)}`);
+      }
+    },
+    [reload],
+  );
+
   const createRule = useCallback(
     async (input: CreateRuleInput) => {
       try {
@@ -106,5 +124,13 @@ export function useCategories(): UseCategories {
     [reload],
   );
 
-  return { categories, rules, createCategory, createRule, deleteRule, renameCategory };
+  return {
+    categories,
+    rules,
+    createCategory,
+    deleteCategory,
+    createRule,
+    deleteRule,
+    renameCategory,
+  };
 }

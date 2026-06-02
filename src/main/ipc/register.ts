@@ -17,6 +17,7 @@ import {
   handleRulesCreate,
   handleRulesDelete,
   handleCategoriesCreate,
+  handleCategoriesDelete,
   handleTransactionsSetCategory,
 } from './handlers/categories';
 
@@ -56,5 +57,6 @@ export function registerAllHandlers(): void {
   register(CHANNELS.rulesCreate, handleRulesCreate);
   register(CHANNELS.rulesDelete, handleRulesDelete);
   register(CHANNELS.categoriesCreate, handleCategoriesCreate);
+  register(CHANNELS.categoriesDelete, handleCategoriesDelete);
   register(CHANNELS.transactionsSetCategory, handleTransactionsSetCategory);
 }

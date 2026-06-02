@@ -19,8 +19,15 @@ const MATCH_LABELS: Record<RuleMatchType, string> = {
 };
 
 export function CategoriesPage() {
-  const { categories, rules, createCategory, createRule, deleteRule, renameCategory } =
-    useCategories();
+  const {
+    categories,
+    rules,
+    createCategory,
+    deleteCategory,
+    createRule,
+    deleteRule,
+    renameCategory,
+  } = useCategories();
   const [adding, setAdding] = useState(false);
 
   return (
@@ -56,7 +63,12 @@ export function CategoriesPage() {
         )}
         <div className="flex flex-col">
           {categories.map((c) => (
-            <CategoryRow key={c.id} category={c} onRename={renameCategory} />
+            <CategoryRow
+              key={c.id}
+              category={c}
+              onRename={renameCategory}
+              onDelete={deleteCategory}
+            />
           ))}
         </div>
       </Card>
@@ -122,11 +134,14 @@ function iconFor(categories: CategoryDTO[], categoryId: string): string {
 function CategoryRow({
   category,
   onRename,
+  onDelete,
 }: {
   category: CategoryDTO;
   onRename: (id: string, newName: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [draft, setDraft] = useState(category.name);
 
   function save() {
@@ -176,6 +191,32 @@ function CategoryRow({
             <X size={14} strokeWidth={1.8} />
           </button>
         </>
+      ) : confirmingDelete ? (
+        <>
+          <span className="flex-1 font-sans text-[13px] text-paper-soft">
+            Supprimer « {category.name} » ? Les transactions associées repassent en « non catégorisé
+            ».
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              void onDelete(category.id);
+              setConfirmingDelete(false);
+            }}
+            className="rounded-md px-2 py-1 font-sans text-[12px] font-medium text-coral hover:bg-ink-3"
+          >
+            Supprimer
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setConfirmingDelete(false);
+            }}
+            className="rounded-md px-2 py-1 font-sans text-[12px] text-paper-dim hover:bg-ink-3"
+          >
+            Annuler
+          </button>
+        </>
       ) : (
         <>
           <span className="flex-1 font-sans text-[13px] text-paper">{category.name}</span>
@@ -188,6 +229,16 @@ function CategoryRow({
             className="flex h-7 w-7 items-center justify-center rounded-md text-paper-dim opacity-0 transition-opacity hover:bg-ink-3 hover:text-paper group-hover:opacity-100"
           >
             <Pencil size={13} strokeWidth={1.6} />
+          </button>
+          <button
+            type="button"
+            aria-label={`Supprimer ${category.name}`}
+            onClick={() => {
+              setConfirmingDelete(true);
+            }}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-paper-dim opacity-0 transition-opacity hover:bg-ink-3 hover:text-coral group-hover:opacity-100"
+          >
+            <Trash2 size={13} strokeWidth={1.6} />
           </button>
         </>
       )}

@@ -13,6 +13,7 @@ import {
   createRule,
   deleteRule,
   createCategory,
+  deleteCategory,
   setTransactionCategory,
 } from '../../categorize/manage';
 import { renameCategory } from '../../taxonomy/renameCategory';
@@ -44,6 +45,10 @@ export function handleRulesDelete(payload: { id: string }): { ok: true } {
 
 export function handleCategoriesCreate(payload: CreateCategoryInput): { category: CategoryDTO } {
   return { category: createCategory(getDb(), payload) };
+}
+
+export function handleCategoriesDelete(payload: { id: string }): { uncategorizedCount: number } {
+  return deleteCategory(getDb(), payload.id);
 }
 
 export function handleTransactionsSetCategory(payload: SetTransactionCategoryInput): { ok: true } {

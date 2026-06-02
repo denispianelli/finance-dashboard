@@ -94,6 +94,7 @@ export interface IpcContract {
   'rules:create': { payload: CreateRuleInput; response: { rule: RuleDTO } };
   'rules:delete': { payload: { id: string }; response: { ok: true } };
   'categories:create': { payload: CreateCategoryInput; response: { category: CategoryDTO } };
+  'categories:delete': { payload: { id: string }; response: { uncategorizedCount: number } };
   'transactions:setCategory': { payload: SetTransactionCategoryInput; response: { ok: true } };
 }
 

@@ -48,6 +48,7 @@ beforeEach(() => {
     if (channel === 'categories:list') return Promise.resolve({ categories: CATEGORIES });
     if (channel === 'rules:list') return Promise.resolve({ rules: RULES });
     if (channel === 'rules:create') return Promise.resolve({ rule: RULES[0] });
+    if (channel === 'categories:delete') return Promise.resolve({ uncategorizedCount: 0 });
     return Promise.resolve({ ok: true });
   }) as typeof ipc.invoke);
 });
@@ -89,6 +90,16 @@ describe('CategoriesPage', () => {
         matchValue: 'IKEA',
         categoryId: 'cat-logement',
       });
+    });
+  });
+
+  it('deletes a category after inline confirmation', async () => {
+    renderPage();
+    await screen.findByText('CARREFOUR');
+    fireEvent.click(screen.getByRole('button', { name: /Supprimer Alimentation/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Supprimer$/ }));
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith('categories:delete', { id: 'cat-alimentation' });
     });
   });
 

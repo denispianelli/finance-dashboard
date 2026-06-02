@@ -7,6 +7,7 @@ import {
   createRule,
   deleteRule,
   createCategory,
+  deleteCategory,
   setTransactionCategory,
 } from '../../../src/main/categorize/manage';
 
@@ -18,10 +19,10 @@ function freshDb(): DatabaseSync {
 }
 
 describe('listCategories', () => {
-  it('returns the 16 seeded categories ordered by position', () => {
+  it('returns the 10 seeded categories ordered by position', () => {
     const db = freshDb();
     const cats = listCategories(db);
-    expect(cats).toHaveLength(16);
+    expect(cats).toHaveLength(10);
     expect(cats[0]?.position).toBeLessThanOrEqual(cats[1]?.position ?? Infinity);
     expect(cats.find((c) => c.id === 'cat-alimentation')).toMatchObject({
       name: 'Alimentation',
@@ -137,9 +138,9 @@ describe('createCategory', () => {
       isDefault: false,
     });
     expect(cat.id.startsWith('cat-')).toBe(true);
-    expect(listCategories(db)).toHaveLength(17);
-    // appended after the 16 seeded ones
-    expect(cat.position).toBeGreaterThan(16);
+    expect(listCategories(db)).toHaveLength(11);
+    // appended after the 10 seeded ones
+    expect(cat.position).toBeGreaterThan(10);
     db.close();
   });
 
@@ -149,6 +150,33 @@ describe('createCategory', () => {
       /name/,
     );
     expect(() => createCategory(db, { name: 'X', color: 'red', icon: 'wallet' })).toThrow(/color/);
+    db.close();
+  });
+});
+
+describe('deleteCategory', () => {
+  it('removes the category, uncategorizes its transactions, and drops its rules', () => {
+    const db = freshDb();
+    db.prepare(
+      `INSERT INTO transactions (id, account_id, tx_hash, date, amount, label_raw, label_clean, category_id)
+       VALUES ('t1', 'acc-lcl-default', 't1', '2026-05-01', -10, 'x', 'X', 'cat-alimentation')`,
+    ).run();
+
+    const result = deleteCategory(db, 'cat-alimentation');
+
+    expect(result.uncategorizedCount).toBe(1);
+    expect(listCategories(db).find((c) => c.id === 'cat-alimentation')).toBeUndefined();
+    expect(listRules(db).some((r) => r.categoryId === 'cat-alimentation')).toBe(false);
+    const tx = db.prepare('SELECT category_id FROM transactions WHERE id = ?').get('t1') as {
+      category_id: string | null;
+    };
+    expect(tx.category_id).toBeNull();
+    db.close();
+  });
+
+  it('throws on an unknown category', () => {
+    const db = freshDb();
+    expect(() => deleteCategory(db, 'nope')).toThrow(/not found/);
     db.close();
   });
 });
