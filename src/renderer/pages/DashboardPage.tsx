@@ -1,4 +1,4 @@
-import { useOutletContext } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Overline } from '../components/ui/overline';
@@ -20,6 +20,9 @@ import {
   topSpendingCategories,
 } from '../lib/dashboardCharts';
 import type { AppOutletContext } from '../lib/outletContext';
+
+/** How many of the latest transactions the dashboard card previews. */
+const RECENT_LIMIT = 10;
 
 export function DashboardPage() {
   const { refreshToken } = useOutletContext<AppOutletContext>();
@@ -137,13 +140,13 @@ export function DashboardPage() {
             <Overline>— III</Overline>
             <CardTitle>Dernières transactions</CardTitle>
           </div>
-          <Button variant="ghost" size="sm">
-            Tout voir →
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/transactions">Tout voir →</Link>
           </Button>
         </CardHeader>
         {transactions.length > 0 ? (
           <TxTable
-            rows={transactions.map(toTxRow)}
+            rows={transactions.slice(0, RECENT_LIMIT).map(toTxRow)}
             categories={categories}
             onReassign={(txId, catId) => {
               void reassign(txId, catId);
