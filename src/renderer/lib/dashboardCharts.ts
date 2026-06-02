@@ -119,6 +119,7 @@ export function topSpendingCategories(
   for (const tx of transactions) {
     if (tx.amount >= 0) continue;
     if (tx.categoryName === null) continue;
+    if (tx.categoryId === 'cat-transferts') continue; // transfers aren't spending
     if (!tx.date.startsWith(month)) continue;
     totals.set(tx.categoryName, (totals.get(tx.categoryName) ?? 0) + Math.abs(tx.amount));
   }

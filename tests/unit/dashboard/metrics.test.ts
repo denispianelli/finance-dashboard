@@ -72,6 +72,23 @@ describe('getDashboardMetrics', () => {
     db.close();
   });
 
+  it('excludes internal transfers from income/expense but keeps them in the balance', () => {
+    const db = freshDb();
+    seedTx(db, '2026-05-01', 2000); // real income
+    seedTx(db, '2026-05-03', -300); // real expense
+    // an inbound transfer the user tagged "Transferts internes"
+    db.prepare(
+      `INSERT INTO transactions (id, account_id, tx_hash, date, amount, label_raw, label_clean, category_id)
+       VALUES ('tr', 'a1', 'tr', '2026-05-04', 920, 'VIR PERSO', 'VIR PERSO', 'cat-transferts')`,
+    ).run();
+
+    const { balance, series } = getDashboardMetrics(db, 'a1');
+    expect(series[0]).toMatchObject({ month: '2026-05', income: 2000, expense: -300, net: 1700 });
+    // balance still reflects the real cash position (transfer included)
+    expect(balance).toBe(2620);
+    db.close();
+  });
+
   it('scopes to the requested account', () => {
     const db = freshDb();
     db.prepare("INSERT INTO accounts (id, name, type) VALUES ('a2', 'Autre', 'checking')").run();
