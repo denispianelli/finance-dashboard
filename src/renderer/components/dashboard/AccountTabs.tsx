@@ -12,10 +12,12 @@ export function AccountTabs({
   accounts,
   activeId,
   onSelect,
+  onAdd,
 }: {
   accounts: Account[];
   activeId: string;
   onSelect: (id: string) => void;
+  onAdd?: () => void;
 }) {
   return (
     <div className="overflow-hidden rounded-lg border border-line-2 bg-ink-2">
@@ -62,13 +64,15 @@ export function AccountTabs({
             </button>
           );
         })}
-        <div
+        <button
+          type="button"
           aria-label="Ajouter un compte"
-          className="flex flex-col items-center justify-center gap-1 px-4 py-3 text-paper-dim"
+          onClick={onAdd}
+          className="flex flex-col items-center justify-center gap-1 px-4 py-3 text-paper-dim transition-colors hover:bg-ink-3 hover:text-paper"
         >
           <Plus size={16} strokeWidth={1.6} />
           <span className="hidden font-sans text-[9px] xl:inline">Ajouter</span>
-        </div>
+        </button>
       </div>
     </div>
   );

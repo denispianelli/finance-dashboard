@@ -1,5 +1,12 @@
 import type { AggregationMode } from './taxonomy';
 
+/** Input to create a new account. `type` defaults to checking; bank is a
+ *  free-text label for display (e.g. "LCL", "Boursorama"). */
+export interface CreateAccountInput {
+  readonly name: string;
+  readonly bankId: string | null;
+}
+
 /** One account row plus derived totals for the account picker / KPI surfaces. */
 export interface AccountSummary {
   readonly id: string;

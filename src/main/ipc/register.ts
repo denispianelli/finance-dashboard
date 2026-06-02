@@ -10,6 +10,7 @@ import { handleDashboardGetAccounts } from './handlers/dashboardGetAccounts';
 import { handleDashboardGetTransactions } from './handlers/dashboardGetTransactions';
 import { handleDashboardAggregate } from './handlers/dashboardAggregate';
 import { handleDashboardMetrics } from './handlers/dashboardMetrics';
+import { handleAccountsCreate } from './handlers/accounts';
 import {
   handleCategoriesList,
   handleCategoriesRename,
@@ -48,6 +49,7 @@ export function registerAllHandlers(): void {
   register(CHANNELS.dashboardGetTransactions, handleDashboardGetTransactions);
   register(CHANNELS.dashboardAggregate, handleDashboardAggregate);
   register(CHANNELS.dashboardMetrics, handleDashboardMetrics);
+  register(CHANNELS.accountsCreate, handleAccountsCreate);
   register(CHANNELS.categoriesList, () => handleCategoriesList());
   register(CHANNELS.categoriesRename, handleCategoriesRename);
   register(CHANNELS.categoriesCreate, handleCategoriesCreate);

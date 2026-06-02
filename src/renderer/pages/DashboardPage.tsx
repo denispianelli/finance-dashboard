@@ -22,7 +22,7 @@ import {
 import type { AppOutletContext } from '../lib/outletContext';
 
 export function DashboardPage() {
-  const { refreshToken } = useOutletContext<AppOutletContext>();
+  const { refreshToken, openImport } = useOutletContext<AppOutletContext>();
   const {
     accounts,
     transactions,
@@ -66,6 +66,7 @@ export function DashboardPage() {
         accounts={accounts.map(toAccount)}
         activeId={selectedAccountId ?? ''}
         onSelect={selectAccount}
+        onAdd={openImport}
       />
 
       <KpiGrid>

@@ -6,7 +6,9 @@ import { cleanup } from '@testing-library/react';
 
 vi.mock('@renderer/hooks/useImport');
 vi.mock('sonner', () => ({ toast: vi.fn() }));
+vi.mock('@renderer/ipc/client', () => ({ ipc: { invoke: vi.fn() } }));
 
+import { ipc } from '@renderer/ipc/client';
 import { useImport } from '@renderer/hooks/useImport';
 import { toast } from 'sonner';
 import { ImportModal } from '@renderer/components/ImportModal';
@@ -64,9 +66,30 @@ function makeReviewExtraction(over: Partial<StatementExtraction> = {}): Statemen
   };
 }
 
+const mockInvoke = vi.mocked(ipc.invoke);
+
 beforeEach(() => {
   mockUseImport.mockReset();
   mockToast.mockReset();
+  mockInvoke.mockReset();
+  mockInvoke.mockImplementation(((channel: string) => {
+    if (channel === 'dashboard:getAccounts') {
+      return Promise.resolve({
+        accounts: [
+          {
+            id: 'acc-lcl-default',
+            name: 'Compte LCL',
+            type: 'checking',
+            bankId: 'lcl',
+            currency: 'EUR',
+            balance: 0,
+            txCount: 0,
+          },
+        ],
+      });
+    }
+    return Promise.resolve(undefined);
+  }) as typeof ipc.invoke);
 });
 
 describe('ImportModal — pick state', () => {
@@ -83,12 +106,14 @@ describe('ImportModal — pick state', () => {
     expect(screen.getByRole('button', { name: /chargement/i })).toBeDisabled();
   });
 
-  it('calls pickAndExtract when Parcourir is clicked', async () => {
+  it('calls pickAndExtract with the selected account when Parcourir is clicked', async () => {
     const hook = makeHook({ step: 'idle' });
     mockUseImport.mockReturnValue(hook);
     render(<ImportModal open={true} onClose={vi.fn()} />);
+    // Wait for the account list to load (Parcourir is disabled until an account is selected).
+    await screen.findByRole('option', { name: /Compte LCL/i });
     await userEvent.click(screen.getByRole('button', { name: /parcourir/i }));
-    expect(hook.pickAndExtract).toHaveBeenCalled();
+    expect(hook.pickAndExtract).toHaveBeenCalledWith('acc-lcl-default');
   });
 });
 
@@ -106,6 +131,7 @@ describe('ImportModal — review state', () => {
         },
       }),
       filePath: '/tmp/test.ofx',
+      accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: false,
     };
@@ -128,6 +154,7 @@ describe('ImportModal — review state', () => {
         },
       }),
       filePath: '/tmp/test.pdf',
+      accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: false,
     };
@@ -151,6 +178,7 @@ describe('ImportModal — review state', () => {
         },
       }),
       filePath: '/tmp/test.ofx',
+      accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: false,
     };
@@ -172,6 +200,7 @@ describe('ImportModal — review state', () => {
         },
       }),
       filePath: '/tmp/test.ofx',
+      accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: false,
     };
@@ -186,6 +215,7 @@ describe('ImportModal — review state', () => {
       step: 'review',
       extraction: makeReviewExtraction(),
       filePath: '/tmp/test.ofx',
+      accountId: 'acc-lcl-default',
       selected: new Set(),
       acknowledgedCannotVerify: false,
     };
@@ -208,6 +238,7 @@ describe('ImportModal — review state', () => {
         },
       }),
       filePath: '/tmp/test.pdf',
+      accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: false,
     };
@@ -230,6 +261,7 @@ describe('ImportModal — review state', () => {
         },
       }),
       filePath: '/tmp/test.pdf',
+      accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: true,
     };
@@ -255,6 +287,7 @@ describe('ImportModal — review state', () => {
         },
       }),
       filePath: '/tmp/test.ofx',
+      accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: false,
     };
@@ -280,6 +313,7 @@ describe('ImportModal — review state', () => {
         },
       }),
       filePath: '/tmp/test.ofx',
+      accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: false,
     };
@@ -295,6 +329,7 @@ describe('ImportModal — review state', () => {
       step: 'review',
       extraction: makeReviewExtraction(),
       filePath: '/tmp/test.ofx',
+      accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: false,
     });

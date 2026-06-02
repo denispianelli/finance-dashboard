@@ -10,6 +10,7 @@ export type ImportState =
       step: 'review';
       extraction: StatementExtraction;
       filePath: string;
+      accountId: string;
       selected: Set<string>;
       acknowledgedCannotVerify: boolean;
     }
@@ -19,7 +20,7 @@ export type ImportState =
 
 export interface UseImport {
   state: ImportState;
-  pickAndExtract: () => Promise<void>;
+  pickAndExtract: (accountId: string) => Promise<void>;
   toggleTx: (txHash: string) => void;
   toggleAll: () => void;
   setAcknowledgedCannotVerify: (value: boolean) => void;
@@ -55,7 +56,7 @@ export function useImport(): UseImport {
     }
   }
 
-  async function pickAndExtract() {
+  async function pickAndExtract(accountId: string) {
     setStateAndRef({ step: 'picking' });
     const pickRes = await ipc.invoke('import:pickFile', {});
     if (pickRes.cancelled) {
@@ -66,7 +67,7 @@ export function useImport(): UseImport {
     setStateAndRef({ step: 'extracting' });
     const extractRes = await ipc.invoke('import:extract', {
       path: pickRes.path,
-      accountId: 'acc-lcl-default',
+      accountId,
     });
 
     if (!extractRes.ok) {
@@ -85,6 +86,7 @@ export function useImport(): UseImport {
       step: 'review',
       extraction,
       filePath: pickRes.path,
+      accountId,
       selected,
       acknowledgedCannotVerify: false,
     });
@@ -124,14 +126,14 @@ export function useImport(): UseImport {
   async function confirm() {
     const current = stateRef.current;
     if (current.step !== 'review') return;
-    const { extraction, filePath, selected, acknowledgedCannotVerify } = current;
+    const { extraction, filePath, accountId, selected, acknowledgedCannotVerify } = current;
 
     setStateAndRef({ step: 'confirming' });
 
     const ack = extraction.sourceType === 'ofx' ? true : acknowledgedCannotVerify;
     const res = await ipc.invoke('import:confirm', {
       path: filePath,
-      accountId: 'acc-lcl-default',
+      accountId,
       selectedHashes: [...selected],
       acknowledgedCannotVerify: ack,
     });

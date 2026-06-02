@@ -1,6 +1,7 @@
 import type { StatementExtraction, ImportFileType } from './import';
 import type {
   AccountSummary,
+  CreateAccountInput,
   DashboardTransaction,
   GetTransactionsQuery,
   AggregateQuery,
@@ -86,6 +87,7 @@ export interface IpcContract {
   };
   'dashboard:aggregate': { payload: AggregateQuery; response: { buckets: AggregationBucket[] } };
   'dashboard:metrics': { payload: { accountId: string }; response: DashboardMetrics };
+  'accounts:create': { payload: CreateAccountInput; response: { account: AccountSummary } };
   'categories:list': { payload: Record<string, never>; response: { categories: CategoryDTO[] } };
   'categories:rename': { payload: RenameCategoryInput; response: { categories: CategoryDTO[] } };
   'categories:create': { payload: CreateCategoryInput; response: { category: CategoryDTO } };

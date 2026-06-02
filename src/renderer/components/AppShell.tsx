@@ -23,7 +23,16 @@ export function AppShell() {
             compressed (which collapsed AccountTabs when the window
             was short). Sections keep their natural height; main scrolls. */}
         <main className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 pb-6 pt-5 xl:gap-5 xl:px-7 xl:pb-8 xl:pt-6 [&>*]:shrink-0">
-          <Outlet context={{ refreshToken } satisfies AppOutletContext} />
+          <Outlet
+            context={
+              {
+                refreshToken,
+                openImport: () => {
+                  setImportOpen(true);
+                },
+              } satisfies AppOutletContext
+            }
+          />
         </main>
       </div>
       <ImportModal

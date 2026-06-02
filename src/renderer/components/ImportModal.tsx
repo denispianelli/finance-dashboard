@@ -1,6 +1,7 @@
-import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Plus, XCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { ipc } from '@renderer/ipc/client';
 import { useImport } from '../hooks/useImport';
 import { TransactionReviewTable } from './TransactionReviewTable';
 import { Button } from './ui/button';
@@ -14,6 +15,10 @@ import {
   DialogTitle,
 } from './ui/dialog';
 import type { StatementExtraction } from '@shared/types/import';
+import type { AccountSummary, CreateAccountInput } from '@shared/types/dashboard';
+
+const FIELD =
+  'h-9 w-full rounded-md border border-line-2 bg-ink-3 px-2.5 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
 
 interface ImportModalProps {
   open: boolean;
@@ -40,7 +45,38 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
   });
 
   const [overlapDismissed, setOverlapDismissed] = useState(false);
+  const [accounts, setAccounts] = useState<AccountSummary[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const insertedCount = state.step === 'done' ? state.insertedCount : 0;
+
+  // Load the account list whenever the modal opens, so the user can pick which
+  // account the statement goes into (or create a new one).
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    void ipc.invoke('dashboard:getAccounts', {}).then(({ accounts: next }) => {
+      if (!active) return;
+      setAccounts(next);
+      setSelectedAccountId((prev) =>
+        prev !== '' && next.some((a) => a.id === prev) ? prev : (next[0]?.id ?? ''),
+      );
+    });
+    return () => {
+      active = false;
+    };
+  }, [open]);
+
+  async function createAccountInline(input: CreateAccountInput): Promise<void> {
+    try {
+      const { account } = await ipc.invoke('accounts:create', input);
+      setAccounts((prev) => [...prev, account]);
+      setSelectedAccountId(account.id);
+      onImportedRef.current?.(); // refresh the dashboard tabs so the new account shows
+      toast.success(`Compte « ${account.name} » créé`);
+    } catch {
+      toast.error('Compte non créé');
+    }
+  }
 
   useEffect(() => {
     if (state.step !== 'done') return;
@@ -119,8 +155,12 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
 
         {(state.step === 'idle' || state.step === 'picking' || state.step === 'extracting') && (
           <PickView
+            accounts={accounts}
+            selectedAccountId={selectedAccountId}
+            onSelectAccount={setSelectedAccountId}
+            onCreateAccount={createAccountInline}
             onPick={() => {
-              void pickAndExtract();
+              if (selectedAccountId !== '') void pickAndExtract(selectedAccountId);
             }}
             loading={state.step === 'picking' || state.step === 'extracting'}
           />
@@ -130,13 +170,116 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
   );
 }
 
-function PickView({ onPick, loading }: { onPick: () => void; loading: boolean }) {
+function PickView({
+  accounts,
+  selectedAccountId,
+  onSelectAccount,
+  onCreateAccount,
+  onPick,
+  loading,
+}: {
+  accounts: AccountSummary[];
+  selectedAccountId: string;
+  onSelectAccount: (id: string) => void;
+  onCreateAccount: (input: CreateAccountInput) => Promise<void>;
+  onPick: () => void;
+  loading: boolean;
+}) {
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState('');
+  const [bank, setBank] = useState('');
+
+  async function submitNew() {
+    if (name.trim() === '') return;
+    await onCreateAccount({ name, bankId: bank.trim() === '' ? null : bank });
+    setCreating(false);
+    setName('');
+    setBank('');
+  }
+
   return (
-    <div className="flex flex-col items-center gap-4 py-8">
-      <p className="text-sm text-muted-foreground">OFX recommandé · PDF pour les archives</p>
-      <Button onClick={onPick} disabled={loading}>
-        {loading ? 'Chargement…' : 'Parcourir…'}
-      </Button>
+    <div className="flex flex-col gap-4 py-6">
+      <div className="flex flex-col gap-1.5">
+        <label className="font-sans text-[11px] font-medium uppercase tracking-[0.06em] text-paper-mute">
+          Importer dans
+        </label>
+        {creating ? (
+          <div className="flex flex-col gap-2 rounded-md border border-line-2 bg-ink-2/60 p-2.5">
+            <input
+              autoFocus
+              value={name}
+              placeholder="Nom du compte (ex. Compte joint)"
+              onChange={(e) => {
+                setName(e.target.value);
+              }}
+              className={FIELD}
+            />
+            <input
+              value={bank}
+              placeholder="Banque (optionnel, ex. Boursorama)"
+              onChange={(e) => {
+                setBank(e.target.value);
+              }}
+              className={FIELD}
+            />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                disabled={name.trim() === ''}
+                onClick={() => {
+                  void submitNew();
+                }}
+              >
+                Créer le compte
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setCreating(false);
+                }}
+              >
+                Annuler
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <select
+              value={selectedAccountId}
+              aria-label="Compte de destination"
+              onChange={(e) => {
+                onSelectAccount(e.target.value);
+              }}
+              className={FIELD}
+            >
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                  {a.bankId !== null ? ` · ${a.bankId}` : ''}
+                </option>
+              ))}
+            </select>
+            <Button
+              size="sm"
+              variant="secondary"
+              aria-label="Nouveau compte"
+              onClick={() => {
+                setCreating(true);
+              }}
+            >
+              <Plus size={14} strokeWidth={1.8} />
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col items-center gap-3 border-t border-line-2 pt-4">
+        <p className="text-sm text-muted-foreground">OFX recommandé · PDF pour les archives</p>
+        <Button onClick={onPick} disabled={loading || selectedAccountId === '' || creating}>
+          {loading ? 'Chargement…' : 'Parcourir…'}
+        </Button>
+      </div>
     </div>
   );
 }

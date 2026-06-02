@@ -9,6 +9,7 @@ export const CHANNELS = {
   dashboardGetTransactions: 'dashboard:getTransactions',
   dashboardAggregate: 'dashboard:aggregate',
   dashboardMetrics: 'dashboard:metrics',
+  accountsCreate: 'accounts:create',
   categoriesList: 'categories:list',
   categoriesRename: 'categories:rename',
   categoriesCreate: 'categories:create',

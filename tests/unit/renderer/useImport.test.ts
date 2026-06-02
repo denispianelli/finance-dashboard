@@ -70,7 +70,7 @@ describe('useImport', () => {
     mockInvoke.mockResolvedValueOnce({ cancelled: true });
     const { result } = renderHook(() => useImport());
     await act(async () => {
-      await result.current.pickAndExtract();
+      await result.current.pickAndExtract('acc-lcl-default');
     });
     expect(result.current.state.step).toBe('idle');
   });
@@ -82,7 +82,7 @@ describe('useImport', () => {
 
     const { result } = renderHook(() => useImport());
     await act(async () => {
-      await result.current.pickAndExtract();
+      await result.current.pickAndExtract('acc-lcl-default');
     });
 
     expect(result.current.state.step).toBe('review');
@@ -99,7 +99,7 @@ describe('useImport', () => {
 
     const { result } = renderHook(() => useImport());
     await act(async () => {
-      await result.current.pickAndExtract();
+      await result.current.pickAndExtract('acc-lcl-default');
     });
 
     expect(result.current.state.step).toBe('error');
@@ -117,7 +117,7 @@ describe('useImport', () => {
 
     const { result } = renderHook(() => useImport());
     await act(async () => {
-      await result.current.pickAndExtract();
+      await result.current.pickAndExtract('acc-lcl-default');
     });
     act(() => {
       result.current.toggleTx('h1');
@@ -135,7 +135,7 @@ describe('useImport', () => {
 
     const { result } = renderHook(() => useImport());
     await act(async () => {
-      await result.current.pickAndExtract();
+      await result.current.pickAndExtract('acc-lcl-default');
     });
     act(() => {
       result.current.toggleTx('h1');
@@ -156,7 +156,7 @@ describe('useImport', () => {
 
     const { result } = renderHook(() => useImport());
     await act(async () => {
-      await result.current.pickAndExtract();
+      await result.current.pickAndExtract('acc-lcl-default');
     });
     act(() => {
       result.current.toggleAll();
@@ -174,7 +174,7 @@ describe('useImport', () => {
 
     const { result } = renderHook(() => useImport());
     await act(async () => {
-      await result.current.pickAndExtract();
+      await result.current.pickAndExtract('acc-lcl-default');
     });
     act(() => {
       result.current.toggleAll();
@@ -195,7 +195,7 @@ describe('useImport', () => {
 
     const { result } = renderHook(() => useImport());
     await act(async () => {
-      await result.current.pickAndExtract();
+      await result.current.pickAndExtract('acc-lcl-default');
     });
     act(() => {
       result.current.setAcknowledgedCannotVerify(true);
@@ -214,7 +214,7 @@ describe('useImport', () => {
 
     const { result } = renderHook(() => useImport());
     await act(async () => {
-      await result.current.pickAndExtract();
+      await result.current.pickAndExtract('acc-lcl-default');
     });
     await act(async () => {
       await result.current.confirm();
@@ -234,7 +234,7 @@ describe('useImport', () => {
 
     const { result } = renderHook(() => useImport());
     await act(async () => {
-      await result.current.pickAndExtract();
+      await result.current.pickAndExtract('acc-lcl-default');
     });
     await act(async () => {
       await result.current.confirm();
@@ -267,7 +267,7 @@ describe('useImport', () => {
 
     const { result } = renderHook(() => useImport());
     await act(async () => {
-      await result.current.pickAndExtract();
+      await result.current.pickAndExtract('acc-lcl-default');
     });
     act(() => {
       result.current.setAcknowledgedCannotVerify(true);
@@ -291,7 +291,7 @@ describe('useImport', () => {
 
     const { result } = renderHook(() => useImport());
     await act(async () => {
-      await result.current.pickAndExtract();
+      await result.current.pickAndExtract('acc-lcl-default');
     });
     await act(async () => {
       await result.current.confirm();
@@ -312,7 +312,7 @@ describe('useImport', () => {
 
     const { result } = renderHook(() => useImport());
     await act(async () => {
-      await result.current.pickAndExtract();
+      await result.current.pickAndExtract('acc-lcl-default');
     });
     await act(async () => {
       await result.current.confirm();
@@ -331,7 +331,7 @@ describe('useImport', () => {
 
     const { result } = renderHook(() => useImport());
     await act(async () => {
-      await result.current.pickAndExtract();
+      await result.current.pickAndExtract('acc-lcl-default');
     });
     act(() => {
       result.current.reset();
