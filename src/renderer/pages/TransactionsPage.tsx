@@ -5,13 +5,14 @@ import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Overline } from '../components/ui/overline';
 import { AccountTabs } from '../components/dashboard/AccountTabs';
 import { TxTableHeader, TxTableRow } from '../components/dashboard/TxTable';
+import { PeriodFilter, type DateSel } from '../components/dashboard/PeriodFilter';
 import { useDashboard } from '../hooks/useDashboard';
 import { toAccount, toTxRow } from '../lib/dashboardMap';
 import {
   filterTransactions,
+  periodStart,
   toLocalISODate,
   type TxFilters,
-  type TxPeriod,
   type TxType,
 } from '../lib/filterTransactions';
 import { cn } from '../lib/utils';
@@ -23,13 +24,6 @@ const FULL_HISTORY_LIMIT = 100000;
 const NONE = '__none__';
 /** Approximate rendered height of one row, used as the virtualizer's size estimate. */
 const ROW_ESTIMATE = 57;
-
-const PERIODS: { value: TxPeriod; label: string }[] = [
-  { value: 'all', label: 'Tout' },
-  { value: '30d', label: '30 jours' },
-  { value: '3m', label: '3 mois' },
-  { value: 'year', label: 'Cette année' },
-];
 
 const TYPES: { value: TxType; label: string }[] = [
   { value: 'all', label: 'Tous' },
@@ -83,21 +77,26 @@ export function TransactionsPage() {
   } = useDashboard(refreshToken, { transactionLimit: FULL_HISTORY_LIMIT });
 
   const [today] = useState(() => toLocalISODate(new Date()));
-  const [period, setPeriod] = useState<TxPeriod>('all');
+  const [dateSel, setDateSel] = useState<DateSel>({ kind: 'preset', preset: 'all' });
   const [type, setType] = useState<TxType>('all');
   const [category, setCategory] = useState<string>('all');
   const [query, setQuery] = useState('');
 
+  const { from, to } = useMemo<{ from: string | null; to: string | null }>(() => {
+    if (dateSel.kind === 'range') return { from: dateSel.from, to: dateSel.to };
+    return { from: periodStart(dateSel.preset, today), to: null };
+  }, [dateSel, today]);
+
   const filtered = useMemo(() => {
     const filters: TxFilters = {
-      period,
-      today,
+      from,
+      to,
       type,
       query,
       categoryId: category === NONE ? null : category,
     };
     return filterTransactions(transactions, filters);
-  }, [transactions, period, today, type, query, category]);
+  }, [transactions, from, to, type, query, category]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -134,7 +133,7 @@ export function TransactionsPage() {
         </CardHeader>
 
         <div className="flex flex-wrap items-center gap-3 pb-4">
-          <Segmented options={PERIODS} value={period} onChange={setPeriod} />
+          <PeriodFilter value={dateSel} onChange={setDateSel} />
           <Segmented options={TYPES} value={type} onChange={setType} />
           <select
             aria-label="Catégorie"

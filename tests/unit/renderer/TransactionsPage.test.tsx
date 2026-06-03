@@ -111,6 +111,9 @@ beforeEach(() => {
       return 300;
     },
   });
+  Element.prototype.hasPointerCapture = () => false;
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  Element.prototype.scrollIntoView = () => {};
 });
 
 afterEach(() => {
@@ -197,5 +200,12 @@ describe('TransactionsPage', () => {
     expect(await screen.findByText('Op 00')).toBeInTheDocument();
     const rendered = screen.getAllByText(/^Op \d{2}$/);
     expect(rendered.length).toBeLessThan(30);
+  });
+
+  it('renders the Période control with presets in its popover', async () => {
+    renderPage();
+    await screen.findByText('Carrefour');
+    fireEvent.click(screen.getByRole('button', { name: /Tout/ }));
+    expect(await screen.findByText('30 derniers jours')).toBeInTheDocument();
   });
 });
