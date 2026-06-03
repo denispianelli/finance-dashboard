@@ -29,15 +29,19 @@ export interface TxTableProps {
 
 const HEAD =
   'font-sans text-[9px] font-semibold uppercase tracking-[0.18em] text-paper-mute pb-2.5 border-b border-line-2';
-const CELL = 'py-[11px] border-b border-line-1';
+const CELL = 'py-[11px]';
 
-const GRID_COLS =
-  'grid-cols-[72px_24px_1fr_max-content_max-content] ' +
-  'xl:grid-cols-[84px_28px_1fr_max-content_max-content_max-content_24px]';
+/** Shared column template. Fixed widths (description is the only flexible 1fr) so each row is
+ *  an independent grid that still aligns with the header and the other rows — which lets the
+ *  Transactions page virtualize rows as positionable boxes. */
+export const TX_GRID =
+  'grid items-center gap-x-3 xl:gap-x-3.5 ' +
+  'grid-cols-[72px_24px_1fr_160px_96px] ' +
+  'xl:grid-cols-[84px_28px_1fr_180px_110px_56px_24px]';
 
-export function TxTable({ rows, categories, onReassign, onCreateCategory }: TxTableProps) {
+export function TxTableHeader() {
   return (
-    <div className={cn('grid items-center gap-x-3 xl:gap-x-3.5', GRID_COLS)}>
+    <div className={TX_GRID}>
       <span className={HEAD} />
       <span className={HEAD} />
       <span className={HEAD}>Description</span>
@@ -45,63 +49,83 @@ export function TxTable({ rows, categories, onReassign, onCreateCategory }: TxTa
       <span className={cn(HEAD, 'text-right')}>Montant</span>
       <span className={cn(HEAD, 'hidden text-right xl:block')}>Conf.</span>
       <span className={cn(HEAD, 'hidden xl:block')} />
-      {rows.map((t, i) => (
-        <div key={i} className="group contents">
-          <span
-            className={cn(
-              CELL,
-              'font-mono text-xs tabular-nums text-paper-mute group-hover:bg-ink-3',
-            )}
-          >
-            {t.date}
+    </div>
+  );
+}
+
+export interface TxTableRowProps {
+  row: TxRow;
+  categories?: CategoryDTO[];
+  onReassign?: (transactionId: string, categoryId: string) => void;
+  onCreateCategory?: (input: CreateCategoryInput) => Promise<CategoryDTO>;
+}
+
+export function TxTableRow({ row: t, categories, onReassign, onCreateCategory }: TxTableRowProps) {
+  return (
+    <div className={cn(TX_GRID, 'border-b border-line-1 hover:bg-ink-3')}>
+      <span className={cn(CELL, 'font-mono text-xs tabular-nums text-paper-mute')}>{t.date}</span>
+      <span className={CELL}>
+        <CategoryIcon name={t.icon} />
+      </span>
+      <span className={cn(CELL, 'flex min-w-0 flex-col gap-0.5')}>
+        <span className="truncate font-sans text-[13px] font-medium leading-tight text-paper">
+          {t.main}
+        </span>
+        <span className="truncate font-mono text-[11px] tracking-[0.02em] text-paper-dim">
+          {t.sub}
+        </span>
+      </span>
+      <span className={cn(CELL, 'min-w-0')}>
+        {categories && onReassign && onCreateCategory ? (
+          <CategoryPicker
+            categories={categories}
+            current={{ name: t.catName, color: t.catColor }}
+            onSelect={(id) => {
+              onReassign(t.id, id);
+            }}
+            onCreate={onCreateCategory}
+          />
+        ) : (
+          <span className="inline-flex min-w-0 items-center gap-1.5 font-sans text-[11px] font-medium text-paper-soft">
+            <span
+              className="h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ background: t.catColor }}
+            />
+            <span className="truncate">{t.catName}</span>
           </span>
-          <span className={cn(CELL, 'group-hover:bg-ink-3')}>
-            <CategoryIcon name={t.icon} />
-          </span>
-          <span className={cn(CELL, 'flex min-w-0 flex-col gap-0.5 group-hover:bg-ink-3')}>
-            <span className="truncate font-sans text-[13px] font-medium leading-tight text-paper">
-              {t.main}
-            </span>
-            <span className="font-mono text-[11px] tracking-[0.02em] text-paper-dim">{t.sub}</span>
-          </span>
-          <span className={cn(CELL, 'group-hover:bg-ink-3')}>
-            {categories && onReassign && onCreateCategory ? (
-              <CategoryPicker
-                categories={categories}
-                current={{ name: t.catName, color: t.catColor }}
-                onSelect={(id) => {
-                  onReassign(t.id, id);
-                }}
-                onCreate={onCreateCategory}
-              />
-            ) : (
-              <span className="inline-flex items-center gap-1.5 font-sans text-[11px] font-medium text-paper-soft">
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: t.catColor }} />
-                {t.catName}
-              </span>
-            )}
-          </span>
-          <span className={cn(CELL, 'text-right group-hover:bg-ink-3')}>
-            <Money value={t.amount} kind={t.amountKind} className="text-[13px] font-medium" />
-          </span>
-          <span
-            className={cn(
-              CELL,
-              'hidden text-right font-mono text-[11px] font-medium group-hover:bg-ink-3 xl:block',
-              t.confLow ? 'text-flag' : 'text-paper-mute',
-            )}
-          >
-            {t.conf}
-          </span>
-          <span
-            className={cn(
-              CELL,
-              'hidden justify-center text-paper-dim group-hover:bg-ink-3 xl:flex',
-            )}
-          >
-            <MoreHorizontal size={14} strokeWidth={1.6} />
-          </span>
-        </div>
+        )}
+      </span>
+      <span className={cn(CELL, 'text-right')}>
+        <Money value={t.amount} kind={t.amountKind} className="text-[13px] font-medium" />
+      </span>
+      <span
+        className={cn(
+          CELL,
+          'hidden text-right font-mono text-[11px] font-medium xl:block',
+          t.confLow ? 'text-flag' : 'text-paper-mute',
+        )}
+      >
+        {t.conf}
+      </span>
+      <span className={cn(CELL, 'hidden justify-center text-paper-dim xl:flex')}>
+        <MoreHorizontal size={14} strokeWidth={1.6} />
+      </span>
+    </div>
+  );
+}
+
+export function TxTable({ rows, categories, onReassign, onCreateCategory }: TxTableProps) {
+  return (
+    <div>
+      <TxTableHeader />
+      {rows.map((t) => (
+        <TxTableRow
+          key={t.id}
+          row={t}
+          categories={categories}
+          onReassign={onReassign}
+          onCreateCategory={onCreateCategory}
+        />
       ))}
     </div>
   );
