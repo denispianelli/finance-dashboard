@@ -1,5 +1,6 @@
 import {
   ArrowLeftRight,
+  Landmark,
   LayoutDashboard,
   LineChart,
   MessageSquare,
@@ -27,6 +28,7 @@ const GROUPS: { key: string; label: string; items: NavItem[] }[] = [
     items: [
       { path: '/', label: 'Tableau de bord', Icon: LayoutDashboard, enabled: true },
       { path: '/transactions', label: 'Transactions', Icon: ArrowLeftRight, enabled: true },
+      { path: '/accounts', label: 'Comptes', Icon: Landmark, enabled: true },
       { path: '/categories', label: 'Catégories', Icon: Tags, enabled: true },
       { path: '/reports', label: 'Rapports', Icon: LineChart, enabled: false },
     ],
