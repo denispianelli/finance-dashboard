@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import type { AppOutletContext } from '@renderer/lib/outletContext';
 import { ImportModal } from './ImportModal';
+import { CreateAccountModal } from './accounts/CreateAccountModal';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 
 export function AppShell() {
   const [importOpen, setImportOpen] = useState(false);
+  const [createAccountOpen, setCreateAccountOpen] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
 
   return (
@@ -30,6 +32,9 @@ export function AppShell() {
                 openImport: () => {
                   setImportOpen(true);
                 },
+                openCreateAccount: () => {
+                  setCreateAccountOpen(true);
+                },
               } satisfies AppOutletContext
             }
           />
@@ -41,6 +46,15 @@ export function AppShell() {
           setImportOpen(false);
         }}
         onImported={() => {
+          setRefreshToken((t) => t + 1);
+        }}
+      />
+      <CreateAccountModal
+        open={createAccountOpen}
+        onClose={() => {
+          setCreateAccountOpen(false);
+        }}
+        onCreated={() => {
           setRefreshToken((t) => t + 1);
         }}
       />

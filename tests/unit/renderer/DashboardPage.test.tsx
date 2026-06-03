@@ -76,7 +76,17 @@ function renderPage() {
   return render(
     <MemoryRouter initialEntries={['/']}>
       <Routes>
-        <Route element={<Outlet context={{ refreshToken: 0, openImport: () => undefined }} />}>
+        <Route
+          element={
+            <Outlet
+              context={{
+                refreshToken: 0,
+                openImport: () => undefined,
+                openCreateAccount: () => undefined,
+              }}
+            />
+          }
+        >
           <Route path="/" element={<DashboardPage />} />
         </Route>
       </Routes>

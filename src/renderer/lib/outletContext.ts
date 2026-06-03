@@ -3,6 +3,8 @@
  *  can refetch. */
 export interface AppOutletContext {
   readonly refreshToken: number;
-  /** Open the import modal (e.g. from the account tabs "+ Ajouter" button). */
+  /** Open the import-a-statement modal (Topbar). */
   readonly openImport: () => void;
+  /** Open the create-account modal (account tabs "+ Ajouter" button). */
+  readonly openCreateAccount: () => void;
 }
