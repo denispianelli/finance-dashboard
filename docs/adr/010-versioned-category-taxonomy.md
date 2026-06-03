@@ -1,7 +1,7 @@
 # ADR-010 — Versioned category taxonomy
 
-- **Status** : Accepted
-- **Date** : 2026-05-20 (proposed) — 2026-05-20 (accepted)
+- **Status** : Accepted — **amended 2026-06-03 (scope locked for MVP, see Amendment below)**
+- **Date** : 2026-05-20 (proposed) — 2026-05-20 (accepted) — 2026-06-03 (amended)
 - **Category** : Data, Product
 - **Related** : ADR-009 (product scope realignment), ADR-006 (multi-level deduplication — same history-preservation philosophy)
 
@@ -96,3 +96,41 @@ PRs and do not invalidate this decision. The design spec
 (`docs/superpowers/specs/2026-05-20-versioned-taxonomy-design.md`) remains
 the implementation contract — consult it for the full operation, resolver
 and aggregation semantics.
+
+## Amendment (2026-06-03) — scope locked for MVP
+
+The versioned taxonomy shipped **in full** (T0–T3: schema, rename/split/merge
+ops, the dual-mode resolver and as-of aggregation, the latter wired into
+`src/main/ipc/handlers/dashboardAggregate.ts`). This amendment does **not**
+undo any of it — removing working, tested, wired code would be pure churn and
+risk for no user-visible gain. It **locks the product surface** for the MVP.
+
+### Product stance (MVP)
+
+- **Only `rename` is exposed to the user** (in place, via the Catégories
+  page). `splitCategory` / `mergeCategories` remain as backend operations but
+  are **not surfaced in the UI** — no taxonomy-restructuring UX is built.
+- **Aggregation effectively uses `as_of_now`.** The `as_of_period` path stays
+  in the code (already implemented and tested) but is **not surfaced**:
+  nothing in the UI lets the user ask for "labels as they were at the time".
+- **No further taxonomy work is planned.** Do not build split/merge UI or an
+  `as_of_period` toggle unless a concrete need actually appears.
+
+### Why
+
+For a single user, a category change is intentional and meant to apply going
+backwards too (`as_of_now`). The dual-mode / period-reconstruction value is
+hypothetical (audit / accounting reproduction). The machinery is already paid
+for, so we keep it — but we don't grow the surface around it. This is the
+anti-over-engineering posture applied to **scope**, not an argument to delete
+working code.
+
+### Reversal
+
+Everything needed to surface the richer model later is already merged: wire
+`splitCategory` / `mergeCategories` to IPC + UI, and expose an `as_of_period`
+toggle on aggregations. No schema or core-logic work required.
+
+> Note: `feat/83-taxonomy-resolver-aggregation` is an abandoned duplicate — a
+> superseded earlier take on T3, which actually landed via PR #95 — and is
+> being removed as part of this cleanup.
