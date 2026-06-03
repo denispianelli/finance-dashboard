@@ -1,4 +1,4 @@
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Overline } from '../components/ui/overline';
@@ -26,13 +26,13 @@ const RECENT_LIMIT = 10;
 
 export function DashboardPage() {
   const { refreshToken, openCreateAccount } = useOutletContext<AppOutletContext>();
+  const navigate = useNavigate();
   const {
     accounts,
     transactions,
     metrics,
     categories,
     selectedAccountId,
-    selectAccount,
     reassign,
     createCategory,
   } = useDashboard(refreshToken);
@@ -68,7 +68,9 @@ export function DashboardPage() {
       <AccountTabs
         accounts={accounts.map(toAccount)}
         activeId={selectedAccountId ?? ''}
-        onSelect={selectAccount}
+        onSelect={(id) => {
+          void navigate(`/transactions?account=${id}`);
+        }}
         onAdd={openCreateAccount}
       />
 
