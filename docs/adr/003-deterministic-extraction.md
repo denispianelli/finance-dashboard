@@ -27,3 +27,10 @@ Using an LLM to parse raw PDF text directly — rejected due to hallucination ri
 - Zero hallucination on figures (deterministic guarantee)
 - Requires text-based PDF (otherwise OCR via Tesseract on demand)
 - LLM column mapping must be cached durably
+
+## Amendment (2026-06-03) — manual edits allowed, audited
+
+Transactions are now user-editable post-import (see ADR-012). This does not
+weaken deterministic extraction: figures are still _extracted_ deterministically
+and never mutated by the LLM or automatically. An edit is an explicit, audited
+user override that preserves the originally-extracted figure.

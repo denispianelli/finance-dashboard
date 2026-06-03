@@ -349,15 +349,15 @@ splits : `docs/superpowers/specs/2026-05-20-versioned-taxonomy-design.md`
 
 ## 11. Pages & UI
 
-| Page         | Rôle                                                                            |
-| ------------ | ------------------------------------------------------------------------------- |
-| Dashboard    | KPIs (solde, revenus, dépenses, épargne), charts (cat + tendance), dernières tx |
-| Transactions | Liste filtrable et éditable, recherche, bulk actions                            |
-| Catégories   | CRUD catégories, règles, sous-catégories                                        |
-| Rapports     | Analyses sur période, comparatifs, exports                                      |
-| Import       | Upload + page de Review (split PDF / extracted)                                 |
-| Chat IA      | Interface conversationnelle avec contexte intelligent                           |
-| Paramètres   | Comptes, modèle LLM, OCR on/off, export/backup, thème                           |
+| Page         | Rôle                                                                                                                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dashboard    | KPIs (solde, revenus, dépenses, épargne), charts (cat + tendance), dernières tx                                                                                                             |
+| Transactions | Liste filtrable et éditable, recherche, bulk actions — transactions are editable (date/label/amount) and deletable post-import; extracted figures are preserved as an audit trail (ADR-012) |
+| Catégories   | CRUD catégories, règles, sous-catégories                                                                                                                                                    |
+| Rapports     | Analyses sur période, comparatifs, exports                                                                                                                                                  |
+| Import       | Upload + page de Review (split PDF / extracted)                                                                                                                                             |
+| Chat IA      | Interface conversationnelle avec contexte intelligent                                                                                                                                       |
+| Paramètres   | Comptes, modèle LLM, OCR on/off, export/backup, thème                                                                                                                                       |
 
 **Design** : dark theme par défaut (cohérent avec mockup validé). Light theme prévu en v2. shadcn/ui + Tailwind. Sidebar persistante à gauche, contenu principal au centre.
 
