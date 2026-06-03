@@ -119,4 +119,29 @@ describe('toTxRow', () => {
       icon: 'car',
     });
   });
+
+  it('marks an edited row and builds an original-values hint', () => {
+    const row = toTxRow(
+      makeTx({
+        editedAt: '2026-06-03 10:00:00',
+        originalAmount: -84.3,
+        originalDate: '2026-05-14',
+      }),
+    );
+    expect(row.edited).toBe(true);
+    expect(row.originalHint).toContain('84,30');
+    expect(row.originalHint).toContain('14/05');
+  });
+
+  it('is not marked edited when editedAt is null', () => {
+    expect(toTxRow(makeTx()).edited).toBe(false);
+    expect(toTxRow(makeTx()).originalHint).toBeNull();
+  });
+
+  it('exposes raw editable values for the inline editor', () => {
+    const row = toTxRow(makeTx({ date: '2026-05-14', amount: -84.3, labelClean: 'Carrefour' }));
+    expect(row.editDate).toBe('2026-05-14');
+    expect(row.editAmount).toBe(-84.3);
+    expect(row.editLabel).toBe('Carrefour');
+  });
 });

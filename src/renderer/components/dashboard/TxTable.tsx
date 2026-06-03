@@ -15,6 +15,14 @@ export interface TxRow {
   catName: string;
   amount: number;
   amountKind: MoneyKind;
+  /** True when the row was edited by hand (shows the "modifié" marker). */
+  edited: boolean;
+  /** Tooltip text with the original extracted figures, or null. */
+  originalHint: string | null;
+  /** Raw values that seed the inline editor. */
+  editDate: string; // ISO yyyy-mm-dd
+  editAmount: number;
+  editLabel: string;
 }
 
 export interface TxTableProps {

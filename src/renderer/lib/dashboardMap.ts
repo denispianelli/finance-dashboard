@@ -33,6 +33,15 @@ export function toAccount(summary: AccountSummary): Account {
   };
 }
 
+/** "extrait : -84,30 · 14/05" from the snapshotted figures, or null if none. */
+function originalHint(tx: DashboardTransaction): string | null {
+  if (tx.editedAt === null) return null;
+  const parts: string[] = [];
+  if (tx.originalAmount !== null) parts.push(formatBalance(tx.originalAmount));
+  if (tx.originalDate !== null) parts.push(formatTxDate(tx.originalDate));
+  return parts.length > 0 ? `extrait : ${parts.join(' · ')}` : 'Modifié manuellement';
+}
+
 export function toTxRow(tx: DashboardTransaction): TxRow {
   return {
     id: tx.id,
@@ -44,5 +53,10 @@ export function toTxRow(tx: DashboardTransaction): TxRow {
     catName: tx.categoryName ?? 'Non catégorisé',
     amount: tx.amount,
     amountKind: txKind(tx),
+    edited: tx.editedAt !== null,
+    originalHint: originalHint(tx),
+    editDate: tx.date,
+    editAmount: tx.amount,
+    editLabel: tx.labelClean,
   };
 }
