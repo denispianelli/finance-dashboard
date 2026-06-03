@@ -1,9 +1,9 @@
 # Branch protection — `main`
 
-> **STATUS: SUSPENDED during MVP mode (since 2026-06-01).** Protection is intentionally off so
-> work can land directly on `main` while we race to a functional model (see §MVP mode in
-> `CONTRIBUTING.md`). This file is the runbook to **re-apply** it in the post-MVP polish phase —
-> run the `gh api -X PUT` call below.
+> **STATUS: ACTIVE since 2026-06-03 — light PR gate.** Every change to `main` goes through a
+> branch + PR with green CI and an up-to-date branch, but **0 required reviews** (self-merge)
+> and **no issue/board linkage** (see §MVP mode in `CONTRIBUTING.md`). This file is the runbook:
+> edit the payload, then re-run the `gh api -X PUT` call below to keep the live config in sync.
 
 This file documents the GitHub branch-protection ruleset applied to `main`
 and the exact commands used to apply or re-apply it. Edit this file when
@@ -12,29 +12,30 @@ this file in sync.
 
 ## Rationale
 
-The repo is solo / vitrine. We need the merge discipline to be **visible**
-without blocking the solo workflow (GitHub forbids self-approving PRs, so a
-"≥1 approving review required" rule would block 100% of merges). Instead:
+The repo is solo. We want merge discipline that is **fast but clean**:
 
-- CI must be green on every PR — already enforced locally via the husky
-  pre-push hook, but a server-side gate prevents anyone (human or agent)
-  from bypassing CI by force-pushing.
-- History stays linear (squash-merge only) — we already do this in
-  practice; the rule prevents accidental merge commits.
-- Direct pushes to `main` are blocked — every change goes through a PR.
-- `enforce_admins: true` — the maintainer is included. Vitrine discipline.
+- A PR is **required** for every change (`required_pull_request_reviews` with
+  `required_approving_review_count: 0`) — so no session can commit to `main`
+  directly — but **no approval is needed**, so the author self-merges once
+  green. (0 reviews, not `null`: `null` would not require a PR at all.)
+- CI must be green and the branch up to date before merge — a server-side gate
+  so no one (human or agent) bypasses CI by force-pushing.
+- History stays linear (squash-merge only) — prevents accidental merge commits.
+- `enforce_admins: true` — the maintainer is included too. This is what makes
+  the multi-session "direct commit to `main`" mistake structurally impossible.
+- **No issue/board linkage required** (the PR ↔ Issue Action was removed).
 
-Reviewer visibility comes from posting `pr-review-toolkit:code-reviewer`
-findings as PR comments (see PR #95 for the pattern).
+Optional reviewer visibility: post `pr-review-toolkit:code-reviewer` findings
+as PR comments (see PR #95 for the pattern).
 
 ## Rules applied
 
 | Rule                               | Value     | Why                                              |
 | ---------------------------------- | --------- | ------------------------------------------------ |
 | `required_status_checks.strict`    | `true`    | branch must be up to date before merge           |
-| `required_status_checks.contexts`  | see below | the 6 CI checks this repo runs today             |
+| `required_status_checks.contexts`  | see below | the 4 CI checks this repo runs today             |
 | `enforce_admins`                   | `true`    | maintainer can't bypass either                   |
-| `required_pull_request_reviews`    | `null`    | no approval — solo project, can't self-approve   |
+| `required_pull_request_reviews`    | 0 reviews | PR required (blocks direct pushes); self-merge    |
 | `restrictions`                     | `null`    | no actor restriction beyond protection           |
 | `required_linear_history`          | `true`    | squash-merge only, no merge commits              |
 | `allow_force_pushes`               | `false`   | no rewriting history on `main`                   |
@@ -44,10 +45,8 @@ findings as PR comments (see PR #95 for the pattern).
 
 Status check contexts (must all pass before merge):
 
-- `check` — PR ↔ Issue link workflow
-- `ubuntu-latest`, `macos-latest`, `windows-latest` — CI matrix
+- `ubuntu-latest`, `macos-latest`, `windows-latest` — CI matrix (typecheck, tests, build)
 - `Analyze (JS/TS)` — CodeQL JS/TS analyzer
-- `CodeQL` — CodeQL umbrella check
 
 ## Apply / re-apply
 
