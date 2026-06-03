@@ -1,0 +1,40 @@
+// @vitest-environment jsdom
+import { cleanup, render, screen } from '@testing-library/react';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+
+import { SettingsPage } from '@renderer/pages/SettingsPage';
+
+vi.mock('sonner', () => ({ toast: { info: vi.fn() } }));
+
+afterEach(() => {
+  cleanup();
+});
+
+describe('SettingsPage', () => {
+  it('renders the three content sections', () => {
+    render(<SettingsPage />);
+    expect(screen.getByText('Modèle LLM')).toBeInTheDocument();
+    expect(screen.getByText('Données & Sauvegarde')).toBeInTheDocument();
+    expect(screen.getByText('Apparence & divers')).toBeInTheDocument();
+  });
+
+  it('shows the fixed model identity and role copy', () => {
+    render(<SettingsPage />);
+    expect(screen.getByText(/Llama 3\.2 3B Instruct · Q4_K_M/)).toBeInTheDocument();
+    expect(screen.getByText(/Ne dialogue jamais/)).toBeInTheDocument();
+  });
+
+  it('disables the "à venir" actions (recategorize, restore, reset)', () => {
+    render(<SettingsPage />);
+    expect(screen.getByRole('button', { name: /Relancer la catégorisation/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Restaurer/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Tout réinitialiser/ })).toBeDisabled();
+  });
+
+  it('keeps the live-worthy export/backup actions enabled', () => {
+    render(<SettingsPage />);
+    expect(screen.getByRole('button', { name: 'CSV' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'JSON' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Sauvegarder' })).toBeEnabled();
+  });
+});
