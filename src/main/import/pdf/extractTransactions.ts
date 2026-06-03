@@ -48,16 +48,50 @@ export function parseValeurDate(str: string): string {
   return `${String(fullYear)}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 }
 
+// Generic date token: dd/mm or dd.mm, optional /yy(yy) or .yy(yy).
+// Covers LCL (03.02, 03.02.26) and other banks (10/06/10, 09/03/2011).
+const DATE_TOKEN = /^(\d{2})[./](\d{2})(?:[./](\d{2,4}))?$/;
+
+function isDateToken(s: string): boolean {
+  return DATE_TOKEN.test(s.trim());
+}
+
+function hasYear(s: string): boolean {
+  return DATE_TOKEN.exec(s.trim())?.[3] !== undefined;
+}
+
+/** Parse any supported date token to ISO. Uses the token's own year if present,
+ *  else `fallbackYear`. Returns null if not a date token. */
+function parseDate(token: string, fallbackYear: number): string | null {
+  const m = DATE_TOKEN.exec(token.trim());
+  if (m === null) return null;
+  const dd = m[1] ?? '';
+  const mm = m[2] ?? '';
+  const yy = m[3];
+  const year = yy === undefined ? fallbackYear : yy.length <= 2 ? yyToFullYear(parseInt(yy, 10)) : parseInt(yy, 10);
+  return `${String(year)}-${mm}-${dd}`;
+}
+
 function inferYear(items: PdfTextItem[]): number {
   for (const item of items) {
-    const m = /^\d{2}\.\d{2}\.(\d{2})$/.exec(item.str);
-    if (m) {
-      const yyStr = m[1] ?? '0';
-      return yyToFullYear(parseInt(yyStr, 10));
+    if (hasYear(item.str)) {
+      const m = DATE_TOKEN.exec(item.str.trim());
+      const yy = m?.[3];
+      if (yy !== undefined) return yy.length <= 2 ? yyToFullYear(parseInt(yy, 10)) : parseInt(yy, 10);
     }
   }
   return new Date().getFullYear();
 }
+
+function normalizeMarker(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toUpperCase();
+}
+
+const OPENING_MARKER = /ANCIEN SOLDE|SOLDE PRECEDENT/;
+const CLOSING_MARKER = /SOLDE EN EUROS|NOUVEAU SOLDE/;
 
 function groupItemsByY(items: PdfTextItem[], tolerance = 4): PdfTextItem[][] {
   if (items.length === 0) return [];
@@ -95,23 +129,20 @@ export function extractTransactions(pages: PdfPage[], mapping: ColumnMapping): E
     const rows = groupItemsByY(page.items);
 
     for (const row of rows) {
-      const dateItem = row.find((i) => /^\d{2}\.\d{2}$/.test(i.str.trim()));
-
+      // The transaction date: prefer a date token that carries a year (LCL's
+      // "valeur" date), else the leftmost bare date with the inferred year.
+      const dateItems = row.filter((i) => isDateToken(i.str));
+      const dateItem = dateItems.find((i) => hasYear(i.str)) ?? dateItems[0];
       if (!dateItem) continue;
-
-      const dateStr = dateItem.str.trim();
-      const valeurItem = row.find((i) => /^\d{2}\.\d{2}\.\d{2}$/.test(i.str.trim()));
-      const date = valeurItem
-        ? parseValeurDate(valeurItem.str.trim())
-        : parseDateStr(dateStr, year);
+      const date = parseDate(dateItem.str, year);
+      if (date === null) continue;
 
       const labelItems = row.filter(
         (i) =>
           i.x >= mapping.label_col - 1 &&
           i.x < mapping.debit_col &&
           i.str.trim().length > 0 &&
-          !/^\d{2}\.\d{2}\.\d{2}$/.test(i.str.trim()) &&
-          !/^\d{2}\.\d{2}$/.test(i.str.trim()),
+          !isDateToken(i.str),
       );
       const debitItems = row.filter((i) => i.x >= mapping.debit_col && i.x < mapping.credit_col);
       const creditItems = row.filter((i) => i.x >= mapping.credit_col);
@@ -121,18 +152,21 @@ export function extractTransactions(pages: PdfPage[], mapping: ColumnMapping): E
         .filter(Boolean)
         .join(' ')
         .trim();
+      const marker = normalizeMarker(labelStr);
 
-      if (labelStr.includes('ANCIEN SOLDE')) {
+      if (OPENING_MARKER.test(marker)) {
         openingBalance = creditItems.map((i) => parseAmount(i.str)).find((n) => n !== null) ?? null;
-        openingDate = parseDateStr(dateStr, year);
+        openingDate = date;
         continue;
       }
-
-      if (/SOLDE EN EUROS/i.test(labelStr)) {
+      if (CLOSING_MARKER.test(marker)) {
         closingBalance = creditItems.map((i) => parseAmount(i.str)).find((n) => n !== null) ?? null;
         closingDate = date;
         continue;
       }
+      // Any other balance line (intermediate "SOLDE", page totals) is not a
+      // transaction — skip it rather than mis-counting it.
+      if (marker.includes('SOLDE')) continue;
 
       const debitAmt = debitItems.map((i) => parseAmount(i.str)).find((n) => n !== null);
       const creditAmt = creditItems.map((i) => parseAmount(i.str)).find((n) => n !== null);
