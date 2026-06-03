@@ -48,7 +48,6 @@ function tx(over: Partial<DashboardTransaction>): DashboardTransaction {
     categoryName: null,
     categoryColor: null,
     categoryIcon: null,
-    confidence: null,
     isInternalTransfer: false,
     userModified: false,
     ...over,

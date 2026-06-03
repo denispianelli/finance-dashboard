@@ -289,14 +289,12 @@ describe('insertStatement — happy path', () => {
       label_raw: string;
       label_clean: string;
       category_id: string | null;
-      confidence: number | null;
       import_id: string;
     }[];
     expect(txs).toHaveLength(1);
     expect(txs[0]?.label_raw).toBe('Café');
     expect(txs[0]?.label_clean).toBe('CAFE');
     expect(txs[0]?.category_id).toBeNull();
-    expect(txs[0]?.confidence).toBeNull();
     expect(txs[0]?.import_id).toBe(r.importId);
     db.close();
   });

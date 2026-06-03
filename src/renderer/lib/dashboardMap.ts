@@ -3,8 +3,6 @@ import type { Account } from '@renderer/components/dashboard/AccountTabs';
 import type { TxRow } from '@renderer/components/dashboard/TxTable';
 import type { MoneyKind } from '@renderer/components/ui/money';
 
-/** Confidence below this is flagged for review in the table. */
-const CONF_LOW_THRESHOLD = 0.8;
 /** Neutral dot color for uncategorized transactions. */
 const NEUTRAL_CAT_COLOR = '#6E6E78';
 
@@ -18,12 +16,6 @@ export function formatTxDate(iso: string): string {
   const [, month, day] = iso.split('-');
   if (month === undefined || day === undefined) return iso;
   return `${day}/${month}`;
-}
-
-/** Confidence score → `0,94`, or `—` when unscored (no classifier has run). */
-export function formatConfidence(confidence: number | null): string {
-  if (confidence === null) return '—';
-  return confidence.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 /** Income / expense / transfer, derived from sign and the internal-transfer flag. */
@@ -52,7 +44,5 @@ export function toTxRow(tx: DashboardTransaction): TxRow {
     catName: tx.categoryName ?? 'Non catégorisé',
     amount: tx.amount,
     amountKind: txKind(tx),
-    conf: formatConfidence(tx.confidence),
-    confLow: tx.confidence !== null && tx.confidence < CONF_LOW_THRESHOLD,
   };
 }
