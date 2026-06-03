@@ -33,15 +33,17 @@ tracking, multi-window. Do not re-propose them. The LLM is a background batch cl
 
 ## Git & process
 
-> **MVP mode (since 2026-06-01).** Process is deliberately lightened to reach a working model
-> fast, then tighten the rigor back afterwards. **Suspended:** PR-per-task + branch protection
-> (commit directly to `main`), Epic→Story→Task decomposition, Notion/board sync. **Kept:**
-> ADRs/specs for genuinely hard-to-reverse decisions, review agents on code that matters, and
-> the husky/commitlint gates (they cost nothing). The full process stays documented in
-> `CONTRIBUTING.md` for when we restore it post-MVP.
+> **MVP mode (since 2026-06-01, refined 2026-06-03).** Process is deliberately lightened to
+> ship **fast but clean**. **Suspended:** Epic→Story→Task decomposition, Notion/board sync, and
+> forced issue-linking on PRs (no issues required). **Kept / restored:** `main` is protected by
+> a **light PR gate** — every change goes through a branch + PR, with CI green and the branch up
+> to date, but **0 required reviews** (open it and self-merge once green) and **no issue/board
+> gate**. ADRs/specs for hard-to-reverse decisions and the husky/commitlint gates stay. The
+> heavier full process stays documented in `CONTRIBUTING.md` for when we restore it post-MVP.
 
-- **Commit directly to `main`** during MVP — no branch/PR required for routine work. Still
-  branch + PR for anything risky or worth a review trail.
+- **`main` is protected — branch + PR for every change.** No direct commits/pushes to `main`
+  (any session). No review required: open the PR and **self-merge once CI is green and the
+  branch is up to date**. No issue or board linkage needed.
 - **Branch naming + commit format (when you do branch): see `CONTRIBUTING.md`.** Commits
   follow Conventional Commits — enforced by `commitlint` via husky `commit-msg`.
 - Commit subjects and PR/issue/ADR/code text: **English**, imperative present

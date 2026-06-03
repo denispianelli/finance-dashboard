@@ -9,9 +9,11 @@ This project follows a structured workflow even though it currently has a single
 >
 > **Suspended for now:**
 >
-> - **Branch + PR per task.** Commit directly to `main` for routine work (branch protection is
->   off — re-apply via `.github/branch-protection.md`). Branch + open a PR only when a change is
->   risky or genuinely worth a review trail.
+> - **The heavy PR ceremony** — required reviews, issue-linking, the PR template,
+>   one-Story-per-PR. `main` _is_ protected (since 2026-06-03), but with a **light** gate:
+>   branch + PR + green CI + branch up to date, **0 required reviews**, **no issue/board
+>   linkage** — open the PR and self-merge once green. Config lives in
+>   `.github/branch-protection.payload.json`.
 > - **Epic → Story → Task decomposition** and the DoR ceremony. Work off a lightweight TODO.
 > - **Notion / GitHub Project board sync** (`/sync-notion-*`). Don't gate work on board state.
 >
@@ -59,7 +61,7 @@ Format : `<type>(<optional-scope>): <subject>`
 ## Pull Requests
 
 - One Story (or one focused Task) per PR.
-- The PR description **must** contain `Closes #<issue-number>` or `Refs #<issue-number>` — enforced by a GitHub Action.
+- _(Post-MVP)_ The PR description should link an issue (`Closes #N` / `Refs #N`). **Not enforced during MVP** — the issue-link Action was removed and no issue is required.
 - The PR template must be filled in.
 - CI on Linux / macOS / Windows must be green.
 - Squash-merge only — `main` keeps a clean linear history.
