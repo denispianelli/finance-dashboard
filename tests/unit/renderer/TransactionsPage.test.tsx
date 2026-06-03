@@ -1,0 +1,201 @@
+// @vitest-environment jsdom
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
+import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
+
+vi.mock('@renderer/ipc/client', () => ({ ipc: { invoke: vi.fn() } }));
+
+import { ipc } from '@renderer/ipc/client';
+import { TransactionsPage } from '@renderer/pages/TransactionsPage';
+import type { AccountSummary, DashboardTransaction } from '@shared/types/dashboard';
+import type { CategoryDTO } from '@shared/types/category';
+
+const mockInvoke = vi.mocked(ipc.invoke);
+
+const ACCOUNTS: AccountSummary[] = [
+  {
+    id: 'acc-1',
+    name: 'Compte courant',
+    type: 'checking',
+    bankId: 'lcl',
+    currency: 'EUR',
+    balance: 1000,
+    txCount: 3,
+  },
+];
+
+const CATEGORIES: CategoryDTO[] = [
+  {
+    id: 'cat-food',
+    name: 'Alimentation',
+    icon: 'wallet',
+    color: '#aaa',
+    parentId: null,
+    isDefault: true,
+    position: 0,
+  },
+];
+
+function tx(over: Partial<DashboardTransaction>): DashboardTransaction {
+  return {
+    id: 't',
+    accountId: 'acc-1',
+    date: '2026-05-14',
+    amount: -10,
+    labelRaw: 'RAW',
+    labelClean: 'Label',
+    categoryId: null,
+    categoryName: null,
+    categoryColor: null,
+    categoryIcon: null,
+    confidence: null,
+    isInternalTransfer: false,
+    userModified: false,
+    ...over,
+  };
+}
+
+const TX: DashboardTransaction[] = [
+  tx({ id: 'a', labelClean: 'Carrefour', amount: -50, categoryId: 'cat-food' }),
+  tx({ id: 'b', labelClean: 'Salaire', amount: 2000, categoryId: null }),
+  tx({ id: 'c', labelClean: 'Pharmacie', amount: -15, categoryId: null }),
+];
+
+const MANY: DashboardTransaction[] = Array.from({ length: 30 }, (_, i) =>
+  tx({ id: `m${String(i)}`, labelClean: `Op ${String(i).padStart(2, '0')}`, amount: -(i + 1) }),
+);
+
+function stubIpc(transactions: DashboardTransaction[] = TX): void {
+  mockInvoke.mockImplementation(((channel: string) => {
+    if (channel === 'dashboard:getAccounts') return Promise.resolve({ accounts: ACCOUNTS });
+    if (channel === 'dashboard:getTransactions') return Promise.resolve({ transactions });
+    if (channel === 'dashboard:metrics') return Promise.resolve({ balance: 0, series: [] });
+    if (channel === 'categories:list') return Promise.resolve({ categories: CATEGORIES });
+    return Promise.resolve(undefined);
+  }) as typeof ipc.invoke);
+}
+
+beforeEach(() => {
+  mockInvoke.mockReset();
+  stubIpc();
+});
+
+afterEach(() => {
+  cleanup();
+});
+
+beforeEach(() => {
+  // jsdom reports zero-sized elements; give the virtualizer a viewport + row heights so it
+  // renders a real (windowed) subset. Small viewport + overscan keeps tiny fixtures fully
+  // visible while large ones are windowed.
+  //
+  // @tanstack/react-virtual reads offsetHeight for the scroll container size and
+  // getBoundingClientRect for individual row measurements.
+  // Viewport: 300 px (shows ~5 rows at ROW_ESTIMATE=57 px + overscan=8 → ~13 items max).
+  // Row height: 40 px via getBoundingClientRect. This keeps the 3-row fixture fully visible
+  // while the 30-row fixture is windowed (fewer than 30 rendered).
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+    width: 800,
+    height: 40,
+    top: 0,
+    left: 0,
+    right: 800,
+    bottom: 40,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  });
+  Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+    configurable: true,
+    get() {
+      return 300;
+    },
+  });
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  // Restore offsetHeight to its original descriptor (0 in jsdom).
+  Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+    configurable: true,
+    get() {
+      return 0;
+    },
+  });
+});
+
+function renderPage() {
+  return render(
+    <MemoryRouter initialEntries={['/transactions']}>
+      <Routes>
+        <Route element={<Outlet context={{ refreshToken: 0 }} />}>
+          <Route path="/transactions" element={<TransactionsPage />} />
+        </Route>
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
+describe('TransactionsPage', () => {
+  it('renders all transactions for the account by default', async () => {
+    renderPage();
+    expect(await screen.findByText('Carrefour')).toBeInTheDocument();
+    expect(screen.getByText('Salaire')).toBeInTheDocument();
+    expect(screen.getByText('Pharmacie')).toBeInTheDocument();
+  });
+
+  it('requests the full history (high limit) over IPC', async () => {
+    renderPage();
+    await screen.findByText('Carrefour');
+    expect(mockInvoke).toHaveBeenCalledWith(
+      'dashboard:getTransactions',
+      expect.objectContaining({ accountId: 'acc-1', limit: 100000 }),
+    );
+  });
+
+  it('filters by free-text search on the label', async () => {
+    renderPage();
+    await screen.findByText('Carrefour');
+    fireEvent.change(screen.getByLabelText('Rechercher'), { target: { value: 'pharma' } });
+    expect(screen.getByText('Pharmacie')).toBeInTheDocument();
+    expect(screen.queryByText('Carrefour')).not.toBeInTheDocument();
+    expect(screen.queryByText('Salaire')).not.toBeInTheDocument();
+  });
+
+  it('filters by type (revenus shows only positive amounts)', async () => {
+    renderPage();
+    await screen.findByText('Carrefour');
+    fireEvent.click(screen.getByRole('button', { name: 'Revenus' }));
+    expect(screen.getByText('Salaire')).toBeInTheDocument();
+    expect(screen.queryByText('Carrefour')).not.toBeInTheDocument();
+  });
+
+  it('filters by category', async () => {
+    renderPage();
+    await screen.findByText('Carrefour');
+    fireEvent.change(screen.getByLabelText('Catégorie'), { target: { value: 'cat-food' } });
+    expect(screen.getByText('Carrefour')).toBeInTheDocument();
+    expect(screen.queryByText('Salaire')).not.toBeInTheDocument();
+  });
+
+  it('shows a filtered-empty state when nothing matches', async () => {
+    renderPage();
+    await screen.findByText('Carrefour');
+    fireEvent.change(screen.getByLabelText('Rechercher'), { target: { value: 'zzzzz' } });
+    expect(screen.getByText(/ne correspond à ces filtres/i)).toBeInTheDocument();
+  });
+
+  it('shows the import empty state when the account has no transactions', async () => {
+    stubIpc([]);
+    renderPage();
+    expect(await screen.findByText(/importez un relevé/i)).toBeInTheDocument();
+  });
+
+  it('virtualizes the list: does not render every row at once', async () => {
+    stubIpc(MANY); // 30 rows
+    renderPage();
+    expect(await screen.findByText('Op 00')).toBeInTheDocument();
+    const rendered = screen.getAllByText(/^Op \d{2}$/);
+    expect(rendered.length).toBeLessThan(30);
+  });
+});

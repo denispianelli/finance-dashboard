@@ -127,4 +127,26 @@ describe('DashboardPage', () => {
     renderPage();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
+
+  it('shows at most the 10 latest transactions in the preview', async () => {
+    const [baseTx] = TX;
+    if (!baseTx) throw new Error('TX fixture is empty');
+    const many: DashboardTransaction[] = Array.from({ length: 12 }, (_, i) => ({
+      ...baseTx,
+      id: `t${String(i)}`,
+      labelClean: `Tx ${String(i).padStart(2, '0')}`,
+    }));
+    stubIpc(many);
+    renderPage();
+    expect(await screen.findByText('Tx 00')).toBeInTheDocument();
+    expect(screen.getByText('Tx 09')).toBeInTheDocument();
+    expect(screen.queryByText('Tx 10')).not.toBeInTheDocument();
+    expect(screen.queryByText('Tx 11')).not.toBeInTheDocument();
+  });
+
+  it('links "Tout voir" to the transactions page', () => {
+    renderPage();
+    const link = screen.getByRole('link', { name: /Tout voir/ });
+    expect(link).toHaveAttribute('href', '/transactions');
+  });
 });
