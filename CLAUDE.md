@@ -56,9 +56,15 @@ tracking, multi-window. Do not re-propose them. The LLM is a background batch cl
 
 ## Worktrees & fixtures
 
-- Isolated worktrees live under `.worktrees/` (gitignored). Do not use other locations.
-- `spike-fixtures/` is gitignored and holds real bank data — **never commit it**. New
-  worktrees need a symlink: `ln -sfn <repo>/spike-fixtures <worktree>/spike-fixtures`.
+- **Use the `EnterWorktree` tool for isolated work.** It creates the worktree under
+  `.claude/worktrees/` (gitignored) and tears it down automatically on exit — don't hand-roll
+  `git worktree add/remove`. **Never delete the worktree you're running in**; let the tool own
+  the lifecycle (this avoids cutting your own session's working directory out from under it).
+  The legacy hand-managed `.worktrees/` path stays gitignored if you ever need it, but the tool
+  is the default.
+- `spike-fixtures/` and `models/` are gitignored (real bank data + the ~1.9 GB model) —
+  **never commit them**. A worktree that needs them gets a symlink, e.g.
+  `ln -sfn <repo>/spike-fixtures <worktree>/spike-fixtures` (same for `models`).
 
 ## Definition of done
 
