@@ -146,11 +146,16 @@ Mirrors the existing `transactions:setCategory` mutation
 (`src/main/ipc/handlers/categories.ts` → `setTransactionCategory` in
 `src/main/categorize/manage.ts`), following ADR-007 end-to-end typing.
 
-| Channel                | Payload                                                                     | Response       |
-| ---------------------- | --------------------------------------------------------------------------- | -------------- |
-| `transactions:update`  | `{ transactionId: string; date?: string; label?: string; amount?: number }` | `{ ok: true }` |
-| `transactions:delete`  | `{ transactionId: string }`                                                 | `{ ok: true }` |
-| `transactions:restore` | `{ transaction: DeletedTransactionSnapshot }`                               | `{ ok: true }` |
+| Channel                | Payload                                                                     | Response                                             |
+| ---------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `transactions:update`  | `{ transactionId: string; date?: string; label?: string; amount?: number }` | `{ ok: true }`                                       |
+| `transactions:delete`  | `{ transactionId: string }`                                                 | `{ ok: true; snapshot: DeletedTransactionSnapshot }` |
+| `transactions:restore` | `{ transaction: DeletedTransactionSnapshot }`                               | `{ ok: true }`                                       |
+
+`transactions:delete` reads the full row **before** deleting and returns it as
+`snapshot`. The renderer stashes that snapshot for the undo toast and passes it
+back verbatim to `transactions:restore` — so the renderer never needs to know the
+hidden columns (`tx_hash`, `fitid`, `import_id`).
 
 - New types in `src/shared/types/` (e.g. `transaction.ts`), added to `IpcContract`
   in `src/shared/types/ipc.ts`, channel constants in
