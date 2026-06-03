@@ -84,6 +84,46 @@ afterEach(() => {
   cleanup();
 });
 
+beforeEach(() => {
+  // jsdom reports zero-sized elements; give the virtualizer a viewport + row heights so it
+  // renders a real (windowed) subset. Small viewport + overscan keeps tiny fixtures fully
+  // visible while large ones are windowed.
+  //
+  // @tanstack/react-virtual reads offsetHeight for the scroll container size and
+  // getBoundingClientRect for individual row measurements.
+  // Viewport: 300 px (shows ~5 rows at ROW_ESTIMATE=57 px + overscan=8 → ~13 items max).
+  // Row height: 40 px via getBoundingClientRect. This keeps the 3-row fixture fully visible
+  // while the 30-row fixture is windowed (fewer than 30 rendered).
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+    width: 800,
+    height: 40,
+    top: 0,
+    left: 0,
+    right: 800,
+    bottom: 40,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  });
+  Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+    configurable: true,
+    get() {
+      return 300;
+    },
+  });
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  // Restore offsetHeight to its original descriptor (0 in jsdom).
+  Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+    configurable: true,
+    get() {
+      return 0;
+    },
+  });
+});
+
 function renderPage() {
   return render(
     <MemoryRouter initialEntries={['/transactions']}>
@@ -151,51 +191,11 @@ describe('TransactionsPage', () => {
     expect(await screen.findByText(/importez un relevé/i)).toBeInTheDocument();
   });
 
-  it('paginates: renders only the first 25 rows and shows the page indicator', async () => {
-    stubIpc(MANY);
+  it('virtualizes the list: does not render every row at once', async () => {
+    stubIpc(MANY); // 30 rows
     renderPage();
     expect(await screen.findByText('Op 00')).toBeInTheDocument();
-    expect(screen.getByText('Op 24')).toBeInTheDocument();
-    expect(screen.queryByText('Op 25')).not.toBeInTheDocument();
-    expect(screen.getByText('Page 1 / 2')).toBeInTheDocument();
-  });
-
-  it('navigates to the next page with Suivant', async () => {
-    stubIpc(MANY);
-    renderPage();
-    await screen.findByText('Op 00');
-    fireEvent.click(screen.getByRole('button', { name: /Suivant/ }));
-    expect(screen.getByText('Op 25')).toBeInTheDocument();
-    expect(screen.getByText('Op 29')).toBeInTheDocument();
-    expect(screen.queryByText('Op 00')).not.toBeInTheDocument();
-    expect(screen.getByText('Page 2 / 2')).toBeInTheDocument();
-  });
-
-  it('disables Précédent on the first page and Suivant on the last page', async () => {
-    stubIpc(MANY);
-    renderPage();
-    await screen.findByText('Op 00');
-    expect(screen.getByRole('button', { name: /Précédent/ })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: /Suivant/ }));
-    expect(screen.getByRole('button', { name: /Suivant/ })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /Précédent/ })).not.toBeDisabled();
-  });
-
-  it('resets to page 1 when a filter changes', async () => {
-    stubIpc(MANY);
-    renderPage();
-    await screen.findByText('Op 00');
-    fireEvent.click(screen.getByRole('button', { name: /Suivant/ }));
-    expect(screen.getByText('Page 2 / 2')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Rechercher'), { target: { value: 'Op' } });
-    expect(screen.getByText('Page 1 / 2')).toBeInTheDocument();
-    expect(screen.getByText('Op 00')).toBeInTheDocument();
-  });
-
-  it('renders no pagination controls when results fit on one page', async () => {
-    renderPage();
-    await screen.findByText('Carrefour');
-    expect(screen.queryByRole('button', { name: /Suivant/ })).not.toBeInTheDocument();
-    expect(screen.queryByText(/Page \d+ \//)).not.toBeInTheDocument();
+    const rendered = screen.getAllByText(/^Op \d{2}$/);
+    expect(rendered.length).toBeLessThan(30);
   });
 });

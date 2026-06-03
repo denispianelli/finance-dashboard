@@ -1,11 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Overline } from '../components/ui/overline';
 import { AccountTabs } from '../components/dashboard/AccountTabs';
-import { TxTable } from '../components/dashboard/TxTable';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '../components/ui/button';
+import { TxTableHeader, TxTableRow } from '../components/dashboard/TxTable';
 import { useDashboard } from '../hooks/useDashboard';
 import { toAccount, toTxRow } from '../lib/dashboardMap';
 import {
@@ -20,10 +19,10 @@ import type { AppOutletContext } from '../lib/outletContext';
 
 /** Load the whole account history; the client-side filters do the rest. */
 const FULL_HISTORY_LIMIT = 100000;
-/** Rows per page in the paginated list. */
-const PAGE_SIZE = 25;
 /** Sentinel select value mapping to "uncategorized" (null) in the filter. */
 const NONE = '__none__';
+/** Approximate rendered height of one row, used as the virtualizer's size estimate. */
+const ROW_ESTIMATE = 57;
 
 const PERIODS: { value: TxPeriod; label: string }[] = [
   { value: 'all', label: 'Tout' },
@@ -89,18 +88,6 @@ export function TransactionsPage() {
   const [category, setCategory] = useState<string>('all');
   const [query, setQuery] = useState('');
 
-  // Store [page, filterKey] together so that when filters change the page resets
-  // to 1 within the same render (React "store info from previous renders" pattern).
-  // `activePage` reads 1 immediately when the key changed; the setState schedules the
-  // stored key to catch up on the next render — guarded so it never loops.
-  const filterKey = `${period}|${type}|${category}|${query}|${selectedAccountId ?? ''}`;
-  const [{ page, storedKey }, setPageState] = useState({ page: 1, storedKey: filterKey });
-  const keyChanged = storedKey !== filterKey;
-  if (keyChanged) {
-    setPageState({ page: 1, storedKey: filterKey });
-  }
-  const activePage = keyChanged ? 1 : page;
-
   const filtered = useMemo(() => {
     const filters: TxFilters = {
       period,
@@ -112,9 +99,18 @@ export function TransactionsPage() {
     return filterTransactions(transactions, filters);
   }, [transactions, period, today, type, query, category]);
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(activePage, pageCount);
-  const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  // react-virtual's useVirtualizer returns non-memoizable functions, so React Compiler skips
+  // memoizing this component — expected and safe for a leaf list view.
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const rowVirtualizer = useVirtualizer({
+    count: filtered.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_ESTIMATE,
+    overscan: 8,
+    scrollMargin: listRef.current?.offsetTop ?? 0,
+  });
 
   return (
     <>
@@ -175,45 +171,48 @@ export function TransactionsPage() {
             Aucune transaction ne correspond à ces filtres.
           </p>
         ) : (
-          <>
-            <TxTable
-              rows={pageRows.map(toTxRow)}
-              categories={categories}
-              onReassign={(txId, catId) => {
-                void reassign(txId, catId);
-              }}
-              onCreateCategory={createCategory}
-            />
-            {pageCount > 1 && (
-              <div className="flex items-center justify-center gap-4 pt-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={safePage <= 1}
-                  onClick={() => {
-                    setPageState((s) => ({ ...s, page: Math.max(1, s.page - 1) }));
-                  }}
-                >
-                  <ChevronLeft size={14} strokeWidth={1.6} />
-                  Précédent
-                </Button>
-                <span className="font-mono text-xs text-paper-mute">
-                  Page {safePage} / {pageCount}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={safePage >= pageCount}
-                  onClick={() => {
-                    setPageState((s) => ({ ...s, page: Math.min(pageCount, s.page + 1) }));
-                  }}
-                >
-                  Suivant
-                  <ChevronRight size={14} strokeWidth={1.6} />
-                </Button>
-              </div>
-            )}
-          </>
+          <div ref={scrollRef} className="relative max-h-[70vh] overflow-y-auto">
+            <div className="sticky top-0 z-10 bg-ink-1">
+              <TxTableHeader />
+            </div>
+            {/* listRef sits below the sticky header, so scrollMargin = header height; each
+                row is translated by (vi.start - scrollMargin) to land right under it. */}
+            <div
+              ref={listRef}
+              className="relative"
+              style={{ height: rowVirtualizer.getTotalSize() }}
+            >
+              {rowVirtualizer.getVirtualItems().map((vi) => {
+                const t = filtered[vi.index];
+                if (!t) return null;
+                return (
+                  <div
+                    key={t.id}
+                    data-index={vi.index}
+                    ref={(el) => {
+                      rowVirtualizer.measureElement(el);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      transform: `translateY(${String(vi.start - rowVirtualizer.options.scrollMargin)}px)`,
+                    }}
+                  >
+                    <TxTableRow
+                      row={toTxRow(t)}
+                      categories={categories}
+                      onReassign={(txId, catId) => {
+                        void reassign(txId, catId);
+                      }}
+                      onCreateCategory={createCategory}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
       </Card>
     </>
