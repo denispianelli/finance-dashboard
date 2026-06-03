@@ -10,7 +10,7 @@ export interface ReadIdentifierResult {
 }
 
 /** French IBAN: FR + 2 check digits + 23 alphanumerics, spaces optional. */
-const IBAN_RE = /FR\d{2}(?:\s?[0-9A-Z]){23}/;
+const IBAN_RE = /FR\d{2}(?:\s*[0-9A-Z]){23}/;
 
 /** Extract and normalize a French IBAN from free text, or null. */
 export function extractIbanFromText(text: string): string | null {

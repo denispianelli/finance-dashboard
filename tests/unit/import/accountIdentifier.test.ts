@@ -24,6 +24,11 @@ describe('extractIbanFromText', () => {
     const once = extractIbanFromText('FR7630006000011234567890189');
     expect(extractIbanFromText(once ?? '')).toBe(once);
   });
+  it('tolerates multiple spaces between IBAN groups (pdf.js join artifacts)', () => {
+    expect(extractIbanFromText('IBAN FR76  3000  6000  0112  3456  7890  189')).toBe(
+      'FR7630006000011234567890189',
+    );
+  });
 });
 
 describe('readIdentifier — OFX', () => {
