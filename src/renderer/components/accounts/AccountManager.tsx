@@ -9,6 +9,15 @@ import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Overline } from '../ui/overline';
 import { Money } from '../ui/money';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 import { useAccounts } from '../../hooks/useAccounts';
 import { cn } from '../../lib/utils';
 
@@ -158,10 +167,6 @@ function AccountRow({
   }
 
   const plural = account.txCount > 1 ? 's' : '';
-  const confirmText =
-    account.txCount > 0
-      ? `Supprimer « ${account.name} » et ses ${String(account.txCount)} transaction${plural} ?`
-      : `Supprimer « ${account.name} » ?`;
 
   return (
     <div className="group flex items-center gap-2.5 border-b border-line-1 py-2">
@@ -172,58 +177,67 @@ function AccountRow({
         </span>
       </div>
 
-      {confirmingDelete ? (
-        <>
-          <span className="font-sans text-[12px] text-paper-soft">{confirmText}</span>
-          <button
-            type="button"
-            onClick={() => {
-              void onDelete(account.id);
-              setConfirmingDelete(false);
-            }}
-            className="rounded-md px-2 py-1 font-sans text-[12px] font-medium text-coral hover:bg-ink-3"
+      <Money
+        value={account.balance}
+        kind={account.balance < 0 ? 'expense' : 'plain'}
+        className="text-[13px]"
+      />
+      <button
+        type="button"
+        aria-label={`Renommer ${account.name}`}
+        onClick={() => {
+          setEditing(true);
+        }}
+        className="flex h-7 w-7 items-center justify-center rounded-md text-paper-dim opacity-0 transition-opacity hover:bg-ink-3 hover:text-paper group-hover:opacity-100"
+      >
+        <Pencil size={13} strokeWidth={1.6} />
+      </button>
+      <button
+        type="button"
+        aria-label={`Supprimer ${account.name}`}
+        onClick={() => {
+          setConfirmingDelete(true);
+        }}
+        className="flex h-7 w-7 items-center justify-center rounded-md text-paper-dim opacity-0 transition-opacity hover:bg-ink-3 hover:text-coral group-hover:opacity-100"
+      >
+        <Trash2 size={13} strokeWidth={1.6} />
+      </button>
+
+      <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+        <DialogContent className="max-w-md">
+          <DialogClose
+            aria-label="Fermer"
+            className="absolute right-4 top-4 rounded-md text-paper-dim transition-colors hover:text-paper focus:outline-none focus:ring-1 focus:ring-brass"
           >
-            Supprimer
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setConfirmingDelete(false);
-            }}
-            className="rounded-md px-2 py-1 font-sans text-[12px] text-paper-dim hover:bg-ink-3"
-          >
-            Annuler
-          </button>
-        </>
-      ) : (
-        <>
-          <Money
-            value={account.balance}
-            kind={account.balance < 0 ? 'expense' : 'plain'}
-            className="text-[13px]"
-          />
-          <button
-            type="button"
-            aria-label={`Renommer ${account.name}`}
-            onClick={() => {
-              setEditing(true);
-            }}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-paper-dim opacity-0 transition-opacity hover:bg-ink-3 hover:text-paper group-hover:opacity-100"
-          >
-            <Pencil size={13} strokeWidth={1.6} />
-          </button>
-          <button
-            type="button"
-            aria-label={`Supprimer ${account.name}`}
-            onClick={() => {
-              setConfirmingDelete(true);
-            }}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-paper-dim opacity-0 transition-opacity hover:bg-ink-3 hover:text-coral group-hover:opacity-100"
-          >
-            <Trash2 size={13} strokeWidth={1.6} />
-          </button>
-        </>
-      )}
+            <X size={16} strokeWidth={1.8} />
+          </DialogClose>
+          <DialogHeader>
+            <DialogTitle>Supprimer ce compte ?</DialogTitle>
+            <DialogDescription>
+              {account.txCount > 0
+                ? `« ${account.name} » et ses ${String(account.txCount)} transaction${plural} seront définitivement supprimés. Cette action est irréversible.`
+                : `« ${account.name} » sera définitivement supprimé.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="secondary" size="sm">
+                Annuler
+              </Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                void onDelete(account.id);
+                setConfirmingDelete(false);
+              }}
+            >
+              Supprimer le compte
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
