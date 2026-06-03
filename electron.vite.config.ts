@@ -7,6 +7,9 @@ export default defineConfig({
     build: {
       rollupOptions: {
         input: { index: resolve(__dirname, 'src/main/index.ts') },
+        // node-llama-cpp is a native module — keep it external so it loads from
+        // node_modules at runtime instead of being bundled.
+        external: ['node-llama-cpp'],
       },
     },
     resolve: {
