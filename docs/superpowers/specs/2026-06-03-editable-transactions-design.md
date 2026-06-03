@@ -204,7 +204,7 @@ flow to the renderer where needed:
 - **Edit mode**: `TransactionsPage` owns `editingId`; `TxTableRow` renders inputs
   when its id matches, else the read-only row. Inline validation per §4.1.
 - **Marker**: edited rows show the §4.3 indicator with an original-values tooltip.
-- **Delete**: trash → inline confirm → delete → undo toast.
+- **Delete**: trash → delete → undo toast (no separate confirm — see §4.2).
 
 ## 8. ADR / docs impact
 
@@ -228,10 +228,10 @@ flow to the renderer where needed:
   `original_*` / `edited_at`).
 - **IPC handlers (unit)**: payload → DB-call mapping, like the existing
   `tests/unit/ipc/` suite.
-- **Queries (unit)**: `getTransactions` returns the new fields / derived
-  `isEdited`.
+- **Queries (unit)**: `getTransactions` returns the new audit fields
+  (`originalDate`, `originalAmount`, `editedAt`).
 - **Renderer (unit, jsdom)**: enter edit mode, validate (good + bad input),
-  cancel, save; marker + tooltip render on edited rows; delete confirm + undo
+  cancel, save; marker + tooltip render on edited rows; delete + undo
   re-inserts.
 - **Integration**: import → edit an amount → originals preserved and figures
   signal set; import → delete → row gone → restore → row back.
