@@ -33,7 +33,7 @@ as PR comments (see PR #95 for the pattern).
 | Rule                               | Value     | Why                                              |
 | ---------------------------------- | --------- | ------------------------------------------------ |
 | `required_status_checks.strict`    | `true`    | branch must be up to date before merge           |
-| `required_status_checks.contexts`  | see below | the 4 CI checks this repo runs today             |
+| `required_status_checks.contexts`  | see below | the 3 CI checks this repo runs today             |
 | `enforce_admins`                   | `true`    | maintainer can't bypass either                   |
 | `required_pull_request_reviews`    | 0 reviews | PR required (blocks direct pushes); self-merge    |
 | `restrictions`                     | `null`    | no actor restriction beyond protection           |
@@ -46,7 +46,11 @@ as PR comments (see PR #95 for the pattern).
 Status check contexts (must all pass before merge):
 
 - `ubuntu-latest`, `macos-latest`, `windows-latest` — CI matrix (typecheck, tests, build)
-- `Analyze (JS/TS)` — CodeQL JS/TS analyzer
+
+> CodeQL (`Analyze (JS/TS)`) is **not** a required check: code scanning needs GitHub
+> Advanced Security on a private repo, so it can't upload results here and fails every run.
+> The `codeql.yml` workflow was removed; re-add it (and this context) if the repo goes public
+> or gets GHAS.
 
 ## Apply / re-apply
 
