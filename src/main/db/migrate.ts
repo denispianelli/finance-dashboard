@@ -5,6 +5,7 @@ import sql003 from './migrations/003_seed_default_account.sql?raw';
 import sql004 from './migrations/004_add_fitid.sql?raw';
 import sql005 from './migrations/005_versioned_taxonomy.sql?raw';
 import sql006 from './migrations/006_seed_categories.sql?raw';
+import sql007 from './migrations/007_drop_transfer_label_rules.sql?raw';
 
 interface Migration {
   version: number;
@@ -18,6 +19,7 @@ const MIGRATIONS: Migration[] = [
   { version: 4, sql: sql004 },
   { version: 5, sql: sql005 },
   { version: 6, sql: sql006 },
+  { version: 7, sql: sql007 },
 ];
 
 export function runMigrations(db: DatabaseSync): void {
