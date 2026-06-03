@@ -7,6 +7,13 @@ export interface CreateAccountInput {
   readonly bankId: string | null;
 }
 
+/** Input to update an existing account's name and bank label. */
+export interface UpdateAccountInput {
+  readonly id: string;
+  readonly name: string;
+  readonly bankId: string | null;
+}
+
 /** One account row plus derived totals for the account picker / KPI surfaces. */
 export interface AccountSummary {
   readonly id: string;
