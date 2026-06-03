@@ -217,6 +217,12 @@ export function TransactionsPage() {
                         void reassign(txId, catId);
                       }}
                       onCreateCategory={createCategory}
+                      onStartEdit={() => {
+                        /* wired in Task 10 */
+                      }}
+                      onDelete={() => {
+                        /* wired in Task 10 */
+                      }}
                     />
                   </div>
                 );

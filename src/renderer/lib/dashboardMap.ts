@@ -11,6 +11,14 @@ export function formatBalance(amount: number): string {
   return amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+/** Parse a French-formatted amount ("-90,5" / "-90.5") to a number, or null. */
+export function parseAmount(input: string): number | null {
+  const normalized = input.trim().replace(/\s/g, '').replace(',', '.');
+  if (normalized === '' || normalized === '-') return null;
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : null;
+}
+
 /** ISO `yyyy-mm-dd` → `dd/mm`; passes the input through unchanged if it isn't ISO. */
 export function formatTxDate(iso: string): string {
   const [, month, day] = iso.split('-');

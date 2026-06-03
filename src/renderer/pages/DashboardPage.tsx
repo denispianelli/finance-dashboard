@@ -155,6 +155,12 @@ export function DashboardPage() {
               void reassign(txId, catId);
             }}
             onCreateCategory={createCategory}
+            onStartEdit={() => {
+              /* wired in Task 10 */
+            }}
+            onDelete={() => {
+              /* wired in Task 10 */
+            }}
           />
         ) : (
           <p className="py-8 text-center text-sm text-paper-mute">
