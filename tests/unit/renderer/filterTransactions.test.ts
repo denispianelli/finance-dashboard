@@ -22,7 +22,7 @@ function tx(over: Partial<DashboardTransaction> = {}): DashboardTransaction {
 }
 
 const TODAY = '2026-06-03';
-const ALL = { period: 'all', today: TODAY, categoryId: 'all', query: '', type: 'all' } as const;
+const ALL = { from: null, to: null, categoryId: 'all', query: '', type: 'all' } as const;
 
 describe('periodStart', () => {
   it('returns null for "all"', () => {
@@ -46,22 +46,41 @@ describe('toLocalISODate', () => {
 });
 
 describe('filterTransactions', () => {
-  it('returns everything with the default "all" filters', () => {
+  it('returns everything with the default (unbounded) filters', () => {
     const txns = [tx({ id: 'a' }), tx({ id: 'b' })];
     expect(filterTransactions(txns, ALL)).toHaveLength(2);
   });
 
-  it('excludes transactions before the period start', () => {
+  it('excludes transactions before the inclusive lower bound (from)', () => {
     const txns = [tx({ id: 'old', date: '2026-01-10' }), tx({ id: 'new', date: '2026-05-20' })];
-    const out = filterTransactions(txns, { ...ALL, period: '30d' });
+    const out = filterTransactions(txns, { ...ALL, from: '2026-05-04' });
     expect(out.map((t) => t.id)).toEqual(['new']);
   });
 
-  it('includes a transaction exactly on the period boundary', () => {
-    const boundary = periodStart('30d', TODAY);
-    if (boundary === null) throw new Error('expected a date');
-    const txns = [tx({ id: 'edge', date: boundary })];
-    expect(filterTransactions(txns, { ...ALL, period: '30d' })).toHaveLength(1);
+  it('includes a transaction exactly on the lower bound', () => {
+    const txns = [tx({ id: 'edge', date: '2026-05-04' })];
+    expect(filterTransactions(txns, { ...ALL, from: '2026-05-04' })).toHaveLength(1);
+  });
+
+  it('excludes transactions after the inclusive upper bound (to)', () => {
+    const txns = [tx({ id: 'in', date: '2026-05-10' }), tx({ id: 'after', date: '2026-05-20' })];
+    const out = filterTransactions(txns, { ...ALL, to: '2026-05-15' });
+    expect(out.map((t) => t.id)).toEqual(['in']);
+  });
+
+  it('includes a transaction exactly on the upper bound', () => {
+    const txns = [tx({ id: 'edge', date: '2026-05-15' })];
+    expect(filterTransactions(txns, { ...ALL, to: '2026-05-15' })).toHaveLength(1);
+  });
+
+  it('keeps only transactions inside a closed [from, to] range', () => {
+    const txns = [
+      tx({ id: 'before', date: '2026-04-30' }),
+      tx({ id: 'inside', date: '2026-05-10' }),
+      tx({ id: 'after', date: '2026-06-01' }),
+    ];
+    const out = filterTransactions(txns, { ...ALL, from: '2026-05-01', to: '2026-05-31' });
+    expect(out.map((t) => t.id)).toEqual(['inside']);
   });
 
   it('filters by a specific category id', () => {
@@ -121,10 +140,17 @@ describe('filterTransactions', () => {
         labelClean: 'Monoprix',
         date: '2026-05-30',
       }),
+      tx({
+        id: 'outOfRange',
+        amount: -10,
+        categoryId: 'cat-1',
+        labelClean: 'Monoprix',
+        date: '2026-01-01',
+      }),
     ];
     const out = filterTransactions(txns, {
-      period: '30d',
-      today: TODAY,
+      from: '2026-05-01',
+      to: '2026-05-31',
       categoryId: 'cat-1',
       query: 'mono',
       type: 'expense',

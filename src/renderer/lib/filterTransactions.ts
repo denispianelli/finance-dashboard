@@ -6,15 +6,15 @@ export type TxType = 'all' | 'income' | 'expense';
 export type TxCategoryFilter = 'all' | null | (string & Record<never, never>);
 
 export interface TxFilters {
-  /** Time window relative to `today`. */
-  readonly period: TxPeriod;
-  /** Reference date as ISO `yyyy-mm-dd`. Injected so this stays clock-free and testable. */
-  readonly today: string;
+  /** Inclusive lower bound, ISO `yyyy-mm-dd`. `null` = unbounded. */
+  readonly from: string | null;
+  /** Inclusive upper bound, ISO `yyyy-mm-dd`. `null` = unbounded. */
+  readonly to: string | null;
   /** Category to match: 'all' = any, null = uncategorized, otherwise a category id. */
   readonly categoryId: TxCategoryFilter;
   /** Free-text match on the cleaned label; case- and accent-insensitive. Empty = no filter. */
   readonly query: string;
-  /** Income (amount > 0), expense (amount < 0), or all. Zero-amount transactions only appear under 'all'. */
+  /** Income (amount > 0), expense (amount < 0), or all. Zero-amount only appears under 'all'. */
   readonly type: TxType;
 }
 
@@ -45,19 +45,18 @@ export function periodStart(period: TxPeriod, today: string): string | null {
 }
 
 /**
- * Filter transactions by period / category / label / type. All criteria are AND-ed.
- * ISO `yyyy-mm-dd` dates compare lexicographically, so no Date parsing is needed for the
- * range check.
+ * Filter transactions by date bounds / category / label / type. All criteria are AND-ed.
+ * ISO `yyyy-mm-dd` dates compare lexicographically.
  */
 export function filterTransactions(
   txns: readonly DashboardTransaction[],
   filters: TxFilters,
 ): DashboardTransaction[] {
-  const from = periodStart(filters.period, filters.today);
   const q = normalize(filters.query.trim());
 
   return txns.filter((t) => {
-    if (from !== null && t.date < from) return false;
+    if (filters.from !== null && t.date < filters.from) return false;
+    if (filters.to !== null && t.date > filters.to) return false;
     if (filters.categoryId !== 'all' && t.categoryId !== filters.categoryId) return false;
     if (filters.type === 'income' && t.amount <= 0) return false;
     if (filters.type === 'expense' && t.amount >= 0) return false;
