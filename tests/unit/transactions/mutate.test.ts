@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { runMigrations } from '../../../src/main/db/migrate';
-import { updateTransaction } from '../../../src/main/transactions/mutate';
+import {
+  updateTransaction,
+  deleteTransaction,
+  restoreTransaction,
+} from '../../../src/main/transactions/mutate';
 
 function freshDb(): DatabaseSync {
   const db = new DatabaseSync(':memory:');
@@ -101,6 +105,36 @@ describe('updateTransaction', () => {
     expect(() => {
       updateTransaction(db, { transactionId: 't1', label: '   ' });
     }).toThrow();
+    db.close();
+  });
+});
+
+describe('deleteTransaction / restoreTransaction', () => {
+  it('returns a faithful snapshot, deletes the row, and restores it', () => {
+    const db = freshDb();
+    db.prepare(
+      `INSERT INTO transactions (id, account_id, import_id, tx_hash, date, amount, label_raw, label_clean, category_id, is_internal_transfer, user_modified, fitid)
+       VALUES ('t1', 'a1', NULL, 'hash1', '2026-05-14', -84.3, 'CB CARREFOUR', 'Carrefour', NULL, 0, 0, 'fit1')`,
+    ).run();
+
+    const snapshot = deleteTransaction(db, 't1');
+    expect(snapshot.id).toBe('t1');
+    expect(snapshot.txHash).toBe('hash1');
+    expect(snapshot.fitid).toBe('fit1');
+    expect(snapshot.amount).toBe(-84.3);
+    expect(db.prepare('SELECT count(*) n FROM transactions').get()).toMatchObject({ n: 0 });
+
+    restoreTransaction(db, snapshot);
+    const back = db
+      .prepare('SELECT id, tx_hash, fitid, amount FROM transactions WHERE id = ?')
+      .get('t1');
+    expect(back).toMatchObject({ id: 't1', tx_hash: 'hash1', fitid: 'fit1', amount: -84.3 });
+    db.close();
+  });
+
+  it('throws when deleting an unknown id', () => {
+    const db = freshDb();
+    expect(() => deleteTransaction(db, 'nope')).toThrow();
     db.close();
   });
 });

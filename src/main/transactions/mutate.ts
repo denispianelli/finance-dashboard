@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
-import type { UpdateTransactionInput } from '@shared/types/transaction';
+import type { UpdateTransactionInput, DeletedTransactionSnapshot } from '@shared/types/transaction';
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -57,4 +57,81 @@ export function updateTransaction(db: DatabaseSync, input: UpdateTransactionInpu
          edited_at = datetime('now'), user_modified = 1
      WHERE id = ?`,
   ).run(nextDate, nextAmount, nextLabel, originalDate, originalAmount, input.transactionId);
+}
+
+interface FullRow {
+  id: string;
+  account_id: string;
+  import_id: string | null;
+  tx_hash: string;
+  date: string;
+  amount: number;
+  label_raw: string;
+  label_clean: string;
+  category_id: string | null;
+  is_internal_transfer: number;
+  user_modified: number;
+  fitid: string | null;
+  original_date: string | null;
+  original_amount: number | null;
+  edited_at: string | null;
+}
+
+/** Hard-delete a transaction, returning a snapshot of every column so the caller
+ *  can restore it (the renderer's undo). Throws if the id does not exist. */
+export function deleteTransaction(
+  db: DatabaseSync,
+  transactionId: string,
+): DeletedTransactionSnapshot {
+  const row = db
+    .prepare('SELECT * FROM transactions WHERE id = ?')
+    .get(transactionId) as unknown as FullRow | undefined;
+  if (row === undefined) {
+    throw new Error(`deleteTransaction: transaction ${transactionId} not found`);
+  }
+  db.prepare('DELETE FROM transactions WHERE id = ?').run(transactionId);
+  return {
+    id: row.id,
+    accountId: row.account_id,
+    importId: row.import_id,
+    txHash: row.tx_hash,
+    date: row.date,
+    amount: row.amount,
+    labelRaw: row.label_raw,
+    labelClean: row.label_clean,
+    categoryId: row.category_id,
+    isInternalTransfer: row.is_internal_transfer === 1,
+    userModified: row.user_modified === 1,
+    fitid: row.fitid,
+    originalDate: row.original_date,
+    originalAmount: row.original_amount,
+    editedAt: row.edited_at,
+  };
+}
+
+/** Re-insert a previously deleted transaction from its snapshot (undo). */
+export function restoreTransaction(db: DatabaseSync, snap: DeletedTransactionSnapshot): void {
+  db.prepare(
+    `INSERT INTO transactions
+       (id, account_id, import_id, tx_hash, date, amount, label_raw, label_clean,
+        category_id, is_internal_transfer, user_modified, fitid,
+        original_date, original_amount, edited_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    snap.id,
+    snap.accountId,
+    snap.importId,
+    snap.txHash,
+    snap.date,
+    snap.amount,
+    snap.labelRaw,
+    snap.labelClean,
+    snap.categoryId,
+    snap.isInternalTransfer ? 1 : 0,
+    snap.userModified ? 1 : 0,
+    snap.fitid,
+    snap.originalDate,
+    snap.originalAmount,
+    snap.editedAt,
+  );
 }
