@@ -8,6 +8,7 @@ export interface OfxTransaction {
 export interface ParsedOfx {
   org: string | null;
   bankId: string | null;
+  acctId: string | null;
   ledgerBalance: number | null;
   transactions: OfxTransaction[];
 }
@@ -57,6 +58,7 @@ export function parseOfx(content: Buffer): ParsedOfx {
 
   let org: string | null = null;
   let bankId: string | null = null;
+  let acctId: string | null = null;
   let ledgerBalance: number | null = null;
   const transactions: OfxTransaction[] = [];
 
@@ -70,6 +72,9 @@ export function parseOfx(content: Buffer): ParsedOfx {
         break;
       case 'BANKID':
         bankId ??= value || null;
+        break;
+      case 'ACCTID':
+        acctId ??= value || null;
         break;
       case 'STMTTRN':
         cur = {};
@@ -121,5 +126,5 @@ export function parseOfx(content: Buffer): ParsedOfx {
   }
 
   if (transactions.length === 0) throw new Error('OFX: no transactions');
-  return { org, bankId, ledgerBalance, transactions };
+  return { org, bankId, acctId, ledgerBalance, transactions };
 }
