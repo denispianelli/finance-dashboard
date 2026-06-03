@@ -61,3 +61,9 @@ over time, with no stored score and no configuration.
 > The LLM categorization tier itself is not built yet; this amendment only fixes
 > _how_ uncertainty is expressed once it lands. Nothing here is persisted on
 > `transactions`.
+
+## Amendment (2026-06-03) — post-import editing is a separate, audited path
+
+The mandatory pre-INSERT Review is unchanged. Correcting a transaction _after_
+import (edit / delete) is a distinct, audited path (see ADR-012), not a bypass of
+the Review gate.

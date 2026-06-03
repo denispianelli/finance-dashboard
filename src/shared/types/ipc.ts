@@ -16,6 +16,7 @@ import type {
   SetTransactionCategoryInput,
 } from './category';
 import type { LearnBankInput, LearnBankResponse } from './bank';
+import type { UpdateTransactionInput, DeletedTransactionSnapshot } from './transaction';
 
 export interface PingPayload {
   now: number;
@@ -97,6 +98,15 @@ export interface IpcContract {
   'categories:create': { payload: CreateCategoryInput; response: { category: CategoryDTO } };
   'categories:delete': { payload: { id: string }; response: { uncategorizedCount: number } };
   'transactions:setCategory': { payload: SetTransactionCategoryInput; response: { ok: true } };
+  'transactions:update': { payload: UpdateTransactionInput; response: { ok: true } };
+  'transactions:delete': {
+    payload: { transactionId: string };
+    response: { ok: true; snapshot: DeletedTransactionSnapshot };
+  };
+  'transactions:restore': {
+    payload: { transaction: DeletedTransactionSnapshot };
+    response: { ok: true };
+  };
   'banks:learn': { payload: LearnBankInput; response: LearnBankResponse };
 }
 

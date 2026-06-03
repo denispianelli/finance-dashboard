@@ -23,6 +23,11 @@ import {
   handleTransactionsSetCategory,
 } from './handlers/categories';
 import { handleBanksLearn } from './handlers/learnBank';
+import {
+  handleTransactionsUpdate,
+  handleTransactionsDelete,
+  handleTransactionsRestore,
+} from './handlers/transactions';
 
 type Handler<C extends IpcChannel> = (
   payload: IpcPayload<C>,
@@ -62,5 +67,8 @@ export function registerAllHandlers(): void {
   register(CHANNELS.categoriesCreate, handleCategoriesCreate);
   register(CHANNELS.categoriesDelete, handleCategoriesDelete);
   register(CHANNELS.transactionsSetCategory, handleTransactionsSetCategory);
+  register(CHANNELS.transactionsUpdate, handleTransactionsUpdate);
+  register(CHANNELS.transactionsDelete, handleTransactionsDelete);
+  register(CHANNELS.transactionsRestore, handleTransactionsRestore);
   register(CHANNELS.banksLearn, handleBanksLearn);
 }

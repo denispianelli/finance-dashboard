@@ -54,6 +54,9 @@ interface TransactionRow {
   category_name: string | null;
   category_color: string | null;
   category_icon: string | null;
+  original_date: string | null;
+  original_amount: number | null;
+  edited_at: string | null;
   is_internal_transfer: number;
   user_modified: number;
 }
@@ -88,6 +91,7 @@ export function getTransactions(
       `SELECT t.id, t.account_id, t.date, t.amount, t.label_raw, t.label_clean,
               t.category_id, c.name AS category_name, c.color AS category_color,
               c.icon AS category_icon,
+              t.original_date, t.original_amount, t.edited_at,
               t.is_internal_transfer, t.user_modified
        FROM transactions t
        LEFT JOIN categories c ON c.id = t.category_id
@@ -108,6 +112,9 @@ export function getTransactions(
     categoryName: r.category_name,
     categoryColor: r.category_color,
     categoryIcon: r.category_icon,
+    originalDate: r.original_date,
+    originalAmount: r.original_amount,
+    editedAt: r.edited_at,
     isInternalTransfer: r.is_internal_transfer === 1,
     userModified: r.user_modified === 1,
   }));
