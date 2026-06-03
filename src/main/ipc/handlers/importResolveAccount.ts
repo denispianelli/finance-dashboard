@@ -8,8 +8,8 @@ import { ImportError } from '../../import/importError';
 export async function handleImportResolveAccount(
   payload: ResolveAccountPayload,
 ): Promise<ResolveAccountResponse> {
-  const content = readFileSync(payload.path);
   try {
+    const content = readFileSync(payload.path);
     const { identifier, sourceType, detectedBank } = await readIdentifier(content, payload.path);
     const matchedAccountId =
       identifier !== null ? findAccountByIdentifier(getDb(), identifier) : null;
