@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Overline } from '../components/ui/overline';
 import { AccountTabs } from '../components/dashboard/AccountTabs';
 import { TxTableHeader, TxTableRow } from '../components/dashboard/TxTable';
-import { PeriodFilter, type DateSel } from '../components/dashboard/PeriodFilter';
+import { PeriodFilter, type DateRangeValue } from '../components/dashboard/PeriodFilter';
 import { useDashboard } from '../hooks/useDashboard';
 import { toAccount, toTxRow } from '../lib/dashboardMap';
 import {
@@ -77,26 +77,24 @@ export function TransactionsPage() {
   } = useDashboard(refreshToken, { transactionLimit: FULL_HISTORY_LIMIT });
 
   const [today] = useState(() => toLocalISODate(new Date()));
-  const [dateSel, setDateSel] = useState<DateSel>({ kind: 'preset', preset: 'all' });
+  const [range, setRange] = useState<DateRangeValue>(() => ({
+    from: periodStart('30d', today),
+    to: today,
+  }));
   const [type, setType] = useState<TxType>('all');
   const [category, setCategory] = useState<string>('all');
   const [query, setQuery] = useState('');
 
-  const { from, to } = useMemo<{ from: string | null; to: string | null }>(() => {
-    if (dateSel.kind === 'range') return { from: dateSel.from, to: dateSel.to };
-    return { from: periodStart(dateSel.preset, today), to: null };
-  }, [dateSel, today]);
-
   const filtered = useMemo(() => {
     const filters: TxFilters = {
-      from,
-      to,
+      from: range.from,
+      to: range.to,
       type,
       query,
       categoryId: category === NONE ? null : category,
     };
     return filterTransactions(transactions, filters);
-  }, [transactions, from, to, type, query, category]);
+  }, [transactions, range, type, query, category]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -133,7 +131,7 @@ export function TransactionsPage() {
         </CardHeader>
 
         <div className="flex flex-wrap items-center gap-3 pb-4">
-          <PeriodFilter value={dateSel} onChange={setDateSel} />
+          <PeriodFilter value={range} onChange={setRange} today={today} />
           <Segmented options={TYPES} value={type} onChange={setType} />
           <select
             aria-label="Catégorie"

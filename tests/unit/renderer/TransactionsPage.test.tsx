@@ -202,10 +202,11 @@ describe('TransactionsPage', () => {
     expect(rendered.length).toBeLessThan(30);
   });
 
-  it('renders the Période control with presets in its popover', async () => {
+  it('defaults to the last-30-days range and renders the Du/Au fields', async () => {
     renderPage();
     await screen.findByText('Carrefour');
-    fireEvent.click(screen.getByRole('button', { name: /Tout/ }));
-    expect(await screen.findByText('30 derniers jours')).toBeInTheDocument();
+    expect(screen.getByLabelText('Du')).toBeInTheDocument();
+    expect(screen.getByLabelText('Au')).toBeInTheDocument();
+    expect(screen.getByLabelText<HTMLInputElement>('Du').value).not.toBe('');
   });
 });
