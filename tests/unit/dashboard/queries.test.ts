@@ -38,12 +38,11 @@ function seedTx(
     amount: number;
     label?: string;
     categoryId?: string | null;
-    confidence?: number | null;
   },
 ): void {
   db.prepare(
-    `INSERT INTO transactions (id, account_id, tx_hash, date, amount, label_raw, label_clean, category_id, confidence)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO transactions (id, account_id, tx_hash, date, amount, label_raw, label_clean, category_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     args.id,
     args.accountId,
@@ -53,7 +52,6 @@ function seedTx(
     args.label ?? args.id,
     args.label ?? args.id,
     args.categoryId ?? null,
-    args.confidence ?? null,
   );
 }
 

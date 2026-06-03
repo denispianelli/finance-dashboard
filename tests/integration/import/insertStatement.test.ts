@@ -44,8 +44,8 @@ describe('insertStatement — real LCL fixture', () => {
       const seedTx = db.prepare(
         `INSERT INTO transactions
            (id, account_id, import_id, tx_hash, date, amount, label_raw, label_clean,
-            category_id, confidence, is_internal_transfer, user_modified)
-         VALUES (?, 'acc-lcl-default', 'prior', ?, ?, ?, ?, ?, NULL, NULL, 0, 0)`,
+            category_id, is_internal_transfer, user_modified)
+         VALUES (?, 'acc-lcl-default', 'prior', ?, ?, ?, ?, ?, NULL, 0, 0)`,
       );
       for (let i = 0; i < 3; i++) {
         const t = pre.transactions[i];

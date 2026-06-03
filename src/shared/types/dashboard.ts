@@ -42,7 +42,6 @@ export interface DashboardTransaction {
   readonly categoryName: string | null;
   readonly categoryColor: string | null;
   readonly categoryIcon: string | null;
-  readonly confidence: number | null;
   readonly isInternalTransfer: boolean;
   readonly userModified: boolean;
 }

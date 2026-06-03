@@ -15,8 +15,6 @@ export interface TxRow {
   catName: string;
   amount: number;
   amountKind: MoneyKind;
-  conf: string;
-  confLow?: boolean;
 }
 
 export interface TxTableProps {
@@ -37,7 +35,7 @@ const CELL = 'py-[11px]';
 export const TX_GRID =
   'grid items-center gap-x-3 xl:gap-x-3.5 ' +
   'grid-cols-[72px_24px_1fr_160px_96px] ' +
-  'xl:grid-cols-[84px_28px_1fr_180px_110px_56px_24px]';
+  'xl:grid-cols-[84px_28px_1fr_180px_110px_24px]';
 
 export function TxTableHeader() {
   return (
@@ -47,7 +45,6 @@ export function TxTableHeader() {
       <span className={HEAD}>Description</span>
       <span className={HEAD}>Catégorie</span>
       <span className={cn(HEAD, 'text-right')}>Montant</span>
-      <span className={cn(HEAD, 'hidden text-right xl:block')}>Conf.</span>
       <span className={cn(HEAD, 'hidden xl:block')} />
     </div>
   );
@@ -97,15 +94,6 @@ export function TxTableRow({ row: t, categories, onReassign, onCreateCategory }:
       </span>
       <span className={cn(CELL, 'text-right')}>
         <Money value={t.amount} kind={t.amountKind} className="text-[13px] font-medium" />
-      </span>
-      <span
-        className={cn(
-          CELL,
-          'hidden text-right font-mono text-[11px] font-medium xl:block',
-          t.confLow ? 'text-flag' : 'text-paper-mute',
-        )}
-      >
-        {t.conf}
       </span>
       <span className={cn(CELL, 'hidden justify-center text-paper-dim xl:flex')}>
         <MoreHorizontal size={14} strokeWidth={1.6} />
