@@ -25,7 +25,7 @@ import type { AppOutletContext } from '../lib/outletContext';
 const RECENT_LIMIT = 10;
 
 export function DashboardPage() {
-  const { refreshToken, openImport } = useOutletContext<AppOutletContext>();
+  const { refreshToken, openCreateAccount } = useOutletContext<AppOutletContext>();
   const {
     accounts,
     transactions,
@@ -69,7 +69,7 @@ export function DashboardPage() {
         accounts={accounts.map(toAccount)}
         activeId={selectedAccountId ?? ''}
         onSelect={selectAccount}
-        onAdd={openImport}
+        onAdd={openCreateAccount}
       />
 
       <KpiGrid>
