@@ -74,7 +74,11 @@ export function TransactionsPage() {
     selectAccount,
     reassign,
     createCategory,
+    updateTransaction,
+    deleteTransaction,
   } = useDashboard(refreshToken, { transactionLimit: FULL_HISTORY_LIMIT });
+
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Pre-select the account passed via ?account=… (e.g. clicking an account on the
   // dashboard navigates here). Re-applies when the param changes (navigating from
@@ -217,11 +221,24 @@ export function TransactionsPage() {
                         void reassign(txId, catId);
                       }}
                       onCreateCategory={createCategory}
-                      onStartEdit={() => {
-                        /* wired in Task 10 */
+                      editing={editingId === t.id}
+                      onStartEdit={(id) => {
+                        setEditingId(id);
                       }}
-                      onDelete={() => {
-                        /* wired in Task 10 */
+                      onSaveEdit={(id, fields) => {
+                        void updateTransaction({
+                          transactionId: id,
+                          date: fields.date,
+                          label: fields.label,
+                          amount: fields.amount,
+                        });
+                        setEditingId(null);
+                      }}
+                      onCancelEdit={() => {
+                        setEditingId(null);
+                      }}
+                      onDelete={(id) => {
+                        void deleteTransaction(id);
                       }}
                     />
                   </div>

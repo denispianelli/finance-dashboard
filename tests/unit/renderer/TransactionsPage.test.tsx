@@ -204,6 +204,34 @@ describe('TransactionsPage', () => {
     expect(rendered.length).toBeLessThan(30);
   });
 
+  it('enters edit mode on the pencil and saves via the hook', async () => {
+    renderPage();
+    await screen.findByText('Carrefour');
+    const [firstPencil] = screen.getAllByLabelText('Modifier');
+    if (!firstPencil) throw new Error('no edit button rendered');
+    fireEvent.click(firstPencil);
+    // Pencil reveals the inline inputs.
+    expect(screen.getByLabelText('Montant')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Montant'), { target: { value: '-99,99' } });
+    fireEvent.click(screen.getByLabelText('Enregistrer'));
+    // The first rendered row is 'a' (Carrefour), so the whole payload is known.
+    expect(mockInvoke).toHaveBeenCalledWith('transactions:update', {
+      transactionId: 'a',
+      date: '2026-05-14',
+      label: 'Carrefour',
+      amount: -99.99,
+    });
+  });
+
+  it('deletes a transaction via the hook on the trash button', async () => {
+    renderPage();
+    await screen.findByText('Carrefour');
+    const [firstTrash] = screen.getAllByLabelText('Supprimer');
+    if (!firstTrash) throw new Error('no delete button rendered');
+    fireEvent.click(firstTrash);
+    expect(mockInvoke).toHaveBeenCalledWith('transactions:delete', { transactionId: 'a' });
+  });
+
   it('defaults to the last-30-days range and renders the Du/Au fields', async () => {
     renderPage();
     await screen.findByText('Carrefour');
