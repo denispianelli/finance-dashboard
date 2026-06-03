@@ -52,6 +52,20 @@ export type ExtractResponse =
       error: 'unknown_bank' | 'no_text' | 'not_pdf' | 'unsupported_format' | 'malformed_ofx';
     };
 
+export interface ResolveAccountPayload {
+  path: string;
+}
+
+export type ResolveAccountResponse =
+  | {
+      ok: true;
+      identifier: string | null;
+      matchedAccountId: string | null;
+      sourceType: 'ofx' | 'pdf';
+      detectedBank: string | null;
+    }
+  | { ok: false; error: 'unsupported_format' };
+
 export interface ConfirmPayload {
   path: string;
   accountId: string;
@@ -78,6 +92,7 @@ export interface IpcContract {
   'app:ping': { payload: PingPayload; response: PingResponse };
   'import:pickFile': { payload: PickFilePayload; response: PickFileResponse };
   'import:extract': { payload: ExtractPayload; response: ExtractResponse };
+  'import:resolveAccount': { payload: ResolveAccountPayload; response: ResolveAccountResponse };
   'import:confirm': { payload: ConfirmPayload; response: ConfirmResponse };
   'dashboard:getAccounts': {
     payload: Record<string, never>;
