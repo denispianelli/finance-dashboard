@@ -1,100 +1,85 @@
-import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import type { DateRange } from 'react-day-picker';
 import { cn } from '@renderer/lib/utils';
-import { toLocalISODate, type TxPeriod } from '@renderer/lib/filterTransactions';
-import { Button } from '../ui/button';
-import { Calendar } from '../ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { periodStart, type TxPeriod } from '@renderer/lib/filterTransactions';
+import { DateInput } from './DateInput';
 
-export type DateSel =
-  | { kind: 'preset'; preset: TxPeriod }
-  | { kind: 'range'; from: string; to: string };
+export interface DateRangeValue {
+  from: string | null; // ISO yyyy-mm-dd
+  to: string | null;
+}
 
 const PRESETS: { preset: TxPeriod; label: string }[] = [
   { preset: 'all', label: 'Tout' },
-  { preset: '30d', label: '30 derniers jours' },
-  { preset: '3m', label: '3 derniers mois' },
+  { preset: '30d', label: '30 jours' },
+  { preset: '3m', label: '3 mois' },
   { preset: 'year', label: 'Cette année' },
 ];
 
-const PRESET_LABEL: Record<TxPeriod, string> = {
-  all: 'Tout',
-  '30d': '30 derniers jours',
-  '3m': '3 derniers mois',
-  year: 'Cette année',
-};
-
-/** ISO `yyyy-mm-dd` → local-midnight Date (no UTC shift). */
-function isoToDate(iso: string): Date {
-  return new Date(`${iso}T00:00:00`);
+/** Bounds for a preset relative to `today`. 'all' clears both bounds. */
+function presetBounds(preset: TxPeriod, today: string): DateRangeValue {
+  if (preset === 'all') return { from: null, to: null };
+  return { from: periodStart(preset, today), to: today };
 }
 
-function triggerLabel(value: DateSel): string {
-  if (value.kind === 'preset') return PRESET_LABEL[value.preset];
-  const from = format(isoToDate(value.from), 'd MMM', { locale: fr });
-  const to = format(isoToDate(value.to), 'd MMM', { locale: fr });
-  return `${from} – ${to}`;
+function isActive(value: DateRangeValue, bounds: DateRangeValue): boolean {
+  return value.from === bounds.from && value.to === bounds.to;
 }
+
+const CHIP = 'h-7 rounded-md px-2.5 font-sans text-xs font-medium transition-colors';
 
 export function PeriodFilter({
   value,
   onChange,
+  today,
 }: {
-  value: DateSel;
-  onChange: (v: DateSel) => void;
+  value: DateRangeValue;
+  onChange: (v: DateRangeValue) => void;
+  today: string;
 }) {
-  const [open, setOpen] = useState(false);
-
-  const selectedRange: DateRange | undefined =
-    value.kind === 'range' ? { from: isoToDate(value.from), to: isoToDate(value.to) } : undefined;
-
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="secondary" size="sm">
-          {triggerLabel(value)}
-          <ChevronDown size={14} strokeWidth={1.6} />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="flex w-auto gap-2 p-2" align="start">
-        <div className="flex w-44 flex-col gap-0.5">
-          {PRESETS.map((p) => (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="inline-flex gap-1 rounded-lg border border-line-2 bg-ink-2 p-1">
+        {PRESETS.map((p) => {
+          const bounds = presetBounds(p.preset, today);
+          return (
             <button
               key={p.preset}
               type="button"
               onClick={() => {
-                onChange({ kind: 'preset', preset: p.preset });
-                setOpen(false);
+                onChange(bounds);
               }}
               className={cn(
-                'rounded-md px-2.5 py-1.5 text-left font-sans text-xs text-paper-mute hover:bg-ink-3 hover:text-paper',
-                value.kind === 'preset' && value.preset === p.preset && 'bg-ink-3 text-paper',
+                CHIP,
+                isActive(value, bounds)
+                  ? 'bg-ink-3 text-paper'
+                  : 'text-paper-mute hover:text-paper',
               )}
             >
               {p.label}
             </button>
-          ))}
-        </div>
-        <div className="border-l border-line-2 pl-2">
-          <Calendar
-            mode="range"
-            selected={selectedRange}
-            onSelect={(range) => {
-              if (range?.from && range.to) {
-                onChange({
-                  kind: 'range',
-                  from: toLocalISODate(range.from),
-                  to: toLocalISODate(range.to),
-                });
-                setOpen(false);
-              }
-            }}
-          />
-        </div>
-      </PopoverContent>
-    </Popover>
+          );
+        })}
+      </div>
+      <div className="inline-flex items-center gap-1.5">
+        <span className="font-sans text-xs text-paper-mute">Du</span>
+        <DateInput
+          ariaLabel="Du"
+          value={value.from}
+          max={value.to ?? today}
+          onChange={(from) => {
+            onChange({ from, to: value.to });
+          }}
+        />
+        <span className="font-sans text-xs text-paper-mute">au</span>
+        <DateInput
+          ariaLabel="Au"
+          value={value.to}
+          min={value.from ?? undefined}
+          max={today}
+          onChange={(to) => {
+            onChange({ from: value.from, to });
+          }}
+        />
+      </div>
+    </div>
   );
 }

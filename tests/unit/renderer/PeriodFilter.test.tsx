@@ -1,56 +1,60 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
-import { PeriodFilter, type DateSel } from '@renderer/components/dashboard/PeriodFilter';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import { PeriodFilter } from '@renderer/components/dashboard/PeriodFilter';
 
-// Radix Popover needs a couple of jsdom APIs that aren't implemented by jsdom.
-// We unconditionally override to stubs — harmless in tests.
-beforeEach(() => {
-  Element.prototype.hasPointerCapture = () => false;
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  Element.prototype.scrollIntoView = () => {};
-});
+const TODAY = '2026-06-03';
 
 afterEach(() => {
   cleanup();
 });
 
 describe('PeriodFilter', () => {
-  it('shows the preset label on the trigger', () => {
-    render(<PeriodFilter value={{ kind: 'preset', preset: 'all' }} onChange={vi.fn()} />);
-    expect(screen.getByRole('button', { name: /Tout/ })).toBeInTheDocument();
-  });
-
-  it('shows a formatted range label on the trigger', () => {
+  it('renders Du and Au fields reflecting the value', () => {
     render(
       <PeriodFilter
-        value={{ kind: 'range', from: '2026-05-12', to: '2026-06-03' }}
+        value={{ from: '2026-05-12', to: '2026-06-03' }}
         onChange={vi.fn()}
+        today={TODAY}
       />,
     );
-    expect(screen.getByRole('button', { name: /mai.*juin/ })).toBeInTheDocument();
+    expect(screen.getByLabelText('Du')).toHaveValue('12/05/2026');
+    expect(screen.getByLabelText('Au')).toHaveValue('03/06/2026');
   });
 
-  it('calls onChange with a preset when a preset is clicked', () => {
+  it('fills both bounds when the "30 jours" preset is clicked', () => {
     const onChange = vi.fn();
-    render(<PeriodFilter value={{ kind: 'preset', preset: 'all' }} onChange={onChange} />);
-    fireEvent.click(screen.getByRole('button', { name: /Tout/ }));
-    fireEvent.click(screen.getByText('30 derniers jours'));
-    expect(onChange).toHaveBeenCalledWith({ kind: 'preset', preset: '30d' });
+    render(<PeriodFilter value={{ from: null, to: null }} onChange={onChange} today={TODAY} />);
+    fireEvent.click(screen.getByRole('button', { name: '30 jours' }));
+    expect(onChange).toHaveBeenCalledWith({ from: '2026-05-04', to: '2026-06-03' });
   });
 
-  it('calls onChange with a range after two calendar days are picked', () => {
-    const onChange = vi.fn<(v: DateSel) => void>();
-    render(<PeriodFilter value={{ kind: 'preset', preset: 'all' }} onChange={onChange} />);
-    fireEvent.click(screen.getByRole('button', { name: /Tout/ }));
-    const dayButtons = screen
-      .getAllByRole('button')
-      .filter((b) => /^\d{1,2}$/.test(b.textContent.trim()));
-    expect(dayButtons.length).toBeGreaterThan(1);
-    const day3 = dayButtons[3];
-    const day8 = dayButtons[8];
-    if (day3) fireEvent.click(day3);
-    if (day8) fireEvent.click(day8);
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ kind: 'range' }));
+  it('clears both bounds when "Tout" is clicked', () => {
+    const onChange = vi.fn();
+    render(
+      <PeriodFilter value={{ from: '2026-05-04', to: TODAY }} onChange={onChange} today={TODAY} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Tout' }));
+    expect(onChange).toHaveBeenCalledWith({ from: null, to: null });
+  });
+
+  it('emits an updated lower bound when Du is edited', () => {
+    const onChange = vi.fn();
+    render(<PeriodFilter value={{ from: null, to: TODAY }} onChange={onChange} today={TODAY} />);
+    const du = screen.getByLabelText('Du');
+    fireEvent.change(du, { target: { value: '01/05/2026' } });
+    fireEvent.blur(du);
+    expect(onChange).toHaveBeenCalledWith({ from: '2026-05-01', to: TODAY });
+  });
+
+  it('emits an updated upper bound when Au is edited', () => {
+    const onChange = vi.fn();
+    render(
+      <PeriodFilter value={{ from: '2026-05-01', to: null }} onChange={onChange} today={TODAY} />,
+    );
+    const au = screen.getByLabelText('Au');
+    fireEvent.change(au, { target: { value: '31/05/2026' } });
+    fireEvent.blur(au);
+    expect(onChange).toHaveBeenCalledWith({ from: '2026-05-01', to: '2026-05-31' });
   });
 });
