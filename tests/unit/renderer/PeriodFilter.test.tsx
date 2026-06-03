@@ -22,22 +22,6 @@ describe('PeriodFilter', () => {
     expect(screen.getByLabelText('Au')).toHaveValue('03/06/2026');
   });
 
-  it('fills both bounds when the "30 jours" preset is clicked', () => {
-    const onChange = vi.fn();
-    render(<PeriodFilter value={{ from: null, to: null }} onChange={onChange} today={TODAY} />);
-    fireEvent.click(screen.getByRole('button', { name: '30 jours' }));
-    expect(onChange).toHaveBeenCalledWith({ from: '2026-05-04', to: '2026-06-03' });
-  });
-
-  it('clears both bounds when "Tout" is clicked', () => {
-    const onChange = vi.fn();
-    render(
-      <PeriodFilter value={{ from: '2026-05-04', to: TODAY }} onChange={onChange} today={TODAY} />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Tout' }));
-    expect(onChange).toHaveBeenCalledWith({ from: null, to: null });
-  });
-
   it('emits an updated lower bound when Du is edited', () => {
     const onChange = vi.fn();
     render(<PeriodFilter value={{ from: null, to: TODAY }} onChange={onChange} today={TODAY} />);

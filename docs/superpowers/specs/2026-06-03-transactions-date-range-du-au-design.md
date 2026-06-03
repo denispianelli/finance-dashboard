@@ -23,8 +23,10 @@ impossible by construction.
   `calendar` (pulled via the shadcn MCP), re-themed to the design tokens.
 - Build a reusable single-date **`DateInput`** from shadcn's "Input" date-picker pattern
   (typed input + calendar popover).
-- `PeriodFilter` = preset quick-fill shortcuts **+ two `DateInput`s ("Du" / "Au")**, replacing
-  the single "Période" popover button.
+- `PeriodFilter` = two `DateInput`s ("Du" / "Au"), replacing the single "Période" popover
+  button. (Update 2026-06-03: the preset quick-fill chips were dropped after first use — the
+  base is intentionally just the two fields; presets can be layered back later if needed. The
+  page still defaults the range to the last 30 days.)
 - The filter logic stays on explicit `from`/`to` bounds (already refactored — unchanged).
 
 ## Design
