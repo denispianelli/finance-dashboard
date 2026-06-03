@@ -13,7 +13,7 @@ out/
 *.sqlite-shm
 *.sqlite-wal
 .superpowers/
-models/
+models
 # Match both the real directory and the per-worktree symlink (CLAUDE.md: never commit)
 spike-fixtures
 spike-results.txt

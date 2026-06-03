@@ -7,13 +7,20 @@ export interface DetectedBank {
   mapping: ColumnMapping;
 }
 
+function fold(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
+}
+
 export function detectBank(db: DatabaseSync, pages: PdfPage[]): DetectedBank | null {
-  const text = pages.map((p) => p.items.map((i) => i.str).join(' ')).join(' ');
+  const text = fold(pages.map((p) => p.items.map((i) => i.str).join(' ')).join(' '));
   const banks = db
     .prepare('SELECT id, detected_signature FROM banks WHERE detected_signature IS NOT NULL')
     .all() as unknown as { id: string; detected_signature: string }[];
   for (const bank of banks) {
-    if (text.includes(bank.detected_signature)) {
+    if (text.includes(fold(bank.detected_signature))) {
       const mapping = db
         .prepare(
           `SELECT date_col, label_col, debit_col, credit_col, balance_col
