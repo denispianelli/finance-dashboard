@@ -60,6 +60,12 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [dragOver, setDragOver] = useState(false);
 
+  // Reopening always starts fresh: closing mid-queue must not resume on stale
+  // sub-state (or show a summary for work the user abandoned).
+  useEffect(() => {
+    if (open) reset();
+  }, [open, reset]);
+
   useEffect(() => {
     if (!open) return;
     let active = true;
@@ -114,7 +120,7 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
     setDragOver(false);
     const files = Array.from(e.dataTransfer.files);
     if (files.length === 0) return;
-    const paths = window.electronAPI.getDroppedPaths(files);
+    const paths = window.electronAPI.getDroppedPaths(files).filter(Boolean);
     if (paths.length > 0) void startFromPaths(paths);
   }
 

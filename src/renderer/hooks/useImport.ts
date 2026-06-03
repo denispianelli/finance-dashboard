@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { StatementExtraction } from '@shared/types/import';
 import { ipc } from '@renderer/ipc/client';
 
@@ -327,9 +327,11 @@ export function useImport(): UseImport {
     ]);
   }
 
-  function reset(): void {
-    setS({ step: 'idle' });
-  }
+  const reset = useCallback((): void => {
+    const next: ImportState = { step: 'idle' };
+    stateRef.current = next;
+    setState(next);
+  }, []);
 
   return {
     state,

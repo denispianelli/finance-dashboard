@@ -119,6 +119,72 @@ describe('useImport — queue', () => {
     ]);
   });
 
+  it('confirm sends ack=true for OFX and only the selected hashes', async () => {
+    mockInvoke
+      .mockResolvedValueOnce({
+        ok: true,
+        identifier: 'ofx:1:1',
+        matchedAccountId: 'acc-a',
+        sourceType: 'ofx',
+        detectedBank: 'LCL',
+      }) // resolve → matched
+      .mockResolvedValueOnce({ ok: true, extraction: extraction() }) // extract
+      .mockResolvedValueOnce({ ok: true, importId: 'i1', insertedCount: 1, skippedCount: 0 }); // confirm
+
+    const { result } = renderHook(() => useImport());
+
+    await act(async () => {
+      await result.current.startFromPaths(['/x/a.ofx']);
+    });
+    await act(async () => {
+      await result.current.confirm();
+    });
+
+    const confirmCall = mockInvoke.mock.calls.find((c) => c[0] === 'import:confirm');
+    expect(confirmCall?.[1]).toMatchObject({
+      acknowledgedCannotVerify: true,
+      selectedHashes: ['h1'],
+    });
+  });
+
+  it('toggleAll clears then reselects', async () => {
+    mockInvoke
+      .mockResolvedValueOnce({
+        ok: true,
+        identifier: 'ofx:1:1',
+        matchedAccountId: 'acc-a',
+        sourceType: 'ofx',
+        detectedBank: 'LCL',
+      }) // resolve → matched
+      .mockResolvedValueOnce({ ok: true, extraction: extraction() }); // extract → review
+
+    const { result } = renderHook(() => useImport());
+
+    await act(async () => {
+      await result.current.startFromPaths(['/x/a.ofx']);
+    });
+
+    const reviewSelected = (): Set<string> => {
+      const s = result.current.state;
+      if (s.step !== 'queue' || s.sub.step !== 'review') {
+        throw new Error('expected review sub-state');
+      }
+      return s.sub.selected;
+    };
+
+    expect(reviewSelected().size).toBe(1);
+
+    act(() => {
+      result.current.toggleAll();
+    });
+    expect(reviewSelected().size).toBe(0);
+
+    act(() => {
+      result.current.toggleAll();
+    });
+    expect(reviewSelected().size).toBe(1);
+  });
+
   it('marks an invalid extension as failed without calling resolve', async () => {
     const { result } = renderHook(() => useImport());
     await act(async () => {
