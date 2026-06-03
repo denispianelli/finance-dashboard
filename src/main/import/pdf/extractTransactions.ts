@@ -68,7 +68,12 @@ function parseDate(token: string, fallbackYear: number): string | null {
   const dd = m[1] ?? '';
   const mm = m[2] ?? '';
   const yy = m[3];
-  const year = yy === undefined ? fallbackYear : yy.length <= 2 ? yyToFullYear(parseInt(yy, 10)) : parseInt(yy, 10);
+  const year =
+    yy === undefined
+      ? fallbackYear
+      : yy.length <= 2
+        ? yyToFullYear(parseInt(yy, 10))
+        : parseInt(yy, 10);
   return `${String(year)}-${mm}-${dd}`;
 }
 
@@ -77,7 +82,8 @@ function inferYear(items: PdfTextItem[]): number {
     if (hasYear(item.str)) {
       const m = DATE_TOKEN.exec(item.str.trim());
       const yy = m?.[3];
-      if (yy !== undefined) return yy.length <= 2 ? yyToFullYear(parseInt(yy, 10)) : parseInt(yy, 10);
+      if (yy !== undefined)
+        return yy.length <= 2 ? yyToFullYear(parseInt(yy, 10)) : parseInt(yy, 10);
     }
   }
   return new Date().getFullYear();
@@ -92,6 +98,41 @@ function normalizeMarker(s: string): string {
 
 const OPENING_MARKER = /ANCIEN SOLDE|SOLDE PRECEDENT/;
 const CLOSING_MARKER = /SOLDE EN EUROS|NOUVEAU SOLDE/;
+
+function fold(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .trim();
+}
+
+/** Y of the transaction-table header row. Requires Date + Débit + Crédit column
+ *  titles on the same row, so stray "débit"/"crédit" words in legal prose (other
+ *  pages) don't get mistaken for a header. Null if there is no such row. */
+function findHeaderY(items: PdfTextItem[]): number | null {
+  for (const d of items) {
+    if (fold(d.str) !== 'debit') continue;
+    const sameRow = new Set(items.filter((i) => Math.abs(i.y - d.y) <= 5).map((i) => fold(i.str)));
+    if (sameRow.has('credit') && sameRow.has('date')) return d.y;
+  }
+  return null;
+}
+
+/** Tokens inside the transaction table (below the Débit/Crédit header), so column
+ *  derivation isn't polluted by header/footer/legal-text dates and amounts. Falls
+ *  back to all tokens when no header is found (layouts without one, e.g. LCL). */
+export function tableRegionItems(pages: readonly PdfPage[]): PdfTextItem[] {
+  const headers = pages.map((p) => findHeaderY(p.items));
+  if (!headers.some((h) => h !== null)) return pages.flatMap((p) => p.items);
+  const out: PdfTextItem[] = [];
+  pages.forEach((p, i) => {
+    const hy = headers[i];
+    if (hy === null || hy === undefined) return;
+    out.push(...p.items.filter((it) => it.y < hy));
+  });
+  return out;
+}
 
 function groupItemsByY(items: PdfTextItem[], tolerance = 4): PdfTextItem[][] {
   if (items.length === 0) return [];
@@ -132,6 +173,11 @@ export function extractTransactions(pages: PdfPage[], mapping: ColumnMapping): E
       // The transaction date: prefer a date token that carries a year (LCL's
       // "valeur" date), else the leftmost bare date with the inferred year.
       const dateItems = row.filter((i) => isDateToken(i.str));
+      // A real transaction row carries its date in the date column (left of the
+      // labels); this rejects header rows and dates embedded in footer / legal
+      // prose (their dates are mid-line, not in the date column), so multi-page
+      // statements work without needing a repeated header on every page.
+      if (!dateItems.some((i) => i.x < mapping.label_col)) continue;
       const dateItem = dateItems.find((i) => hasYear(i.str)) ?? dateItems[0];
       if (!dateItem) continue;
       const date = parseDate(dateItem.str, year);

@@ -88,4 +88,19 @@ describe('extractTransactions — Société Générale layout (slashes, SOLDE PR
     expect(r.openingBalance).toBeCloseTo(2543.19, 2);
     expect(r.openingDate).toBe('2011-03-09');
   });
+
+  it('ignores footer/legal rows whose date is not in the date column', () => {
+    const p = page([
+      it_('10/06/10', 37, 90),
+      it_('VIR RECU', 136, 90),
+      it_('109,43', 534, 90),
+      // footer prose: a date mid-line (x ≥ label_col) + an amount → not a transaction
+      it_('01/01/2011', 200, 20),
+      it_('Tarif', 150, 20),
+      it_('0,34', 534, 20),
+    ]);
+    const r = extractTransactions([p], SG);
+    expect(r.transactions).toHaveLength(1);
+    expect(r.transactions[0]).toMatchObject({ label: 'VIR RECU' });
+  });
 });

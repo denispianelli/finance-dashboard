@@ -57,19 +57,21 @@ export function deriveColumnMapping(
   if (firstAmount === undefined) return null;
 
   const dateColLeft = Math.min(...dateXs);
-  const dateColRight = Math.max(...dateXs);
 
+  // Label area starts at the first non-date/non-amount token right of the (left)
+  // date column and left of the first amount column. Using the LEFT date column
+  // as the lower bound makes this robust to a stray footer date at a high x.
   const labelXs = tokens
     .filter(
       (t) =>
         t.str.trim() !== '' &&
         !isDate(t.str) &&
         !isAmount(t.str) &&
-        t.x > dateColRight &&
+        t.x > dateColLeft &&
         t.x < firstAmount,
     )
     .map((t) => t.x);
-  const labelCol = labelXs.length > 0 ? Math.min(...labelXs) : dateColRight + 10;
+  const labelCol = labelXs.length > 0 ? Math.min(...labelXs) : dateColLeft + 10;
 
   // Amount columns the LLM reported, in left-to-right order.
   const amountCols = (['debit', 'credit', 'balance'] as const)

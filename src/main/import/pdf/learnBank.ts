@@ -3,6 +3,7 @@ import type { PdfPage } from './extract';
 import type { ColumnMapping } from './extractTransactions';
 import type { ColumnOrder } from './inferColumns';
 import { deriveColumnMapping } from './deriveMapping';
+import { tableRegionItems } from './extractTransactions';
 
 export interface LearnedBank {
   readonly bankId: string;
@@ -34,10 +35,8 @@ export async function learnBankMapping(
   const text = pages.flatMap((p) => p.items.map((i) => i.str)).join(' ');
   const order = await infer(text);
   if (order === null) return null;
-  return deriveColumnMapping(
-    order,
-    pages.flatMap((p) => p.items),
-  );
+  // Derive thresholds from the table region only (excludes header/footer noise).
+  return deriveColumnMapping(order, tableRegionItems(pages));
 }
 
 /**
