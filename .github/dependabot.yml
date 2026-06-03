@@ -7,13 +7,16 @@ updates:
       day: monday
     open-pull-requests-limit: 5
     groups:
-      dev-deps:
+      npm-dev:
         dependency-type: development
         update-types: [minor, patch]
-      prod-deps:
+      npm-prod:
         dependency-type: production
-        update-types: [patch]
+        update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: '/'
     schedule:
       interval: monthly
+    groups:
+      actions:
+        patterns: ['*']
