@@ -113,14 +113,16 @@ export function TransactionsPage() {
   });
 
   return (
-    <>
+    // Fill the available viewport height so the page itself doesn't scroll (no outer
+    // scrollbar); only the transaction list scrolls, inside its own container.
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       <AccountTabs
         accounts={accounts.map(toAccount)}
         activeId={selectedAccountId ?? ''}
         onSelect={selectAccount}
       />
 
-      <Card>
+      <Card className="min-h-0 flex-1">
         <CardHeader>
           <div className="flex items-center gap-3.5">
             <Overline>— III</Overline>
@@ -171,7 +173,7 @@ export function TransactionsPage() {
             Aucune transaction ne correspond à ces filtres.
           </p>
         ) : (
-          <div ref={scrollRef} className="relative max-h-[70vh] overflow-y-auto">
+          <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-y-auto">
             <div className="sticky top-0 z-10 bg-ink-1">
               <TxTableHeader />
             </div>
@@ -215,6 +217,6 @@ export function TransactionsPage() {
           </div>
         )}
       </Card>
-    </>
+    </div>
   );
 }
