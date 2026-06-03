@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle, Plus, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Plus, Sparkles, XCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ipc } from '@renderer/ipc/client';
@@ -31,6 +31,7 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
   const {
     state,
     pickAndExtract,
+    learnBank,
     toggleTx,
     toggleAll,
     setAcknowledgedCannotVerify,
@@ -153,6 +154,22 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
           </div>
         )}
 
+        {state.step === 'learning' && (
+          <div className="flex flex-col items-center gap-2 py-8">
+            <p className="text-sm text-paper">Analyse de la banque par l'IA…</p>
+            <p className="text-xs text-paper-mute">Cela prend environ une minute, une seule fois par banque.</p>
+          </div>
+        )}
+
+        {state.step === 'unknownBank' && (
+          <LearnBankView
+            onLearn={(name) => {
+              void learnBank(name);
+            }}
+            onCancel={handleClose}
+          />
+        )}
+
         {(state.step === 'idle' || state.step === 'picking' || state.step === 'extracting') && (
           <PickView
             accounts={accounts}
@@ -167,6 +184,53 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function LearnBankView({
+  onLearn,
+  onCancel,
+}: {
+  onLearn: (bankName: string) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState('');
+  return (
+    <div className="flex flex-col gap-4 py-4">
+      <div className="flex items-start gap-2 rounded-md border border-line-2 bg-ink-2/60 p-3 text-sm">
+        <Sparkles size={16} strokeWidth={1.6} className="mt-0.5 shrink-0 text-brass" />
+        <span className="text-paper-soft">
+          Banque non reconnue. L'IA peut analyser ce relevé pour apprendre sa mise en page — une
+          seule fois (~1 min, en local). Les imports suivants de cette banque seront instantanés.
+        </span>
+      </div>
+      <input
+        autoFocus
+        value={name}
+        placeholder="Nom de la banque (ex. Société Générale)"
+        onChange={(e) => {
+          setName(e.target.value);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && name.trim() !== '') onLearn(name.trim());
+        }}
+        className={FIELD}
+      />
+      <DialogFooter>
+        <Button variant="outline" onClick={onCancel}>
+          Annuler
+        </Button>
+        <Button
+          disabled={name.trim() === ''}
+          onClick={() => {
+            onLearn(name.trim());
+          }}
+        >
+          <Sparkles size={14} strokeWidth={1.8} />
+          Analyser avec l'IA (~1 min)
+        </Button>
+      </DialogFooter>
+    </div>
   );
 }
 

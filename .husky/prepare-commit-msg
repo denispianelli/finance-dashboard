@@ -1,0 +1,37 @@
+#!/usr/bin/env sh
+# Guard: refuse merging a stale branch into `main`.
+#
+# Runs on `git merge <branch>` into main (source = "merge", when MERGE_HEAD is
+# set). Blocks unless the branch being merged already contains the latest
+# origin/main — i.e. it was brought up to date first. Only protects `main`.
+#
+# Note: a clean `git merge` leaves the merge in progress when blocked — run
+# `git merge --abort` to back out. Does NOT cover `git merge --squash` (commits
+# as a normal commit, not a merge) nor `--no-verify`; for the GitHub PR path use
+# branch protection's "require branches to be up to date before merging".
+
+# Only act on merge commits (run via husky under `sh -e`, so guard substitutions).
+[ "$2" = "merge" ] || exit 0
+[ "$(git symbolic-ref --short HEAD 2>/dev/null)" = "main" ] || exit 0
+
+mh=$(git rev-parse --verify --quiet MERGE_HEAD) || mh=""
+[ -n "$mh" ] || exit 0
+
+git fetch origin main --quiet 2>/dev/null || true
+if ! git rev-parse --verify --quiet origin/main >/dev/null 2>&1; then
+  echo "⚠ prepare-commit-msg: origin/main introuvable (hors-ligne ?), vérification ignorée." >&2
+  exit 0
+fi
+
+if ! git merge-base --is-ancestor origin/main "$mh"; then
+  behind=$(git rev-list --count "$mh"..origin/main 2>/dev/null || echo "?")
+  echo "" >&2
+  echo "✗ Merge bloqué : la branche fusionnée est en retard de ${behind} commit(s) sur origin/main." >&2
+  echo "  1) annule ce merge :   git merge --abort" >&2
+  echo "  2) mets la branche à jour :   git switch <branche> && git merge origin/main" >&2
+  echo "  3) relance le merge dans main." >&2
+  echo "  (contourner : git merge --no-verify — à tes risques)" >&2
+  echo "" >&2
+  exit 1
+fi
+exit 0

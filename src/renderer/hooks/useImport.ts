@@ -6,6 +6,8 @@ export type ImportState =
   | { step: 'idle' }
   | { step: 'picking' }
   | { step: 'extracting' }
+  | { step: 'unknownBank'; filePath: string; accountId: string }
+  | { step: 'learning' }
   | {
       step: 'review';
       extraction: StatementExtraction;
@@ -21,6 +23,7 @@ export type ImportState =
 export interface UseImport {
   state: ImportState;
   pickAndExtract: (accountId: string) => Promise<void>;
+  learnBank: (bankName: string) => Promise<void>;
   toggleTx: (txHash: string) => void;
   toggleAll: () => void;
   setAcknowledgedCannotVerify: (value: boolean) => void;
@@ -33,10 +36,11 @@ const ERROR_MESSAGES: Partial<Record<string, string>> = {
   malformed_ofx: 'Fichier OFX invalide ou corrompu.',
   not_pdf: 'Le fichier ne semble pas être un PDF valide.',
   no_text: 'Ce PDF ne contient pas de texte extractible (scan image ?).',
-  unknown_bank: 'Banque non reconnue. Seuls les relevés LCL sont supportés.',
   arithmetic_failed: 'Le solde ne correspond pas aux transactions. Import bloqué.',
   cannot_verify_unacknowledged: 'Vérification du solde non confirmée.',
   already_imported: 'Ce fichier a déjà été importé.',
+  model_unavailable: "Modèle IA non installé — impossible d'analyser une nouvelle banque.",
+  inference_failed: "L'IA n'a pas réussi à lire la structure de ce relevé.",
 };
 
 export function useImport(): UseImport {
@@ -56,21 +60,16 @@ export function useImport(): UseImport {
     }
   }
 
-  async function pickAndExtract(accountId: string) {
-    setStateAndRef({ step: 'picking' });
-    const pickRes = await ipc.invoke('import:pickFile', {});
-    if (pickRes.cancelled) {
-      setStateAndRef({ step: 'idle' });
-      return;
-    }
-
+  async function runExtract(accountId: string, path: string) {
     setStateAndRef({ step: 'extracting' });
-    const extractRes = await ipc.invoke('import:extract', {
-      path: pickRes.path,
-      accountId,
-    });
+    const extractRes = await ipc.invoke('import:extract', { path, accountId });
 
     if (!extractRes.ok) {
+      // An unknown bank (PDF only) is recoverable: offer to learn it with the LLM.
+      if (extractRes.error === 'unknown_bank') {
+        setStateAndRef({ step: 'unknownBank', filePath: path, accountId });
+        return;
+      }
       setStateAndRef({
         step: 'error',
         message: ERROR_MESSAGES[extractRes.error] ?? extractRes.error,
@@ -85,11 +84,35 @@ export function useImport(): UseImport {
     setStateAndRef({
       step: 'review',
       extraction,
-      filePath: pickRes.path,
+      filePath: path,
       accountId,
       selected,
       acknowledgedCannotVerify: false,
     });
+  }
+
+  async function pickAndExtract(accountId: string) {
+    setStateAndRef({ step: 'picking' });
+    const pickRes = await ipc.invoke('import:pickFile', {});
+    if (pickRes.cancelled) {
+      setStateAndRef({ step: 'idle' });
+      return;
+    }
+    await runExtract(accountId, pickRes.path);
+  }
+
+  async function learnBank(bankName: string) {
+    const current = stateRef.current;
+    if (current.step !== 'unknownBank') return;
+    const { filePath, accountId } = current;
+
+    setStateAndRef({ step: 'learning' });
+    const res = await ipc.invoke('banks:learn', { path: filePath, bankName });
+    if (res.ok) {
+      await runExtract(accountId, filePath); // now detectBank recognizes the learned bank
+    } else {
+      setStateAndRef({ step: 'error', message: ERROR_MESSAGES[res.error] ?? res.error });
+    }
   }
 
   function toggleTx(txHash: string) {
@@ -152,6 +175,7 @@ export function useImport(): UseImport {
   return {
     state,
     pickAndExtract,
+    learnBank,
     toggleTx,
     toggleAll,
     setAcknowledgedCannotVerify,

@@ -26,6 +26,7 @@ function makeHook(state: ImportState, overrides: Partial<UseImport> = {}): UseIm
   return {
     state,
     pickAndExtract: vi.fn(),
+    learnBank: vi.fn(),
     toggleTx: vi.fn(),
     toggleAll: vi.fn(),
     setAcknowledgedCannotVerify: vi.fn(),
@@ -114,6 +115,24 @@ describe('ImportModal — pick state', () => {
     await screen.findByRole('option', { name: /Compte LCL/i });
     await userEvent.click(screen.getByRole('button', { name: /parcourir/i }));
     expect(hook.pickAndExtract).toHaveBeenCalledWith('acc-lcl-default');
+  });
+});
+
+describe('ImportModal — unknown bank (learn flow)', () => {
+  it('offers to learn the bank and calls learnBank with the entered name', async () => {
+    const hook = makeHook({ step: 'unknownBank', filePath: '/tmp/x.pdf', accountId: 'acc-lcl-default' });
+    mockUseImport.mockReturnValue(hook);
+    render(<ImportModal open={true} onClose={vi.fn()} />);
+    expect(screen.getByText(/Banque non reconnue/i)).toBeInTheDocument();
+    await userEvent.type(screen.getByPlaceholderText(/Nom de la banque/i), 'Société Générale');
+    await userEvent.click(screen.getByRole('button', { name: /Analyser avec/i }));
+    expect(hook.learnBank).toHaveBeenCalledWith('Société Générale');
+  });
+
+  it('shows a progress message while learning', () => {
+    mockUseImport.mockReturnValue(makeHook({ step: 'learning' }));
+    render(<ImportModal open={true} onClose={vi.fn()} />);
+    expect(screen.getByText(/Analyse de la banque par l'IA/i)).toBeInTheDocument();
   });
 });
 

@@ -32,16 +32,26 @@ describe('extractOfx', () => {
     db.close();
   });
 
-  it('throws unknown_bank when the account has no resolvable bank', () => {
+  it('extracts OFX for any account bank, even one not seeded in banks (multi-bank)', () => {
     const db = new DatabaseSync(':memory:');
     runMigrations(db);
-    let code: string | undefined;
-    try {
-      extractOfx(db, 'no-such-account', Buffer.from(OFX));
-    } catch (e) {
-      code = (e as ImportError).code;
-    }
-    expect(code).toBe('unknown_bank');
+    db.prepare(
+      "INSERT INTO accounts (id, name, type, bank_id) VALUES ('acc-joint', 'Compte joint', 'checking', 'boursorama')",
+    ).run();
+    const r = extractOfx(db, 'acc-joint', Buffer.from(OFX));
+    expect(r.bankId).toBe('boursorama'); // account label, no seeded-bank requirement
+    expect(r.transactions).toHaveLength(2);
+    db.close();
+  });
+
+  it("falls back to the OFX's own BANKID when the account has no bank label", () => {
+    const db = new DatabaseSync(':memory:');
+    runMigrations(db);
+    db.prepare(
+      "INSERT INTO accounts (id, name, type, bank_id) VALUES ('acc-nobank', 'Sans banque', 'checking', NULL)",
+    ).run();
+    const r = extractOfx(db, 'acc-nobank', Buffer.from(OFX));
+    expect(r.bankId).toBe('30002'); // from <BANKID>30002
     db.close();
   });
 

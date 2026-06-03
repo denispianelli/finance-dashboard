@@ -14,6 +14,7 @@ import type {
   CreateCategoryInput,
   SetTransactionCategoryInput,
 } from './category';
+import type { LearnBankInput, LearnBankResponse } from './bank';
 
 export interface PingPayload {
   now: number;
@@ -93,6 +94,7 @@ export interface IpcContract {
   'categories:create': { payload: CreateCategoryInput; response: { category: CategoryDTO } };
   'categories:delete': { payload: { id: string }; response: { uncategorizedCount: number } };
   'transactions:setCategory': { payload: SetTransactionCategoryInput; response: { ok: true } };
+  'banks:learn': { payload: LearnBankInput; response: LearnBankResponse };
 }
 
 export type IpcChannel = keyof IpcContract;
