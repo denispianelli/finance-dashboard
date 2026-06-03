@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Overline } from '../components/ui/overline';
@@ -75,6 +75,17 @@ export function TransactionsPage() {
     reassign,
     createCategory,
   } = useDashboard(refreshToken, { transactionLimit: FULL_HISTORY_LIMIT });
+
+  // Pre-select the account passed via ?account=… (e.g. clicking an account on the
+  // dashboard navigates here). Re-applies when the param changes (navigating from
+  // a different account) once the matching account has loaded.
+  const [searchParams] = useSearchParams();
+  const accountParam = searchParams.get('account');
+  useEffect(() => {
+    if (accountParam !== null && accounts.some((a) => a.id === accountParam)) {
+      selectAccount(accountParam);
+    }
+  }, [accountParam, accounts, selectAccount]);
 
   const [today] = useState(() => toLocalISODate(new Date()));
   const [range, setRange] = useState<DateRangeValue>(() => ({
