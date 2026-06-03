@@ -14,8 +14,14 @@ here.
 
 ## Privacy is non-negotiable
 
-100% local. No network calls, no telemetry, no cloud, no bank connections. Renderer does no
-I/O — everything via typed IPC to main. CSP stays `'self'`. See ADR-002.
+**The invariant: no user data ever leaves the machine.** 100% local processing, no telemetry,
+no analytics, no cloud, no bank connections. Renderer does no I/O — everything via typed IPC to
+main. CSP stays `'self'`. See ADR-002.
+
+The rule is about _data_, not packets: the only outbound calls allowed are an opt-in version
+check (sends no data, receives a version number) and the initial LLM model download — both from
+the main process only, never the renderer. Anything that would transmit user/financial data is
+forbidden, full stop.
 
 **Scope guard:** ADR-009 cut conversational AI, NL search, generative insights, investments
 tracking, multi-window. Do not re-propose them. The LLM is a background batch classifier only
