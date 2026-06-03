@@ -33,8 +33,8 @@ export interface TxTableProps {
   categories?: CategoryDTO[];
   onReassign?: (transactionId: string, categoryId: string) => void;
   onCreateCategory?: (input: CreateCategoryInput) => Promise<CategoryDTO>;
-  onStartEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onStartEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 const HEAD =
@@ -68,13 +68,13 @@ export interface TxTableRowProps {
   onReassign?: (transactionId: string, categoryId: string) => void;
   onCreateCategory?: (input: CreateCategoryInput) => Promise<CategoryDTO>;
   editing?: boolean;
-  onStartEdit: (transactionId: string) => void;
+  onStartEdit?: (transactionId: string) => void;
   onSaveEdit?: (
     transactionId: string,
     fields: { date: string; label: string; amount: number },
   ) => void;
   onCancelEdit?: () => void;
-  onDelete: (transactionId: string) => void;
+  onDelete?: (transactionId: string) => void;
 }
 
 const INPUT =
@@ -146,28 +146,32 @@ export function TxTableRow({
       <span className={cn(CELL, 'text-right')}>
         <Money value={t.amount} kind={t.amountKind} className="text-[13px] font-medium" />
       </span>
-      <span className={cn(CELL, 'flex justify-end gap-0.5 opacity-0 group-hover:opacity-100')}>
-        <button
-          type="button"
-          aria-label="Modifier"
-          className={ICON_BTN}
-          onClick={() => {
-            onStartEdit(t.id);
-          }}
-        >
-          <Pencil size={13} strokeWidth={1.8} />
-        </button>
-        <button
-          type="button"
-          aria-label="Supprimer"
-          className={ICON_BTN}
-          onClick={() => {
-            onDelete(t.id);
-          }}
-        >
-          <Trash2 size={13} strokeWidth={1.8} />
-        </button>
-      </span>
+      {onStartEdit && onDelete ? (
+        <span className={cn(CELL, 'flex justify-end gap-0.5 opacity-0 group-hover:opacity-100')}>
+          <button
+            type="button"
+            aria-label="Modifier"
+            className={ICON_BTN}
+            onClick={() => {
+              onStartEdit(t.id);
+            }}
+          >
+            <Pencil size={13} strokeWidth={1.8} />
+          </button>
+          <button
+            type="button"
+            aria-label="Supprimer"
+            className={ICON_BTN}
+            onClick={() => {
+              onDelete(t.id);
+            }}
+          >
+            <Trash2 size={13} strokeWidth={1.8} />
+          </button>
+        </span>
+      ) : (
+        <span className={CELL} />
+      )}
     </div>
   );
 }
