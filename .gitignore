@@ -26,3 +26,5 @@ playwright-report/
 
 # Claude Code per-machine overrides (shared config lives in .claude/settings.json)
 .claude/settings.local.json
+# Worktrees created by the EnterWorktree tool
+.claude/worktrees/
