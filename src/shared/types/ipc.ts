@@ -1,4 +1,4 @@
-import type { StatementExtraction, ImportFileType } from './import';
+import type { StatementExtraction } from './import';
 import type {
   AccountSummary,
   CreateAccountInput,
@@ -29,16 +29,7 @@ export interface PingResponse {
 
 export type PickFilePayload = Record<string, never>;
 
-export type PickFileResponse =
-  | { cancelled: true }
-  | {
-      cancelled: false;
-      path: string;
-      type: ImportFileType;
-      hash: string;
-      size: number;
-      alreadyImported: boolean;
-    };
+export type PickFileResponse = { cancelled: true } | { cancelled: false; paths: string[] };
 
 export interface ExtractPayload {
   path: string;
@@ -121,4 +112,5 @@ export type IpcResponse<C extends IpcChannel> = IpcContract[C]['response'];
 
 export interface ElectronAPI {
   invoke: <C extends IpcChannel>(channel: C, payload: IpcPayload<C>) => Promise<IpcResponse<C>>;
+  getDroppedPaths: (files: File[]) => string[];
 }

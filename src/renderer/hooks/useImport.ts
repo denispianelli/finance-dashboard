@@ -2,32 +2,62 @@ import { useRef, useState } from 'react';
 import type { StatementExtraction } from '@shared/types/import';
 import { ipc } from '@renderer/ipc/client';
 
-export type ImportState =
-  | { step: 'idle' }
-  | { step: 'picking' }
+const VALID_EXT = ['pdf', 'csv', 'ofx'];
+
+export interface QueuedFile {
+  path: string;
+  fileName: string;
+}
+
+export type FileResult =
+  | {
+      fileName: string;
+      status: 'imported';
+      accountId: string;
+      insertedCount: number;
+      autoRouted: boolean;
+    }
+  | { fileName: string; status: 'skipped'; reason: string }
+  | { fileName: string; status: 'failed'; error: string };
+
+export type SubState =
+  | { step: 'resolving' }
+  | {
+      step: 'chooseAccount';
+      identifier: string | null;
+      detectedBank: string | null;
+      sourceType: 'ofx' | 'pdf';
+    }
   | { step: 'extracting' }
-  | { step: 'unknownBank'; filePath: string; accountId: string }
-  | { step: 'learning' }
+  | { step: 'unknownBank'; accountId: string }
+  | { step: 'learning'; accountId: string }
   | {
       step: 'review';
       extraction: StatementExtraction;
-      filePath: string;
       accountId: string;
       selected: Set<string>;
       acknowledgedCannotVerify: boolean;
+      autoRouted: boolean;
     }
   | { step: 'confirming' }
-  | { step: 'done'; insertedCount: number }
-  | { step: 'error'; message: string };
+  | { step: 'fileError'; message: string };
+
+export type ImportState =
+  | { step: 'idle' }
+  | { step: 'queue'; files: QueuedFile[]; index: number; results: FileResult[]; sub: SubState }
+  | { step: 'summary'; results: FileResult[] };
 
 export interface UseImport {
   state: ImportState;
-  pickAndExtract: (accountId: string) => Promise<void>;
+  pickFiles: () => Promise<void>;
+  startFromPaths: (paths: string[]) => Promise<void>;
+  chooseAccount: (accountId: string) => Promise<void>;
   learnBank: (bankName: string) => Promise<void>;
   toggleTx: (txHash: string) => void;
   toggleAll: () => void;
   setAcknowledgedCannotVerify: (value: boolean) => void;
   confirm: () => Promise<void>;
+  skipFile: () => void;
   reset: () => void;
 }
 
@@ -38,148 +68,280 @@ const ERROR_MESSAGES: Partial<Record<string, string>> = {
   no_text: 'Ce PDF ne contient pas de texte extractible (scan image ?).',
   arithmetic_failed: 'Le solde ne correspond pas aux transactions. Import bloqué.',
   cannot_verify_unacknowledged: 'Vérification du solde non confirmée.',
-  already_imported: 'Ce fichier a déjà été importé.',
+  already_imported: 'Déjà importé — rien de nouveau.',
   model_unavailable: "Modèle IA non installé — impossible d'analyser une nouvelle banque.",
   inference_failed: "L'IA n'a pas réussi à lire la structure de ce relevé.",
 };
+
+function fileNameOf(path: string): string {
+  return path.split('/').pop() ?? path;
+}
 
 export function useImport(): UseImport {
   const [state, setState] = useState<ImportState>({ step: 'idle' });
   const stateRef = useRef<ImportState>(state);
 
-  function setStateAndRef(next: ImportState | ((prev: ImportState) => ImportState)) {
-    if (typeof next === 'function') {
-      setState((prev) => {
-        const resolved = next(prev);
-        stateRef.current = resolved;
-        return resolved;
-      });
-    } else {
-      stateRef.current = next;
-      setState(next);
-    }
+  function setS(next: ImportState): void {
+    stateRef.current = next;
+    setState(next);
   }
 
-  async function runExtract(accountId: string, path: string) {
-    setStateAndRef({ step: 'extracting' });
-    const extractRes = await ipc.invoke('import:extract', { path, accountId });
+  function updateSub(
+    updater: (prev: Extract<ImportState, { step: 'queue' }>) => ImportState,
+  ): void {
+    setState((prev) => {
+      if (prev.step !== 'queue') return prev;
+      const resolved = updater(prev);
+      stateRef.current = resolved;
+      return resolved;
+    });
+  }
 
-    if (!extractRes.ok) {
-      // An unknown bank (PDF only) is recoverable: offer to learn it with the LLM.
-      if (extractRes.error === 'unknown_bank') {
-        setStateAndRef({ step: 'unknownBank', filePath: path, accountId });
+  async function advance(files: QueuedFile[], index: number, results: FileResult[]): Promise<void> {
+    const next = index + 1;
+    if (next >= files.length) {
+      setS({ step: 'summary', results });
+      return;
+    }
+    await resolveAt(files, next, results);
+  }
+
+  async function resolveAt(
+    files: QueuedFile[],
+    index: number,
+    results: FileResult[],
+  ): Promise<void> {
+    const file = files[index];
+    if (file === undefined) return;
+    setS({ step: 'queue', files, index, results, sub: { step: 'resolving' } });
+    const res = await ipc.invoke('import:resolveAccount', { path: file.path });
+    if (!res.ok) {
+      await advance(files, index, [
+        ...results,
+        {
+          fileName: file.fileName,
+          status: 'failed',
+          error: ERROR_MESSAGES[res.error] ?? res.error,
+        },
+      ]);
+      return;
+    }
+    if (res.matchedAccountId !== null) {
+      await runExtract(files, index, results, res.matchedAccountId, true);
+      return;
+    }
+    setS({
+      step: 'queue',
+      files,
+      index,
+      results,
+      sub: {
+        step: 'chooseAccount',
+        identifier: res.identifier,
+        detectedBank: res.detectedBank,
+        sourceType: res.sourceType,
+      },
+    });
+  }
+
+  async function runExtract(
+    files: QueuedFile[],
+    index: number,
+    results: FileResult[],
+    accountId: string,
+    autoRouted: boolean,
+  ): Promise<void> {
+    const file = files[index];
+    if (file === undefined) return;
+    setS({ step: 'queue', files, index, results, sub: { step: 'extracting' } });
+    const res = await ipc.invoke('import:extract', { path: file.path, accountId });
+    if (!res.ok) {
+      if (res.error === 'unknown_bank') {
+        setS({ step: 'queue', files, index, results, sub: { step: 'unknownBank', accountId } });
         return;
       }
-      setStateAndRef({
-        step: 'error',
-        message: ERROR_MESSAGES[extractRes.error] ?? extractRes.error,
-      });
+      await advance(files, index, [
+        ...results,
+        {
+          fileName: file.fileName,
+          status: 'failed',
+          error: ERROR_MESSAGES[res.error] ?? res.error,
+        },
+      ]);
       return;
     }
-
-    const { extraction } = extractRes;
     const selected = new Set(
-      extraction.transactions.filter((tx) => !tx.isDuplicate).map((tx) => tx.tx_hash),
+      res.extraction.transactions.filter((tx) => !tx.isDuplicate).map((tx) => tx.tx_hash),
     );
-    setStateAndRef({
-      step: 'review',
-      extraction,
-      filePath: path,
-      accountId,
-      selected,
-      acknowledgedCannotVerify: false,
+    setS({
+      step: 'queue',
+      files,
+      index,
+      results,
+      sub: {
+        step: 'review',
+        extraction: res.extraction,
+        accountId,
+        selected,
+        acknowledgedCannotVerify: false,
+        autoRouted,
+      },
     });
   }
 
-  async function pickAndExtract(accountId: string) {
-    setStateAndRef({ step: 'picking' });
-    const pickRes = await ipc.invoke('import:pickFile', {});
-    if (pickRes.cancelled) {
-      setStateAndRef({ step: 'idle' });
+  async function startFromPaths(paths: string[]): Promise<void> {
+    const valid: QueuedFile[] = [];
+    const failed: FileResult[] = [];
+    for (const path of paths) {
+      const ext = path.toLowerCase().split('.').pop();
+      if (ext !== undefined && VALID_EXT.includes(ext)) {
+        valid.push({ path, fileName: fileNameOf(path) });
+      } else {
+        failed.push({ fileName: fileNameOf(path), status: 'failed', error: 'Format non supporté' });
+      }
+    }
+    if (valid.length === 0) {
+      setS({ step: 'summary', results: failed });
       return;
     }
-    await runExtract(accountId, pickRes.path);
+    await resolveAt(valid, 0, failed);
   }
 
-  async function learnBank(bankName: string) {
-    const current = stateRef.current;
-    if (current.step !== 'unknownBank') return;
-    const { filePath, accountId } = current;
+  async function pickFiles(): Promise<void> {
+    const res = await ipc.invoke('import:pickFile', {});
+    if (res.cancelled) {
+      setS({ step: 'idle' });
+      return;
+    }
+    await startFromPaths(res.paths);
+  }
 
-    setStateAndRef({ step: 'learning' });
-    const res = await ipc.invoke('banks:learn', { path: filePath, bankName });
+  async function chooseAccount(accountId: string): Promise<void> {
+    const cur = stateRef.current;
+    if (cur.step !== 'queue' || cur.sub.step !== 'chooseAccount') return;
+    await runExtract(cur.files, cur.index, cur.results, accountId, false);
+  }
+
+  async function learnBank(bankName: string): Promise<void> {
+    const cur = stateRef.current;
+    if (cur.step !== 'queue' || cur.sub.step !== 'unknownBank') return;
+    const { accountId } = cur.sub;
+    const file = cur.files[cur.index];
+    if (file === undefined) return;
+    setS({ ...cur, sub: { step: 'learning', accountId } });
+    const res = await ipc.invoke('banks:learn', { path: file.path, bankName });
     if (res.ok) {
-      await runExtract(accountId, filePath); // now detectBank recognizes the learned bank
+      await runExtract(cur.files, cur.index, cur.results, accountId, false);
     } else {
-      setStateAndRef({ step: 'error', message: ERROR_MESSAGES[res.error] ?? res.error });
+      await advance(cur.files, cur.index, [
+        ...cur.results,
+        {
+          fileName: file.fileName,
+          status: 'failed',
+          error: ERROR_MESSAGES[res.error] ?? res.error,
+        },
+      ]);
     }
   }
 
-  function toggleTx(txHash: string) {
-    setStateAndRef((prev) => {
-      if (prev.step !== 'review') return prev;
-      const next = new Set(prev.selected);
-      if (next.has(txHash)) {
-        next.delete(txHash);
-      } else {
-        next.add(txHash);
-      }
-      return { ...prev, selected: next };
+  function toggleTx(txHash: string): void {
+    updateSub((prev) => {
+      if (prev.sub.step !== 'review') return prev;
+      const next = new Set(prev.sub.selected);
+      if (next.has(txHash)) next.delete(txHash);
+      else next.add(txHash);
+      return { ...prev, sub: { ...prev.sub, selected: next } };
     });
   }
 
-  function toggleAll() {
-    setStateAndRef((prev) => {
-      if (prev.step !== 'review') return prev;
-      const nonDuplicateHashes = prev.extraction.transactions
+  function toggleAll(): void {
+    updateSub((prev) => {
+      if (prev.sub.step !== 'review') return prev;
+      const hashes = prev.sub.extraction.transactions
         .filter((tx) => !tx.isDuplicate)
         .map((tx) => tx.tx_hash);
-      const allSelected = nonDuplicateHashes.every((h) => prev.selected.has(h));
-      return { ...prev, selected: allSelected ? new Set<string>() : new Set(nonDuplicateHashes) };
+      const allSelected = hashes.every(
+        (h) => prev.sub.step === 'review' && prev.sub.selected.has(h),
+      );
+      return {
+        ...prev,
+        sub: { ...prev.sub, selected: allSelected ? new Set<string>() : new Set(hashes) },
+      };
     });
   }
 
-  function setAcknowledgedCannotVerify(value: boolean) {
-    setStateAndRef((prev) => {
-      if (prev.step !== 'review') return prev;
-      return { ...prev, acknowledgedCannotVerify: value };
+  function setAcknowledgedCannotVerify(value: boolean): void {
+    updateSub((prev) => {
+      if (prev.sub.step !== 'review') return prev;
+      return { ...prev, sub: { ...prev.sub, acknowledgedCannotVerify: value } };
     });
   }
 
-  async function confirm() {
-    const current = stateRef.current;
-    if (current.step !== 'review') return;
-    const { extraction, filePath, accountId, selected, acknowledgedCannotVerify } = current;
-
-    setStateAndRef({ step: 'confirming' });
-
+  async function confirm(): Promise<void> {
+    const cur = stateRef.current;
+    if (cur.step !== 'queue' || cur.sub.step !== 'review') return;
+    const { extraction, accountId, selected, acknowledgedCannotVerify, autoRouted } = cur.sub;
+    const file = cur.files[cur.index];
+    if (file === undefined) return;
+    setS({ ...cur, sub: { step: 'confirming' } });
     const ack = extraction.sourceType === 'ofx' ? true : acknowledgedCannotVerify;
     const res = await ipc.invoke('import:confirm', {
-      path: filePath,
+      path: file.path,
       accountId,
       selectedHashes: [...selected],
       acknowledgedCannotVerify: ack,
     });
-
     if (res.ok) {
-      setStateAndRef({ step: 'done', insertedCount: res.insertedCount });
+      await advance(cur.files, cur.index, [
+        ...cur.results,
+        {
+          fileName: file.fileName,
+          status: 'imported',
+          accountId,
+          insertedCount: res.insertedCount,
+          autoRouted,
+        },
+      ]);
+    } else if (res.error === 'already_imported') {
+      await advance(cur.files, cur.index, [
+        ...cur.results,
+        {
+          fileName: file.fileName,
+          status: 'skipped',
+          reason: ERROR_MESSAGES.already_imported ?? '',
+        },
+      ]);
     } else {
-      setStateAndRef({ step: 'error', message: ERROR_MESSAGES[res.error] ?? res.error });
+      setS({ ...cur, sub: { step: 'fileError', message: ERROR_MESSAGES[res.error] ?? res.error } });
     }
   }
 
-  function reset() {
-    setStateAndRef({ step: 'idle' });
+  function skipFile(): void {
+    const cur = stateRef.current;
+    if (cur.step !== 'queue') return;
+    const file = cur.files[cur.index];
+    if (file === undefined) return;
+    void advance(cur.files, cur.index, [
+      ...cur.results,
+      { fileName: file.fileName, status: 'skipped', reason: 'Ignoré' },
+    ]);
+  }
+
+  function reset(): void {
+    setS({ step: 'idle' });
   }
 
   return {
     state,
-    pickAndExtract,
+    pickFiles,
+    startFromPaths,
+    chooseAccount,
     learnBank,
     toggleTx,
     toggleAll,
     setAcknowledgedCannotVerify,
     confirm,
+    skipFile,
     reset,
   };
 }
