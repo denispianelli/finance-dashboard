@@ -116,8 +116,7 @@ giving full edit history. **Rejected**: overkill for a single-user app — a sin
 
 ### 4.2 Delete
 
-- Trash → a small confirm (inline confirm on the row, not a full modal) → hard
-  `DELETE` via `transactions:delete`.
+- Trash → immediate hard `DELETE` via `transactions:delete`, with the transient undo (below) as the safety net — no separate confirm step. A confirm _and_ an undo toast would be redundant friction; delete-then-undo (à la Gmail) is the better pattern.
 - A toast "Transaction supprimée · Annuler" holds the deleted row **in renderer
   memory** for its lifetime. "Annuler" re-inserts it via `transactions:restore`
   (same `id`, `import_id`, fields, and any `original_*` / `edited_at`), so undo

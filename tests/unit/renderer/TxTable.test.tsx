@@ -88,4 +88,50 @@ describe('TxTableRow', () => {
     );
     expect(screen.getByLabelText('extrait : -84,30 · 14/05')).toBeInTheDocument();
   });
+
+  it('invalid date blocks save and shows "Date invalide"', () => {
+    const onSaveEdit = vi.fn();
+    render(
+      <TxTableRow
+        row={baseRow}
+        editing
+        onSaveEdit={onSaveEdit}
+        onCancelEdit={vi.fn()}
+        onStartEdit={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText('Montant'), { target: { value: '-90,5' } });
+    fireEvent.click(screen.getByLabelText('Enregistrer'));
+    expect(onSaveEdit).not.toHaveBeenCalled();
+    expect(screen.getByText('Date invalide')).toBeInTheDocument();
+  });
+
+  it('empty label blocks save and shows "Libellé vide"', () => {
+    const onSaveEdit = vi.fn();
+    render(
+      <TxTableRow
+        row={baseRow}
+        editing
+        onSaveEdit={onSaveEdit}
+        onCancelEdit={vi.fn()}
+        onStartEdit={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('Libellé'), { target: { value: '   ' } });
+    fireEvent.click(screen.getByLabelText('Enregistrer'));
+    expect(onSaveEdit).not.toHaveBeenCalled();
+    expect(screen.getByText('Libellé vide')).toBeInTheDocument();
+  });
+
+  it('no-actions read mode: shows marker but no edit/delete buttons', () => {
+    render(
+      <TxTableRow row={{ ...baseRow, edited: true, originalHint: 'extrait : -84,30 · 14/05' }} />,
+    );
+    expect(screen.getByLabelText('extrait : -84,30 · 14/05')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Modifier')).toBeNull();
+    expect(screen.queryByLabelText('Supprimer')).toBeNull();
+  });
 });
