@@ -26,14 +26,15 @@ function freshDb(): DatabaseSync {
 }
 
 describe('createAccount', () => {
-  it('creates an account with zero balance and a bank label', () => {
+  it('creates an account with no balance yet and a bank label', () => {
     const db = freshDb();
     const acc = createAccount(db, { name: '  Compte joint  ', bankId: 'Boursorama' });
+    // No statement imported yet → no anchor → balance is null (UI shows "—"), not 0.
     expect(acc).toMatchObject({
       name: 'Compte joint',
       bankId: 'Boursorama',
       currency: 'EUR',
-      balance: 0,
+      balance: null,
       txCount: 0,
     });
     expect(acc.id.startsWith('acc-')).toBe(true);
