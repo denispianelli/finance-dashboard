@@ -28,7 +28,18 @@ export async function extractStatement(
 
   const withHashes = assignTxHashes(accountId, stmt.transactions);
   const arithmetic = verifyArithmetic(stmt.transactions, stmt.openingBalance, stmt.closingBalance);
-  const periodOverlap = checkPeriodOverlap(db, accountId, stmt.openingDate, stmt.closingDate);
+
+  // The import's period is the span of the dates it actually carries, not the
+  // statement's declared header period. A statement header opens on the prior
+  // statement's closing date ("ancien solde au 30/04"), so consecutive monthly
+  // statements always share that boundary date even though no transaction is
+  // shared. Comparing transaction spans avoids that false "overlap" — adjacent
+  // months don't touch; a genuine re-import of the same period still does.
+  const txDates = stmt.transactions.map((t) => t.date).sort((a, b) => a.localeCompare(b));
+  const dateRangeStart = txDates[0] ?? stmt.openingDate;
+  const dateRangeEnd = txDates[txDates.length - 1] ?? stmt.closingDate;
+
+  const periodOverlap = checkPeriodOverlap(db, accountId, dateRangeStart, dateRangeEnd);
   const existing = findExistingHashes(db, accountId);
 
   const transactions: ReviewTransaction[] = withHashes.map((t) => ({
@@ -51,8 +62,8 @@ export async function extractStatement(
     duplicateCount,
     fileHash,
     alreadyImported,
-    dateRangeStart: stmt.openingDate,
-    dateRangeEnd: stmt.closingDate,
+    dateRangeStart,
+    dateRangeEnd,
     sourceType: type,
   };
 }
