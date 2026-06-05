@@ -99,6 +99,21 @@ beforeEach(() => {
         ],
       });
     }
+    if (channel === 'categories:list') {
+      return Promise.resolve({
+        categories: [
+          {
+            id: 'cat-a',
+            name: 'Alimentation',
+            icon: 'shop',
+            color: '#7AB890',
+            parentId: null,
+            isDefault: true,
+            position: 1,
+          },
+        ],
+      });
+    }
     return Promise.resolve(undefined);
   }) as typeof ipc.invoke);
 });
@@ -364,6 +379,27 @@ describe('ImportModal — review state', () => {
     expect(screen.getByText(/chevauche/i)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /fermer/i }));
     expect(screen.queryByText(/chevauche/i)).not.toBeInTheDocument();
+  });
+
+  it('fetches categories and renders the Catégorie column in review', async () => {
+    const state: ImportState = {
+      step: 'review',
+      extraction: makeReviewExtraction(),
+      filePath: '/tmp/test.ofx',
+      accountId: 'acc-lcl-default',
+      selected: new Set(['h1']),
+      acknowledgedCannotVerify: false,
+      categories: new Map([['h1', { categoryId: 'cat-a', userModified: false }]]),
+      pending: new Set<string>(),
+      suggested: new Set<string>(),
+    };
+    mockUseImport.mockReturnValue(makeHook(state));
+    render(<ImportModal open={true} onClose={vi.fn()} />);
+
+    expect(screen.getByRole('columnheader', { name: /Catégorie/i })).toBeInTheDocument();
+    // The category list is fetched via IPC and resolved onto the row's picker.
+    await screen.findByRole('button', { name: /Alimentation/i });
+    expect(mockInvoke).toHaveBeenCalledWith('categories:list', {});
   });
 
   it('calls confirm when Importer is clicked', async () => {
