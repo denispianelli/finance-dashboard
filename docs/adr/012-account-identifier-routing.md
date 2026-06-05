@@ -1,6 +1,6 @@
 # ADR-012 — Learned account routing for multi-file import
 
-- **Status** : Proposed
+- **Status** : Accepted
 - **Date** : 2026-06-03
 - **Category** : Data, UI, Process
 - **Related** : ADR-002 (privacy-first local), ADR-004 (LLM is batch classifier only), ADR-007 (Electron security / typed IPC), ADR-008 (OFX primary / PDF backfill, frozen identity contract), ADR-009 (north star, LLM scope), ADR-011 (two-role import)
@@ -128,5 +128,6 @@ detectedBank? }`. The existing `import:extract` / `import:confirm` then run
   no network.
 
 > Not reflected in the README (stack/engine/model unchanged) — no README update
-> needed. Promote to Accepted once the implementation lands and the design spec's
-> Definition of Done is met.
+> needed. Accepted: the implementation landed (migration 008, `resolveAccount`,
+> renderer queue, confirm-time upsert) with the design spec's Definition of Done
+> met — lint/tsc/build clean, unit + integration tests green.
