@@ -1,21 +1,13 @@
-import { readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
-import { app } from 'electron';
+import { readFileSync } from 'node:fs';
 import type { LearnBankInput, LearnBankResponse } from '@shared/types/bank';
 import { getDb } from '../../db';
 import { extractPdfText } from '../../import/pdf/extract';
 import { inferColumnOrder } from '../../import/pdf/inferColumns';
 import { learnBankMapping, persistLearnedBank, slugifyBank } from '../../import/pdf/learnBank';
-import { getModel, isModelAvailable, MODEL_FILE } from '../../llm/llm';
+import { getModel, isModelAvailable } from '../../llm/llm';
+import { modelsDir } from '../../llm/modelsDir';
 
 const PDF_MAGIC = Buffer.from('%PDF-');
-
-/** Where the GGUF model lives: the repo's models/ in dev, else userData/models. */
-function modelsDir(): string {
-  const devDir = join(process.cwd(), 'models');
-  if (existsSync(join(devDir, MODEL_FILE))) return devDir;
-  return join(app.getPath('userData'), 'models');
-}
 
 /**
  * Learn an unknown bank's column mapping from a sample PDF (option A: one slow
