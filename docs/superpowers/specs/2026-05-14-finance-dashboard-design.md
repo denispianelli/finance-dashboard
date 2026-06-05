@@ -184,10 +184,18 @@ Pour chaque transaction :
 
 ### Apprentissage continu
 
-Quand l'utilisateur corrige une catégorie pendant la Review, l'app propose :
+L'apprentissage est **implicite** (ADR-013, smart-by-default, pas de pop-up de
+config) : une correction de catégorie pendant la Review est écrite avec
+`user_modified = 1`, et une suggestion LLM acceptée telle quelle avec
+`user_modified = 0`. Dans les deux cas, le **tier historique** (niveau 2) réutilise
+cette catégorie pour le même libellé aux imports suivants — une correction
+manuelle l'emportant sur une suggestion auto. Aucune règle n'est créée
+automatiquement et aucune question n'est posée.
 
-> _"Toujours catégoriser 'BOULANGER MARTIN' comme Restaurants ?"_
-> → Si oui, une règle utilisateur est créée pour la cascade niveau 1.
+> Variante envisagée puis écartée : proposer _"Toujours catégoriser 'BOULANGER
+> MARTIN' comme Restaurants ?"_ pour créer une règle niveau 1 explicite. L'historique
+> couvre le besoin sans friction ; la création de règle reste **manuelle** depuis la
+> page Catégories (ci-dessous).
 
 ### Gestion des règles
 

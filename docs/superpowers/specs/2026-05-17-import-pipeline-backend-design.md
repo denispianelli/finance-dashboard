@@ -37,8 +37,12 @@ Out of scope (deferred):
 - Inline editing of transactions → later story (this flow is read-only)
 - Multi-account management / account creation UI → later story (one seeded
   default account is used)
-- LLM categorization → not wired in this flow (the `confidence` column was
-  dropped; uncertainty is a Review-only signal — see ADR-005)
+- LLM categorization → not wired _in this story_; the deterministic cascade
+  (rule → history) ran at insert. Since shipped as tier-3 in a later story: the
+  cascade is computed at **extract** and the LLM fills the residual
+  **progressively in the Review** (the `confidence` column was dropped; uncertainty
+  is a Review-only cascade-tier signal). See ADR-013 and
+  `specs/2026-06-05-llm-batch-categorization-design.md`.
 
 ## 3. Architecture
 
@@ -186,8 +190,10 @@ Decisions:
 - `ArithmeticCheckResult` / `PeriodOverlapResult` / `OverlappingImport`
   live in `@shared/types/import`; the main modules re-export them so
   `@shared` never depends on `@main` (see §3 layering fix).
-- `ReviewTransaction` carries no `category_id`: no LLM in this flow (and the
-  `confidence` column no longer exists — see ADR-005).
+- `ReviewTransaction` originally carried no category. Since updated (ADR-013):
+  it carries `categoryId` + `tier` (the deterministic cascade result computed at
+  extract), and the LLM fills the residual in the Review. The `confidence` column
+  no longer exists — uncertainty is the ephemeral cascade tier (see ADR-005).
 
 ## 5. Logic
 
