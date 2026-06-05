@@ -1,4 +1,9 @@
-import type { StatementExtraction, ImportFileType } from './import';
+import type {
+  StatementExtraction,
+  ImportFileType,
+  CategorizeItem,
+  CategorizeResult,
+} from './import';
 import type {
   AccountSummary,
   CreateAccountInput,
@@ -53,11 +58,18 @@ export type ExtractResponse =
       error: 'unknown_bank' | 'no_text' | 'not_pdf' | 'unsupported_format' | 'malformed_ofx';
     };
 
+export interface ConfirmCategory {
+  tx_hash: string;
+  categoryId: string | null;
+  userModified: boolean;
+}
+
 export interface ConfirmPayload {
   path: string;
   accountId: string;
   selectedHashes?: string[];
   acknowledgedCannotVerify?: boolean;
+  categories?: ConfirmCategory[];
 }
 
 export type ConfirmResponse =
@@ -75,11 +87,20 @@ export type ConfirmResponse =
         | 'malformed_ofx';
     };
 
+export interface CategorizePayload {
+  items: CategorizeItem[];
+}
+
+export type CategorizeResponse =
+  | { ok: true; results: CategorizeResult[] }
+  | { ok: false; error: 'model_unavailable' | 'inference_failed' };
+
 export interface IpcContract {
   'app:ping': { payload: PingPayload; response: PingResponse };
   'import:pickFile': { payload: PickFilePayload; response: PickFileResponse };
   'import:extract': { payload: ExtractPayload; response: ExtractResponse };
   'import:confirm': { payload: ConfirmPayload; response: ConfirmResponse };
+  'import:categorize': { payload: CategorizePayload; response: CategorizeResponse };
   'dashboard:getAccounts': {
     payload: Record<string, never>;
     response: { accounts: AccountSummary[] };

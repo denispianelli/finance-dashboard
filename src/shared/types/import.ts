@@ -21,6 +21,9 @@ export interface PeriodOverlapResult {
   overlappingImports: OverlappingImport[];
 }
 
+/** Which deterministic cascade tier filled the category (null = residual). */
+export type CategorizationTier = 'history' | 'rule' | null;
+
 export interface ReviewTransaction {
   date: string;
   label: string;
@@ -28,6 +31,8 @@ export interface ReviewTransaction {
   tx_hash: string;
   fitid: string | null;
   isDuplicate: boolean; // already in DB for this account (Level 3)
+  categoryId: string | null; // deterministic cascade result, or null (residual → LLM)
+  tier: CategorizationTier; // which tier matched; drives the Review badge (ephemeral)
 }
 
 export interface StatementExtraction {
@@ -48,6 +53,18 @@ export interface StatementExtraction {
    *  null when there is no closing balance. */
   closingBalanceDate: string | null;
   sourceType: ImportFileType;
+}
+
+/** One residual transaction sent to the LLM tier (keyed by hash). */
+export interface CategorizeItem {
+  tx_hash: string;
+  label: string;
+}
+
+/** The LLM's suggestion for one transaction (categoryId null = none fit). */
+export interface CategorizeResult {
+  tx_hash: string;
+  categoryId: string | null;
 }
 
 export interface NormalizedTx {
