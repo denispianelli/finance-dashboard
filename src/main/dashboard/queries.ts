@@ -13,21 +13,47 @@ interface AccountRow {
   type: string;
   bank_id: string | null;
   currency: string;
-  balance: number;
+  anchor_balance: number | null;
+  later_sum: number;
+  has_anchor: number;
   tx_count: number;
 }
 
-/** All accounts with their net balance and transaction count (accounts with no
- *  transactions are included via the LEFT JOIN, with balance 0). */
+/**
+ * All accounts with their real balance and transaction count (ADR-014).
+ *
+ * The balance is anchored on the most recent statement that carries a closing
+ * balance (the import with the greatest `closing_balance_date`, ties broken by
+ * `imported_at`), plus any transactions dated strictly after that anchor date.
+ * That closing balance already incorporates the full history up to its date, so
+ * the figure is robust to gaps in the imported history. An account that no
+ * statement anchors gets a `null` balance (the UI shows "—") rather than a
+ * misleading sum of movements.
+ */
 export function getAccountSummaries(db: DatabaseSync): AccountSummary[] {
   const rows = db
     .prepare(
-      `SELECT a.id, a.name, a.type, a.bank_id, a.currency,
-              COALESCE(SUM(t.amount), 0) AS balance,
-              COUNT(t.id) AS tx_count
+      `WITH ranked AS (
+         SELECT account_id, closing_balance, closing_balance_date,
+                ROW_NUMBER() OVER (
+                  PARTITION BY account_id
+                  ORDER BY closing_balance_date DESC, imported_at DESC
+                ) AS rn
+         FROM imports
+         WHERE status = 'validated' AND closing_balance IS NOT NULL
+       ),
+       anchor AS (
+         SELECT account_id, closing_balance, closing_balance_date
+         FROM ranked WHERE rn = 1
+       )
+       SELECT a.id, a.name, a.type, a.bank_id, a.currency,
+              (SELECT COUNT(*) FROM transactions t WHERE t.account_id = a.id) AS tx_count,
+              an.closing_balance AS anchor_balance,
+              (SELECT COALESCE(SUM(t.amount), 0) FROM transactions t
+                 WHERE t.account_id = a.id AND t.date > an.closing_balance_date) AS later_sum,
+              CASE WHEN an.account_id IS NULL THEN 0 ELSE 1 END AS has_anchor
        FROM accounts a
-       LEFT JOIN transactions t ON t.account_id = a.id
-       GROUP BY a.id
+       LEFT JOIN anchor an ON an.account_id = a.id
        ORDER BY a.created_at ASC, a.name ASC`,
     )
     .all() as unknown as AccountRow[];
@@ -38,7 +64,7 @@ export function getAccountSummaries(db: DatabaseSync): AccountSummary[] {
     type: r.type,
     bankId: r.bank_id,
     currency: r.currency,
-    balance: r.balance,
+    balance: r.has_anchor === 1 ? (r.anchor_balance ?? 0) + r.later_sum : null,
     txCount: r.tx_count,
   }));
 }

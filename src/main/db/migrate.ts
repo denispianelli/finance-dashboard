@@ -8,6 +8,7 @@ import sql006 from './migrations/006_seed_categories.sql?raw';
 import sql007 from './migrations/007_drop_transfer_label_rules.sql?raw';
 import sql008 from './migrations/008_drop_confidence.sql?raw';
 import sql009 from './migrations/009_editable_transactions.sql?raw';
+import sql011 from './migrations/011_account_closing_balance.sql?raw';
 
 interface Migration {
   version: number;
@@ -24,6 +25,10 @@ const MIGRATIONS: Migration[] = [
   { version: 7, sql: sql007 },
   { version: 8, sql: sql008 },
   { version: 9, sql: sql009 },
+  // 010 is reserved for PR #141 (account routing); this branch adds 011 to avoid
+  // a collision regardless of merge order. The runner applies by version and
+  // tolerates gaps, so the missing 010 here is inert until #141 lands.
+  { version: 11, sql: sql011 },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

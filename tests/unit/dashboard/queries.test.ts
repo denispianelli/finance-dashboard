@@ -55,26 +55,115 @@ function seedTx(
   );
 }
 
-describe('getAccountSummaries', () => {
-  it('returns balance as the net sum of transaction amounts and the tx count', () => {
+function seedImport(
+  db: DatabaseSync,
+  args: {
+    id: string;
+    accountId: string;
+    source?: string;
+    closingBalance: number | null;
+    closingDate: string | null;
+    importedAt?: string;
+  },
+): void {
+  const range = args.closingDate ?? '2026-01-01';
+  db.prepare(
+    `INSERT INTO imports
+       (id, account_id, file_hash, source_type, date_range_start, date_range_end,
+        closing_balance, closing_balance_date, status, imported_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'validated', ?)`,
+  ).run(
+    args.id,
+    args.accountId,
+    args.id, // file_hash unique per id
+    args.source ?? 'ofx',
+    range,
+    range,
+    args.closingBalance,
+    args.closingDate,
+    args.importedAt ?? '2026-06-01 00:00:00',
+  );
+}
+
+describe('getAccountSummaries — real balance (ADR-014)', () => {
+  it('anchors on the latest statement closing balance, ignoring pre-anchor sums', () => {
     const db = freshDb();
     seedAccount(db, 'a1', 'Compte courant');
-    seedTx(db, { id: 't1', accountId: 'a1', date: '2026-05-01', amount: 100 });
-    seedTx(db, { id: 't2', accountId: 'a1', date: '2026-05-02', amount: -30 });
+    seedImport(db, { id: 'i1', accountId: 'a1', closingBalance: 1500, closingDate: '2026-05-31' });
+    // A transaction inside the statement period: already reflected in the closing
+    // balance, must not be re-added.
+    seedTx(db, { id: 't1', accountId: 'a1', date: '2026-05-10', amount: 200 });
 
-    const summaries = getAccountSummaries(db);
-    const a1 = summaries.find((s) => s.id === 'a1');
-    expect(a1).toMatchObject({ id: 'a1', name: 'Compte courant', balance: 70, txCount: 2 });
+    const a1 = getAccountSummaries(db).find((s) => s.id === 'a1');
+    expect(a1).toMatchObject({ id: 'a1', name: 'Compte courant', balance: 1500, txCount: 1 });
     db.close();
   });
 
-  it('includes accounts with no transactions (balance 0, count 0)', () => {
+  it('adds only transactions dated strictly after the anchor', () => {
+    const db = freshDb();
+    seedAccount(db, 'a1', 'Compte');
+    seedImport(db, { id: 'i1', accountId: 'a1', closingBalance: 1000, closingDate: '2026-04-30' });
+    seedTx(db, { id: 'before', accountId: 'a1', date: '2026-04-15', amount: 999 }); // in the closing balance
+    seedTx(db, { id: 'after', accountId: 'a1', date: '2026-05-02', amount: -50 });
+
+    const a1 = getAccountSummaries(db).find((s) => s.id === 'a1');
+    expect(a1?.balance).toBe(950); // 1000 + (-50); the pre-anchor 999 is not double-counted
+    db.close();
+  });
+
+  it('uses the most recent closing balance when the history has a gap', () => {
+    const db = freshDb();
+    seedAccount(db, 'a1', 'Compte');
+    seedImport(db, { id: 'mar', accountId: 'a1', closingBalance: 300, closingDate: '2026-03-31' });
+    seedImport(db, { id: 'may', accountId: 'a1', closingBalance: 800, closingDate: '2026-05-31' });
+
+    const a1 = getAccountSummaries(db).find((s) => s.id === 'a1');
+    expect(a1?.balance).toBe(800);
+    db.close();
+  });
+
+  it('keeps the newer OFX anchor when an older PDF backfill is imported later', () => {
+    const db = freshDb();
+    seedAccount(db, 'a1', 'Compte');
+    seedImport(db, {
+      id: 'ofx',
+      accountId: 'a1',
+      source: 'ofx',
+      closingBalance: 2000,
+      closingDate: '2026-05-31',
+      importedAt: '2026-06-01 10:00:00',
+    });
+    seedImport(db, {
+      id: 'pdf',
+      accountId: 'a1',
+      source: 'pdf',
+      closingBalance: 500,
+      closingDate: '2026-02-28',
+      importedAt: '2026-06-05 10:00:00',
+    });
+
+    const a1 = getAccountSummaries(db).find((s) => s.id === 'a1');
+    expect(a1?.balance).toBe(2000); // the May OFX stays the anchor — no double count
+    db.close();
+  });
+
+  it('returns null when transactions exist but no import carries a closing balance', () => {
+    const db = freshDb();
+    seedAccount(db, 'a1', 'Compte');
+    seedImport(db, { id: 'i1', accountId: 'a1', closingBalance: null, closingDate: null });
+    seedTx(db, { id: 't1', accountId: 'a1', date: '2026-05-01', amount: 100 });
+
+    const a1 = getAccountSummaries(db).find((s) => s.id === 'a1');
+    expect(a1).toMatchObject({ balance: null, txCount: 1 });
+    db.close();
+  });
+
+  it('returns null for an account with no imports', () => {
     const db = freshDb();
     seedAccount(db, 'empty', 'Livret');
 
-    const summaries = getAccountSummaries(db);
-    const empty = summaries.find((s) => s.id === 'empty');
-    expect(empty).toMatchObject({ balance: 0, txCount: 0 });
+    const empty = getAccountSummaries(db).find((s) => s.id === 'empty');
+    expect(empty).toMatchObject({ balance: null, txCount: 0 });
     db.close();
   });
 });

@@ -45,6 +45,13 @@ export interface StatementExtraction {
   alreadyImported: boolean; // Level 1
   dateRangeStart: string;
   dateRangeEnd: string;
+  /** Statement's stated closing balance (OFX LEDGERBAL / PDF "nouveau solde"),
+   *  or null when the source carries none. Persisted to anchor the account's
+   *  real balance (ADR-014). */
+  closingBalance: number | null;
+  /** As-of date of `closingBalance` (the statement's last transaction date), or
+   *  null when there is no closing balance. */
+  closingBalanceDate: string | null;
   sourceType: ImportFileType;
 }
 
