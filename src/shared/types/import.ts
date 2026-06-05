@@ -48,6 +48,18 @@ export interface StatementExtraction {
   sourceType: ImportFileType;
 }
 
+/** One residual transaction sent to the LLM tier (keyed by hash). */
+export interface CategorizeItem {
+  tx_hash: string;
+  label: string;
+}
+
+/** The LLM's suggestion for one transaction (categoryId null = none fit). */
+export interface CategorizeResult {
+  tx_hash: string;
+  categoryId: string | null;
+}
+
 export interface NormalizedTx {
   date: string; // ISO yyyy-mm-dd
   label: string;

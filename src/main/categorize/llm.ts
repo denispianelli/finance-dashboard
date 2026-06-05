@@ -1,22 +1,13 @@
 import type { LlamaModel } from 'node-llama-cpp';
+import type { CategorizeItem, CategorizeResult } from '@shared/types/import';
 import { runPrompt } from '../llm/llm';
+
+export type { CategorizeItem, CategorizeResult };
 
 /** An existing category the LLM may assign a transaction to. */
 export interface LlmCategory {
   id: string;
   name: string;
-}
-
-/** A transaction label to categorize, keyed by its hash. */
-export interface CategorizeItem {
-  tx_hash: string;
-  label: string;
-}
-
-/** The category chosen for a transaction (null = residual, none fit). */
-export interface CategorizeResult {
-  tx_hash: string;
-  categoryId: string | null;
 }
 
 const MAX_LABEL = 120;
