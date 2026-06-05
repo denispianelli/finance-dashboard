@@ -46,8 +46,14 @@ test('imports an OFX statement end to end and surfaces it on the dashboard', asy
     await expect(window.getByRole('dialog')).toBeVisible();
     await window.getByRole('button', { name: /parcourir/i }).click();
 
-    // Review step: the three fixture transactions are parsed and listed.
+    // Account routing step: a fresh DB has no learned route for this OFX
+    // identifier, so the queue asks which account the statement belongs to
+    // (ADR-013 — first import of an account asks once). The seeded default
+    // account is preselected; confirming it learns the route for next time.
     await expect(window.getByText('statement.ofx')).toBeVisible();
+    await window.getByRole('button', { name: /continuer/i }).click();
+
+    // Review step: the three fixture transactions are parsed and listed.
     await expect(window.getByText('SALAIRE')).toBeVisible();
     await expect(window.getByText('LOYER')).toBeVisible();
     await expect(window.getByText('COURSES')).toBeVisible();
