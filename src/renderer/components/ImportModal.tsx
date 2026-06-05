@@ -16,8 +16,6 @@ import {
 } from './ui/dialog';
 import type { StatementExtraction } from '@shared/types/import';
 import type { AccountSummary, CreateAccountInput } from '@shared/types/dashboard';
-import type { CategoryDTO, CreateCategoryInput } from '@shared/types/category';
-import type { ReviewCategory } from '../hooks/useImport';
 
 const FIELD =
   'h-9 w-full rounded-md border border-line-2 bg-ink-3 px-2.5 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
@@ -37,7 +35,6 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
     toggleTx,
     toggleAll,
     setAcknowledgedCannotVerify,
-    pickCategory,
     confirm,
     reset,
   } = useImport();
@@ -51,7 +48,6 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
   const [overlapDismissed, setOverlapDismissed] = useState(false);
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
-  const [categories, setCategories] = useState<CategoryDTO[]>([]);
   const insertedCount = state.step === 'done' ? state.insertedCount : 0;
 
   // Load the account list whenever the modal opens, so the user can pick which
@@ -70,36 +66,6 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
       active = false;
     };
   }, [open]);
-
-  // Load the category list whenever the modal opens, so the Review step can show
-  // each row's category in an inline picker. Failure is non-fatal (picker shows none).
-  useEffect(() => {
-    if (!open) return;
-    let active = true;
-    void ipc
-      .invoke('categories:list', {})
-      .then(({ categories: next }) => {
-        if (active) setCategories(next);
-      })
-      .catch(() => {
-        // Categories are optional in Review; on failure the picker simply has no choices.
-      });
-    return () => {
-      active = false;
-    };
-  }, [open]);
-
-  async function createCategoryInline(input: CreateCategoryInput): Promise<CategoryDTO> {
-    try {
-      const { category } = await ipc.invoke('categories:create', input);
-      setCategories((prev) => [...prev, category]);
-      toast.success(`Catégorie « ${category.name} » créée`);
-      return category;
-    } catch (e) {
-      toast.error('Catégorie non créée');
-      throw e instanceof Error ? e : new Error('create failed');
-    }
-  }
 
   async function createAccountInline(input: CreateAccountInput): Promise<void> {
     try {
@@ -167,12 +133,6 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
             filePath={state.filePath}
             selected={state.selected}
             acknowledgedCannotVerify={state.acknowledgedCannotVerify}
-            categories={categories}
-            reviewCategories={state.categories}
-            pending={state.pending}
-            suggested={state.suggested}
-            onPickCategory={pickCategory}
-            onCreateCategory={createCategoryInline}
             overlapDismissed={overlapDismissed}
             onDismissOverlap={() => {
               setOverlapDismissed(true);
@@ -408,12 +368,6 @@ interface ReviewViewProps {
   filePath: string;
   selected: Set<string>;
   acknowledgedCannotVerify: boolean;
-  categories: CategoryDTO[];
-  reviewCategories: Map<string, ReviewCategory>;
-  pending: Set<string>;
-  suggested: Set<string>;
-  onPickCategory: (txHash: string, categoryId: string | null) => void;
-  onCreateCategory: (input: CreateCategoryInput) => Promise<CategoryDTO>;
   overlapDismissed: boolean;
   onDismissOverlap: () => void;
   onToggleTx: (hash: string) => void;
@@ -429,12 +383,6 @@ function ReviewView({
   filePath,
   selected,
   acknowledgedCannotVerify,
-  categories,
-  reviewCategories,
-  pending,
-  suggested,
-  onPickCategory,
-  onCreateCategory,
   overlapDismissed,
   onDismissOverlap,
   onToggleTx,
@@ -497,12 +445,6 @@ function ReviewView({
         selected={selected}
         onToggleTx={onToggleTx}
         onToggleAll={onToggleAll}
-        categories={categories}
-        reviewCategories={reviewCategories}
-        pending={pending}
-        suggested={suggested}
-        onPickCategory={onPickCategory}
-        onCreateCategory={onCreateCategory}
       />
 
       <DialogFooter>

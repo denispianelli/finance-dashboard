@@ -10,7 +10,6 @@ export async function handleImportConfirm(payload: ConfirmPayload): Promise<Conf
     const result = await insertStatement(getDb(), payload.accountId, content, {
       acknowledgedCannotVerify: payload.acknowledgedCannotVerify,
       selectedHashes: payload.selectedHashes,
-      categories: payload.categories,
     });
     return { ok: true, ...result };
   } catch (e) {
