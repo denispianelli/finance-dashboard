@@ -10,7 +10,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ipc } from '@renderer/ipc/client';
-import { useImport, type FileResult, type SubState } from '../hooks/useImport';
+import { useImport, type FileResult, type SubState, type ReviewCategory } from '../hooks/useImport';
 import { TransactionReviewTable } from './TransactionReviewTable';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
@@ -24,6 +24,7 @@ import {
 } from './ui/dialog';
 import type { StatementExtraction } from '@shared/types/import';
 import type { AccountSummary, CreateAccountInput } from '@shared/types/dashboard';
+import type { CategoryDTO, CreateCategoryInput } from '@shared/types/category';
 
 const FIELD =
   'h-9 w-full rounded-md border border-line-2 bg-ink-3 px-2.5 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
@@ -44,6 +45,7 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
     toggleTx,
     toggleAll,
     setAcknowledgedCannotVerify,
+    pickCategory,
     confirm,
     skipFile,
     reset,
@@ -58,6 +60,7 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
 
   const [overlapDismissed, setOverlapDismissed] = useState(false);
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
+  const [categories, setCategories] = useState<CategoryDTO[]>([]);
   const [dragOver, setDragOver] = useState(false);
 
   // Reopening always starts fresh: closing mid-queue must not resume on stale
@@ -76,6 +79,36 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
       active = false;
     };
   }, [open]);
+
+  // Load the category list whenever the modal opens, so each Review row can show
+  // its category in an inline picker. Failure is non-fatal (picker shows none).
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    void ipc
+      .invoke('categories:list', {})
+      .then(({ categories: next }) => {
+        if (active) setCategories(next);
+      })
+      .catch(() => {
+        // Categories are optional in Review; on failure the picker has no choices.
+      });
+    return () => {
+      active = false;
+    };
+  }, [open]);
+
+  async function createCategoryInline(input: CreateCategoryInput): Promise<CategoryDTO> {
+    try {
+      const { category } = await ipc.invoke('categories:create', input);
+      setCategories((prev) => [...prev, category]);
+      toast.success(`Catégorie « ${category.name} » créée`);
+      return category;
+    } catch (e) {
+      toast.error('Catégorie non créée');
+      throw e instanceof Error ? e : new Error('create failed');
+    }
+  }
 
   async function createAccountInline(input: CreateAccountInput): Promise<string | null> {
     try {
@@ -207,6 +240,12 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
             autoRouted={sub.autoRouted}
             selected={sub.selected}
             acknowledgedCannotVerify={sub.acknowledgedCannotVerify}
+            categories={categories}
+            reviewCategories={sub.categories}
+            pending={sub.pending}
+            suggested={sub.suggested}
+            onPickCategory={pickCategory}
+            onCreateCategory={createCategoryInline}
             overlapDismissed={overlapDismissed}
             onDismissOverlap={() => {
               setOverlapDismissed(true);
@@ -519,6 +558,12 @@ interface ReviewViewProps {
   autoRouted: boolean;
   selected: Set<string>;
   acknowledgedCannotVerify: boolean;
+  categories: CategoryDTO[];
+  reviewCategories: Map<string, ReviewCategory>;
+  pending: Set<string>;
+  suggested: Set<string>;
+  onPickCategory: (txHash: string, categoryId: string | null) => void;
+  onCreateCategory: (input: CreateCategoryInput) => Promise<CategoryDTO>;
   overlapDismissed: boolean;
   onDismissOverlap: () => void;
   onToggleTx: (hash: string) => void;
@@ -536,6 +581,12 @@ function ReviewView({
   autoRouted,
   selected,
   acknowledgedCannotVerify,
+  categories,
+  reviewCategories,
+  pending,
+  suggested,
+  onPickCategory,
+  onCreateCategory,
   overlapDismissed,
   onDismissOverlap,
   onToggleTx,
@@ -603,6 +654,12 @@ function ReviewView({
         selected={selected}
         onToggleTx={onToggleTx}
         onToggleAll={onToggleAll}
+        categories={categories}
+        reviewCategories={reviewCategories}
+        pending={pending}
+        suggested={suggested}
+        onPickCategory={onPickCategory}
+        onCreateCategory={onCreateCategory}
       />
 
       <DialogFooter>

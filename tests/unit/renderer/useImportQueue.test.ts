@@ -20,6 +20,10 @@ function extraction(): StatementExtraction {
         label: 'Alpha',
         amount: -10,
         fitid: null,
+        // Non-residual (deterministic tier) so the queue tests trigger no
+        // import:categorize call and their positional mock chains stay aligned.
+        categoryId: 'cat-default',
+        tier: 'rule',
       },
     ],
     arithmetic: {
@@ -239,6 +243,60 @@ describe('useImport — queue', () => {
     expect(result.current.state).toMatchObject({
       step: 'summary',
       results: [{ fileName: 'notes.txt', status: 'failed' }],
+    });
+  });
+
+  it('progressively categorizes a file’s residual rows and sends them on confirm', async () => {
+    // A residual row (tier null) drives the per-file LLM categorize loop inside
+    // the queue’s review; the suggestion lands in the review sub-state, then
+    // flows to import:confirm.
+    const residual = {
+      ...extraction(),
+      transactions: [
+        {
+          tx_hash: 'r1',
+          isDuplicate: false,
+          date: '2026-01-15',
+          label: 'MYSTERY MERCHANT',
+          amount: -10,
+          fitid: null,
+          categoryId: null,
+          tier: null,
+        },
+      ],
+    };
+    mockInvoke
+      .mockResolvedValueOnce({
+        ok: true,
+        identifier: 'ofx:1:1',
+        matchedAccountId: 'acc-a',
+        sourceType: 'ofx',
+        detectedBank: 'LCL',
+      }) // resolve → matched
+      .mockResolvedValueOnce({ ok: true, extraction: residual }) // extract
+      .mockResolvedValueOnce({ ok: true, results: [{ tx_hash: 'r1', categoryId: 'cat-food' }] }) // categorize batch
+      .mockResolvedValueOnce({ ok: true, importId: 'i1', insertedCount: 1, skippedCount: 0 }); // confirm
+
+    const { result } = renderHook(() => useImport());
+    await act(async () => {
+      await result.current.startFromPaths(['/x/a.ofx']);
+      // Let the fire-and-forget categorize batch resolve and apply.
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+    });
+
+    const s = result.current.state;
+    expect(s.step === 'queue' && s.sub.step === 'review').toBe(true);
+    if (s.step === 'queue' && s.sub.step === 'review') {
+      expect(s.sub.categories.get('r1')?.categoryId).toBe('cat-food');
+      expect(s.sub.suggested.has('r1')).toBe(true);
+    }
+
+    await act(async () => {
+      await result.current.confirm();
+    });
+    const confirmCall = mockInvoke.mock.calls.find((c) => c[0] === 'import:confirm');
+    expect(confirmCall?.[1]).toMatchObject({
+      categories: [{ tx_hash: 'r1', categoryId: 'cat-food', userModified: false }],
     });
   });
 });

@@ -1,8 +1,18 @@
 import { useCallback, useRef, useState } from 'react';
-import type { StatementExtraction } from '@shared/types/import';
+import type { StatementExtraction, ReviewTransaction } from '@shared/types/import';
+import type { ConfirmCategory } from '@shared/types/ipc';
 import { ipc } from '@renderer/ipc/client';
 
 const VALID_EXT = ['pdf', 'csv', 'ofx'];
+
+/** Per-row category state in Review (deterministic seed or LLM/user overlay). */
+export interface ReviewCategory {
+  categoryId: string | null;
+  userModified: boolean;
+}
+
+/** Residual batch size for the progressive LLM categorization loop. */
+const LLM_BATCH_SIZE = 12;
 
 export interface QueuedFile {
   path: string;
@@ -38,9 +48,14 @@ export type SubState =
       selected: Set<string>;
       acknowledgedCannotVerify: boolean;
       autoRouted: boolean;
+      categories: Map<string, ReviewCategory>;
+      pending: Set<string>; // tx_hash whose batch is in flight → "IA…"
+      suggested: Set<string>; // tx_hash the LLM filled → "IA" badge until touched
     }
   | { step: 'confirming' }
   | { step: 'fileError'; message: string };
+
+type ReviewSub = Extract<SubState, { step: 'review' }>;
 
 export type ImportState =
   | { step: 'idle' }
@@ -56,6 +71,7 @@ export interface UseImport {
   toggleTx: (txHash: string) => void;
   toggleAll: () => void;
   setAcknowledgedCannotVerify: (value: boolean) => void;
+  pickCategory: (txHash: string, categoryId: string | null) => void;
   confirm: () => Promise<void>;
   skipFile: () => void;
   reset: () => void;
@@ -75,6 +91,22 @@ const ERROR_MESSAGES: Partial<Record<string, string>> = {
 
 function fileNameOf(path: string): string {
   return path.split('/').pop() ?? path;
+}
+
+/** Split an array into fixed-size chunks (last chunk may be shorter). */
+function chunk<T>(items: readonly T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    out.push(items.slice(i, i + size));
+  }
+  return out;
+}
+
+/** Remove a batch's hashes from a Review sub-state's `pending` set. */
+function clearPending(sub: ReviewSub, batchHashes: readonly string[]): ReviewSub {
+  const pending = new Set(sub.pending);
+  for (const h of batchHashes) pending.delete(h);
+  return { ...sub, pending };
 }
 
 // Returns the IPC response, or null if the call rejected (main threw
@@ -107,6 +139,24 @@ export function useImport(): UseImport {
       const resolved = updater(prev);
       stateRef.current = resolved;
       return resolved;
+    });
+  }
+
+  /** True while the queue is still paused on `index`'s Review (the loop's guard). */
+  function isReviewing(index: number): boolean {
+    const s = stateRef.current;
+    return s.step === 'queue' && s.index === index && s.sub.step === 'review';
+  }
+
+  /** Apply a Review-only update to file `index`, but only if the queue is still
+   *  on that file's Review — so a late categorize batch never mutates another
+   *  file or a confirmed one. */
+  function updateReviewAt(index: number, updater: (sub: ReviewSub) => ReviewSub): void {
+    setState((prev) => {
+      if (prev.step !== 'queue' || prev.index !== index || prev.sub.step !== 'review') return prev;
+      const next = { ...prev, sub: updater(prev.sub) };
+      stateRef.current = next;
+      return next;
     });
   }
 
@@ -200,6 +250,13 @@ export function useImport(): UseImport {
     const selected = new Set(
       res.extraction.transactions.filter((tx) => !tx.isDuplicate).map((tx) => tx.tx_hash),
     );
+    // Seed each non-duplicate row with its deterministic category; the LLM loop
+    // fills the residual (tier null) rows progressively below.
+    const categories = new Map<string, ReviewCategory>();
+    for (const tx of res.extraction.transactions) {
+      if (tx.isDuplicate) continue;
+      categories.set(tx.tx_hash, { categoryId: tx.categoryId, userModified: false });
+    }
     setS({
       step: 'queue',
       files,
@@ -212,8 +269,66 @@ export function useImport(): UseImport {
         selected,
         acknowledgedCannotVerify: false,
         autoRouted,
+        categories,
+        pending: new Set<string>(),
+        suggested: new Set<string>(),
       },
     });
+    // Fire-and-forget the progressive LLM fill for THIS file. It reads stateRef
+    // to stop early (the queue leaving this file's Review); late results are
+    // dropped by `updateReviewAt`'s same-file guard.
+    void runCategorizeLoop(index, res.extraction.transactions);
+  }
+
+  /**
+   * Best-effort progressive categorization of file `index`'s residual rows.
+   * Cancellation is "drop late results", not a hard abort: the queue advancing
+   * past this file's Review makes `isReviewing(index)` false, so new batches
+   * stop and resolved batches no-op.
+   */
+  async function runCategorizeLoop(
+    index: number,
+    transactions: readonly ReviewTransaction[],
+  ): Promise<void> {
+    const residual = transactions.filter((t) => !t.isDuplicate && t.tier === null);
+
+    for (const batch of chunk(residual, LLM_BATCH_SIZE)) {
+      if (!isReviewing(index)) break;
+
+      const batchHashes = batch.map((t) => t.tx_hash);
+      updateReviewAt(index, (sub) => {
+        const pending = new Set(sub.pending);
+        for (const h of batchHashes) pending.add(h);
+        return { ...sub, pending };
+      });
+
+      const res = await safeInvoke(
+        ipc.invoke('import:categorize', {
+          items: batch.map((t) => ({ tx_hash: t.tx_hash, label: t.label })),
+        }),
+      );
+
+      // Unexpected rejection or no model installed → clear this batch and stop.
+      if (res === null || (!res.ok && res.error === 'model_unavailable')) {
+        updateReviewAt(index, (sub) => clearPending(sub, batchHashes));
+        break;
+      }
+
+      updateReviewAt(index, (sub) => {
+        if (!res.ok) return clearPending(sub, batchHashes); // inference_failed → stays residual
+        const categories = new Map(sub.categories);
+        const suggested = new Set(sub.suggested);
+        for (const r of res.results) {
+          if (r.categoryId === null) continue;
+          const existing = categories.get(r.tx_hash);
+          // Never overwrite a row the user already set.
+          if (existing?.userModified === true) continue;
+          categories.set(r.tx_hash, { categoryId: r.categoryId, userModified: false });
+          suggested.add(r.tx_hash);
+        }
+        return { ...clearPending(sub, batchHashes), categories, suggested };
+      });
+    }
   }
 
   async function startFromPaths(paths: string[]): Promise<void> {
@@ -304,20 +419,50 @@ export function useImport(): UseImport {
     });
   }
 
+  function pickCategory(txHash: string, categoryId: string | null): void {
+    updateSub((prev) => {
+      if (prev.sub.step !== 'review') return prev;
+      const categories = new Map(prev.sub.categories);
+      categories.set(txHash, { categoryId, userModified: true });
+      const suggested = new Set(prev.sub.suggested);
+      suggested.delete(txHash);
+      return { ...prev, sub: { ...prev.sub, categories, suggested } };
+    });
+  }
+
   async function confirm(): Promise<void> {
     const cur = stateRef.current;
     if (cur.step !== 'queue' || cur.sub.step !== 'review') return;
-    const { extraction, accountId, selected, acknowledgedCannotVerify, autoRouted } = cur.sub;
+    const { extraction, accountId, selected, acknowledgedCannotVerify, autoRouted, categories } =
+      cur.sub;
     const file = cur.files[cur.index];
     if (file === undefined) return;
+    // Setting 'confirming' also stops this file's progressive loop (its
+    // isReviewing guard turns false; late batches no-op via updateReviewAt).
     setS({ ...cur, sub: { step: 'confirming' } });
     const ack = extraction.sourceType === 'ofx' ? true : acknowledgedCannotVerify;
+
+    // Serialize the validated categories for SELECTED, non-duplicate rows only.
+    const duplicateHashes = new Set(
+      extraction.transactions.filter((tx) => tx.isDuplicate).map((tx) => tx.tx_hash),
+    );
+    const confirmCategories: ConfirmCategory[] = [];
+    for (const [tx_hash, cat] of categories) {
+      if (!selected.has(tx_hash) || duplicateHashes.has(tx_hash)) continue;
+      confirmCategories.push({
+        tx_hash,
+        categoryId: cat.categoryId,
+        userModified: cat.userModified,
+      });
+    }
+
     const res = await safeInvoke(
       ipc.invoke('import:confirm', {
         path: file.path,
         accountId,
         selectedHashes: [...selected],
         acknowledgedCannotVerify: ack,
+        categories: confirmCategories,
       }),
     );
     if (res === null) {
@@ -376,6 +521,7 @@ export function useImport(): UseImport {
     toggleTx,
     toggleAll,
     setAcknowledgedCannotVerify,
+    pickCategory,
     confirm,
     skipFile,
     reset,

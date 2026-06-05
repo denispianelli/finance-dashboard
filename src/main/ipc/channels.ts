@@ -6,6 +6,7 @@ export const CHANNELS = {
   importExtract: 'import:extract',
   importResolveAccount: 'import:resolveAccount',
   importConfirm: 'import:confirm',
+  importCategorize: 'import:categorize',
   dashboardGetAccounts: 'dashboard:getAccounts',
   dashboardGetTransactions: 'dashboard:getTransactions',
   dashboardAggregate: 'dashboard:aggregate',

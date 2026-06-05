@@ -12,6 +12,7 @@ export async function handleImportConfirm(payload: ConfirmPayload): Promise<Conf
     const result = await insertStatement(getDb(), payload.accountId, content, {
       acknowledgedCannotVerify: payload.acknowledgedCannotVerify,
       selectedHashes: payload.selectedHashes,
+      categories: payload.categories,
     });
     // Route learning is best-effort: a failure here must never fail an import
     // whose rows were already written.
