@@ -1,7 +1,10 @@
 # LLM batch categorization — progressive tier-3 in the import Review
 
 - **Date**: 2026-06-05
-- **Status**: Approved — in implementation
+- **Status**: **Amended 2026-06-05** — §1–§10 describe the original _in-Review_
+  approach (built as PR #143). It was reversed the same day after hands-on testing:
+  categorization moved **out of the import Review** to an **async background pass**.
+  **Read §11 first** — it supersedes the Review-time behaviour in §4, §6, §7.
 - **Author**: Denis (PO/Tech Lead) + Claude
 - **Related**: ADR-003 (deterministic extraction), ADR-004 (model selection),
   ADR-005 (mandatory human review), ADR-009 (product scope — LLM is a background
@@ -315,3 +318,57 @@ None blocking. Resolved during design: progressive-in-Review (not blocking, not
 async-background); categorization moves to extract; no migration (no persisted
 score/tier); LLM constrained to existing categories; accepted suggestions feed
 history implicitly; tests mock the model.
+
+## 11. Amendment — async background categorization (supersedes §4/§6/§7)
+
+The in-Review design (§1–§10) was built (PR #143) and tested. **Reversed the same
+day** on maintainer feedback: the category column is noise during import, and — worse
+— the in-flight LLM fill **blocked the Import button**. See ADR-013's Amendment for
+the rationale. The new model:
+
+### Import is clean and instant again
+
+- The Review shows **date / label / amount / status only** — no category column, no
+  picker, no "IA" badge. `ReviewTransaction` carries no category; `extractStatement`
+  does no categorization; `import:confirm` carries no `categories`. (These are the §3/§4
+  in-Review additions, reverted.)
+- **Import is never gated** by categorization. The deterministic cascade
+  (rule → history) still runs at **insert** (`insertStatement`, as it always did), so
+  most rows are categorized the instant they land; the residual enters with
+  `category_id = NULL`.
+
+### The LLM runs after import, in the background
+
+- On a successful import, the renderer kicks off a background pass (`AppShell`
+  `onImported` → `useBackgroundCategorization.run()`).
+- The pass pulls `categorize:pending` (`category_id IS NULL`, non-transfer; keyed by
+  **transaction id**), then loops batches of `LLM_BATCH_SIZE = 12` through
+  `categorize:batch`, which runs the model **and persists** each suggestion in main —
+  writing `category_id` only where still null (`user_modified = 0`, so it feeds the
+  history tier; a manual pick made meanwhile is never overwritten).
+- After each batch that writes anything, the views **refetch** (the existing
+  `refreshToken`) so categories appear progressively in the **Transactions view and
+  dashboard** — where the inline `CategoryPicker` already lets the user correct them.
+- **Surfacing**: a single **discreet, non-interactive indicator** in the Topbar —
+  "Catégorisation IA… (N)" with a Lucide `Sparkles` — shown only while a pass runs.
+- **Degradation / triggering**: `model_unavailable` on the first batch stops the pass
+  (residual stays manually categorizable); `inference_failed` skips a batch and
+  continues; `run()` is idempotent (concurrent imports don't double-run). Trigger is
+  **auto-after-import only** (no on-mount sweep, no manual button — YAGNI; re-importing
+  re-triggers, and leftovers can be set by hand).
+
+### IPC delta vs §6
+
+- **Removed**: `import:categorize`; `ConfirmCategory` / `categories` on `import:confirm`;
+  `categoryId` / `tier` on `ReviewTransaction`; `modelAvailable`.
+- **Added**: `categorize:pending` → `{ items: { id, label }[] }`;
+  `categorize:batch` → `{ items }` ⇒ `{ ok: true; applied } | { ok: false; error }`.
+- **Kept**: the LLM module `categorize/llm.ts` (now keyed by `id`), `modelsDir`,
+  graceful-degradation and constrained-output guarantees, no migration / no score.
+
+### What still holds from §1–§10
+
+No persisted score (uncertainty is just "uncategorized"); LLM constrained to existing
+categories; implicit learning via the history tier; ADR-005 still governs validating
+the **transactions** at import — categories are now an after-the-fact, correctable
+concern, not part of that gate.
