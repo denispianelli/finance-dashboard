@@ -154,10 +154,15 @@ Each non-duplicate Review row exposes the category via an inline `CategoryPicker
 `userModified` in Review state (→ `user_modified = 1` at insert). Duplicates show
 no picker (they are not inserted).
 
-Clearing a row back to **no category** is a user action too: `categoryId: null,
-userModified: true`. It inserts `category_id = NULL, user_modified = 1` — inert for
-the history tier (its query filters `category_id IS NOT NULL`), i.e. a deliberate
-"leave this uncategorized" that the LLM won't re-propose against an existing row.
+Clearing a row back to **no category** is supported end-to-end in the data layer
+(`pickCategory(hash, null)` → `categoryId: null, userModified: true` → insert
+`category_id = NULL, user_modified = 1`, inert for the history tier whose query
+filters `category_id IS NOT NULL`). It is **not exposed in the UI for now**:
+`CategoryPicker.onSelect` only emits an existing id, so the picker can set a
+category but not clear one. A residual row the user leaves alone simply stays
+`categoryId: null` (with `userModified: false`). Adding an explicit "clear" entry to
+the shared picker is deferred (YAGNI — a row can be re-categorized later on the
+Transactions page); the data path is already in place if we want it.
 
 ### 4.4 Confirm inserts the validated categories
 
