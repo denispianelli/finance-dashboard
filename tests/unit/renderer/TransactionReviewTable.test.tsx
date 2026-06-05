@@ -17,6 +17,8 @@ function makeTx(hash: string, isDuplicate = false): ReviewTransaction {
     amount: -42.5,
     fitid: null,
     isDuplicate,
+    categoryId: null,
+    tier: null,
   };
 }
 

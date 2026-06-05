@@ -24,6 +24,8 @@ function makeTx(hash: string, isDuplicate = false) {
     tx_hash: hash,
     fitid: null,
     isDuplicate,
+    categoryId: null,
+    tier: null,
   };
 }
 

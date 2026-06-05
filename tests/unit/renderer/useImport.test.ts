@@ -23,6 +23,8 @@ function makeExtraction(over: Partial<StatementExtraction> = {}): StatementExtra
         amount: -10,
         fitid: 'F1',
         isDuplicate: false,
+        categoryId: null,
+        tier: null,
       },
       {
         tx_hash: 'h2',
@@ -31,6 +33,8 @@ function makeExtraction(over: Partial<StatementExtraction> = {}): StatementExtra
         amount: -5,
         fitid: 'F2',
         isDuplicate: true,
+        categoryId: null,
+        tier: null,
       },
     ],
     arithmetic: {
