@@ -177,11 +177,15 @@ function AccountRow({
         </span>
       </div>
 
-      <Money
-        value={account.balance}
-        kind={account.balance < 0 ? 'expense' : 'plain'}
-        className="text-[13px]"
-      />
+      {account.balance === null ? (
+        <span className="font-mono text-[13px] tabular-nums text-paper-dim">—</span>
+      ) : (
+        <Money
+          value={account.balance}
+          kind={account.balance < 0 ? 'expense' : 'plain'}
+          className="text-[13px]"
+        />
+      )}
       <button
         type="button"
         aria-label={`Renommer ${account.name}`}

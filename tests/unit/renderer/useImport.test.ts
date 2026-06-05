@@ -47,6 +47,8 @@ function makeExtraction(over: Partial<StatementExtraction> = {}): StatementExtra
     alreadyImported: false,
     dateRangeStart: '2026-01-01',
     dateRangeEnd: '2026-01-31',
+    closingBalance: null,
+    closingBalanceDate: null,
     sourceType: 'ofx',
     ...over,
   };

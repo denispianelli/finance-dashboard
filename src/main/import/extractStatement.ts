@@ -53,6 +53,11 @@ export async function extractStatement(
     alreadyImported,
     dateRangeStart: stmt.openingDate,
     dateRangeEnd: stmt.closingDate,
+    // Anchor for the real account balance (ADR-014): the stated closing balance
+    // and its as-of date (the statement's last transaction date). Null when the
+    // source carries no usable balance, so the account simply does not anchor.
+    closingBalance: stmt.closingBalance,
+    closingBalanceDate: stmt.closingBalance === null ? null : stmt.closingDate,
     sourceType: type,
   };
 }

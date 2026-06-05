@@ -33,8 +33,9 @@ export async function insertStatement(
   try {
     db.prepare(
       `INSERT INTO imports
-         (id, account_id, file_hash, source_type, date_range_start, date_range_end, status)
-       VALUES (?, ?, ?, ?, ?, ?, 'validated')`,
+         (id, account_id, file_hash, source_type, date_range_start, date_range_end,
+          closing_balance, closing_balance_date, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'validated')`,
     ).run(
       importId,
       accountId,
@@ -42,6 +43,8 @@ export async function insertStatement(
       extraction.sourceType,
       extraction.dateRangeStart,
       extraction.dateRangeEnd,
+      extraction.closingBalance,
+      extraction.closingBalanceDate,
     );
     const insertTx = db.prepare(
       `INSERT INTO transactions

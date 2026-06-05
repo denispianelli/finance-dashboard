@@ -50,6 +50,8 @@ function baseExtraction(over: Partial<StatementExtraction> = {}): StatementExtra
     alreadyImported: false,
     dateRangeStart: '2025-11-01',
     dateRangeEnd: '2025-11-02',
+    closingBalance: 10,
+    closingBalanceDate: '2025-11-02',
     sourceType: 'pdf',
     ...over,
   };
@@ -128,6 +130,34 @@ describe('insertStatement — guards', () => {
     });
     expect(r.insertedCount).toBe(2);
     expect(db.prepare('SELECT count(*) n FROM transactions').get()).toMatchObject({ n: 2 });
+    db.close();
+  });
+});
+
+describe('insertStatement — closing balance persistence (ADR-014)', () => {
+  it('persists the closing balance and its as-of date', async () => {
+    const db = freshDb();
+    extractMock.mockResolvedValue(
+      baseExtraction({ closingBalance: 1234.56, closingBalanceDate: '2025-11-02' }),
+    );
+    const r = await insertStatement(db, 'acc-lcl-default', Buffer.from('x'));
+    const row = db
+      .prepare('SELECT closing_balance, closing_balance_date FROM imports WHERE id = ?')
+      .get(r.importId) as { closing_balance: number | null; closing_balance_date: string | null };
+    expect(row).toEqual({ closing_balance: 1234.56, closing_balance_date: '2025-11-02' });
+    db.close();
+  });
+
+  it('stores NULL when the statement carries no closing balance', async () => {
+    const db = freshDb();
+    extractMock.mockResolvedValue(
+      baseExtraction({ closingBalance: null, closingBalanceDate: null }),
+    );
+    const r = await insertStatement(db, 'acc-lcl-default', Buffer.from('x'));
+    const row = db
+      .prepare('SELECT closing_balance, closing_balance_date FROM imports WHERE id = ?')
+      .get(r.importId) as { closing_balance: number | null; closing_balance_date: string | null };
+    expect(row).toEqual({ closing_balance: null, closing_balance_date: null });
     db.close();
   });
 });

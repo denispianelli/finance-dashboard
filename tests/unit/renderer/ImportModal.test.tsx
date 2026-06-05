@@ -62,6 +62,8 @@ function makeReviewExtraction(over: Partial<StatementExtraction> = {}): Statemen
     alreadyImported: false,
     dateRangeStart: '2026-01-01',
     dateRangeEnd: '2026-01-31',
+    closingBalance: null,
+    closingBalanceDate: null,
     sourceType: 'ofx',
     ...over,
   };
@@ -120,7 +122,11 @@ describe('ImportModal — pick state', () => {
 
 describe('ImportModal — unknown bank (learn flow)', () => {
   it('offers to learn the bank and calls learnBank with the entered name', async () => {
-    const hook = makeHook({ step: 'unknownBank', filePath: '/tmp/x.pdf', accountId: 'acc-lcl-default' });
+    const hook = makeHook({
+      step: 'unknownBank',
+      filePath: '/tmp/x.pdf',
+      accountId: 'acc-lcl-default',
+    });
     mockUseImport.mockReturnValue(hook);
     render(<ImportModal open={true} onClose={vi.fn()} />);
     expect(screen.getByText(/Banque non reconnue/i)).toBeInTheDocument();
