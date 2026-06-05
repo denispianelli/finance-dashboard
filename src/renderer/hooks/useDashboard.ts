@@ -6,6 +6,7 @@ import type {
   DashboardTransaction,
 } from '@shared/types/dashboard';
 import type { CategoryDTO, CreateCategoryInput } from '@shared/types/category';
+import type { UpdateTransactionInput } from '@shared/types/transaction';
 import { ipc } from '@renderer/ipc/client';
 
 const EMPTY_METRICS: DashboardMetrics = { balance: 0, series: [] };
@@ -25,6 +26,10 @@ export interface UseDashboard {
   reassign: (transactionId: string, categoryId: string) => Promise<void>;
   /** Create a category on the fly; returns it so callers can assign it. */
   createCategory: (input: CreateCategoryInput) => Promise<CategoryDTO>;
+  /** Edit a transaction's date / label / amount and refresh. */
+  updateTransaction: (input: UpdateTransactionInput) => Promise<void>;
+  /** Delete a transaction; offers an undo toast that restores it. */
+  deleteTransaction: (transactionId: string) => Promise<void>;
 }
 
 export interface UseDashboardOptions {
@@ -129,6 +134,35 @@ export function useDashboard(
     }
   }, []);
 
+  const updateTransaction = useCallback(async (input: UpdateTransactionInput) => {
+    try {
+      await ipc.invoke('transactions:update', input);
+      setTick((t) => t + 1);
+      toast.success('Transaction modifiée');
+    } catch (e) {
+      toast.error(`Modification impossible : ${errMessage(e)}`);
+    }
+  }, []);
+
+  const deleteTransaction = useCallback(async (transactionId: string) => {
+    try {
+      const { snapshot } = await ipc.invoke('transactions:delete', { transactionId });
+      setTick((t) => t + 1);
+      toast.success('Transaction supprimée', {
+        action: {
+          label: 'Annuler',
+          onClick: () => {
+            void ipc.invoke('transactions:restore', { transaction: snapshot }).then(() => {
+              setTick((t) => t + 1);
+            });
+          },
+        },
+      });
+    } catch (e) {
+      toast.error(`Suppression impossible : ${errMessage(e)}`);
+    }
+  }, []);
+
   const createCategory = useCallback(async (input: CreateCategoryInput) => {
     try {
       const { category } = await ipc.invoke('categories:create', input);
@@ -150,5 +184,7 @@ export function useDashboard(
     selectAccount,
     reassign,
     createCategory,
+    updateTransaction,
+    deleteTransaction,
   };
 }

@@ -1,0 +1,12 @@
+-- Drop the per-transaction LLM `confidence` score.
+--
+-- An LLM-self-reported 0-1 score is not calibrated — it is fake precision, and
+-- the product deliberately does not surface or store one (see ADR-005 amendment,
+-- 2026-06-03). Uncertainty is expressed by the categorization cascade tier
+-- (rule / history = trusted, LLM-suggested / uncategorized = worth a look) and
+-- lives only in the import Review screen. Once an import is validated, every
+-- categorization is confirmed; there is nothing left to score.
+--
+-- No index, view, trigger or generated column references this column, so a plain
+-- DROP COLUMN is safe.
+ALTER TABLE transactions DROP COLUMN confidence;

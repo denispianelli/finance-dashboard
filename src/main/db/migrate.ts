@@ -6,7 +6,9 @@ import sql004 from './migrations/004_add_fitid.sql?raw';
 import sql005 from './migrations/005_versioned_taxonomy.sql?raw';
 import sql006 from './migrations/006_seed_categories.sql?raw';
 import sql007 from './migrations/007_drop_transfer_label_rules.sql?raw';
-import sql008 from './migrations/008_account_identifiers.sql?raw';
+import sql008 from './migrations/008_drop_confidence.sql?raw';
+import sql009 from './migrations/009_editable_transactions.sql?raw';
+import sql010 from './migrations/010_account_identifiers.sql?raw';
 
 interface Migration {
   version: number;
@@ -22,6 +24,8 @@ const MIGRATIONS: Migration[] = [
   { version: 6, sql: sql006 },
   { version: 7, sql: sql007 },
   { version: 8, sql: sql008 },
+  { version: 9, sql: sql009 },
+  { version: 10, sql: sql010 },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

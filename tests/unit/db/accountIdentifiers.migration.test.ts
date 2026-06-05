@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { runMigrations } from '../../../src/main/db/migrate';
 
-describe('migration 008 — account_identifiers', () => {
+describe('migration 010 — account_identifiers', () => {
   it('creates the table and cascades on account delete', () => {
     const db = new DatabaseSync(':memory:');
     db.exec('PRAGMA foreign_keys = ON');

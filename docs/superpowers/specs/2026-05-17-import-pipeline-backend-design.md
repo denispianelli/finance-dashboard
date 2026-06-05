@@ -37,7 +37,8 @@ Out of scope (deferred):
 - Inline editing of transactions → later story (this flow is read-only)
 - Multi-account management / account creation UI → later story (one seeded
   default account is used)
-- LLM categorization → `category_id` / `confidence` are inserted `NULL`
+- LLM categorization → not wired in this flow (the `confidence` column was
+  dropped; uncertainty is a Review-only signal — see ADR-005)
 
 ## 3. Architecture
 
@@ -185,8 +186,8 @@ Decisions:
 - `ArithmeticCheckResult` / `PeriodOverlapResult` / `OverlappingImport`
   live in `@shared/types/import`; the main modules re-export them so
   `@shared` never depends on `@main` (see §3 layering fix).
-- `ReviewTransaction` carries no `category_id` / `confidence`: no LLM in this
-  flow; those columns are `NULL` at INSERT.
+- `ReviewTransaction` carries no `category_id`: no LLM in this flow (and the
+  `confidence` column no longer exists — see ADR-005).
 
 ## 5. Logic
 
@@ -250,11 +251,11 @@ source of truth (Approach A).
      for (tx of extraction.transactions where !tx.isDuplicate) {
        INSERT INTO transactions
          (id, account_id, import_id, tx_hash, date, amount,
-          label_raw, label_clean, category_id, confidence,
+          label_raw, label_clean, category_id,
           is_internal_transfer, user_modified)
          VALUES (randomUUID(), accountId, importId, tx.tx_hash, tx.date,
                  tx.amount, tx.label, normalizeLabel(tx.label),
-                 NULL, NULL, 0, 0);
+                 NULL, 0, 0);
      }
      db.exec('COMMIT');
    } catch (e) {
@@ -324,8 +325,8 @@ Vitest. Unit tests (in-memory `node:sqlite` + synthetic pages) in
   `transactions`, `insertedCount === 46`, `skippedCount === 0`
 - re-import of an overlapping statement → only new ones inserted, duplicates
   skipped, `skippedCount` correct, `UNIQUE` never violated
-- `label_clean === normalizeLabel(label)`, `category_id` / `confidence`
-  NULL, `import_id` correct
+- `label_clean === normalizeLabel(label)`, `category_id` NULL, `import_id`
+  correct
 - arithmetic `failed` (synthetic unbalanced pages) → refuses, **no** rows
   written
 - `cannot_verify` without ack → refuses; with

@@ -97,7 +97,7 @@ Le modèle a été **confirmé par le spike** (#12) : Llama 3.2 3B retenu, cf. A
 **Décision clé** : les **chiffres** (montants, dates, libellés) viennent **exclusivement** de l'extraction déterministe. Le LLM ne touche jamais à ces valeurs. Il intervient uniquement pour :
 
 - Le mapping de colonnes (une fois par banque)
-- La catégorisation (avec score de confiance)
+- La catégorisation (sans score de confiance — cf. §5.2 et ADR-005)
 
 Aucun usage IA en aval : chat / insights générés sont coupés (cf. §9 + ADR-009). Toute analyse downstream est déterministe.
 
@@ -113,16 +113,16 @@ solde_début_relevé + Σ(crédits) − Σ(débits) ?= solde_fin_relevé
 
 Si la somme ne matche pas, l'import est **bloqué** avec un message explicite. C'est une garantie déterministe que rien n'a été inventé ni omis.
 
-### 5.2. Score de confiance par transaction
+### 5.2. Mise en évidence des catégorisations à relire (pas de score)
 
-Le LLM renvoie un `confidence` (0-1) pour chaque catégorisation. Les transactions à `confidence < 0.8` sont surlignées dans la page de Review.
+Pas de score de confiance : un nombre 0-1 auto-déclaré par le LLM n'est pas calibré, ce serait de la fausse précision (cf. amendement ADR-005, 2026-06-03). Le signal honnête « celle-ci est incertaine » est un **fait** que le logiciel connaît : l'étage de la cascade d'attribution (§7) qui a posé la catégorie. Une catégorie issue d'une **règle** ou de l'**historique** est de confiance implicite ; une catégorie **proposée par le LLM** (libellé jamais validé) ou une transaction **non catégorisée** sont mises en évidence dans la page de Review. Ce signal est **éphémère** : il n'existe que le temps de la Review. Une fois l'import validé, tout est confirmé et rien n'est stocké.
 
 ### 5.3. Review utilisateur obligatoire
 
 Aucun `INSERT` ne peut être effectué sans validation explicite. La page de Review affiche :
 
 - PDF original rendu via PDF.js (gauche)
-- Transactions extraites, éditables, avec niveau de confiance (droite)
+- Transactions extraites, éditables, avec les lignes à relire mises en évidence (droite)
 - Résultat de la vérif arithmétique (vert/rouge)
 - Actions : `Valider l'import` / `Modifier` / `Annuler`
 
@@ -179,7 +179,7 @@ Catégories extensibles : l'utilisateur peut ajouter, renommer, supprimer. Sous-
 Pour chaque transaction :
   1. RÈGLE UTILISATEUR ("libellé contient X → catégorie Y") → instantané
   2. HISTORIQUE (libellé déjà vu) → instantané, propose la catégorie la plus utilisée
-  3. LLM → catégorie + confidence score
+  3. LLM → catégorie proposée (mise en évidence dans la Review, pas de score)
 ```
 
 ### Apprentissage continu
@@ -291,7 +291,6 @@ CREATE TABLE transactions (
   label_raw TEXT,
   label_clean TEXT,
   category_id TEXT,
-  confidence REAL,
   is_internal_transfer INT DEFAULT 0,
   user_modified INT DEFAULT 0,
   UNIQUE(account_id, tx_hash)
@@ -350,15 +349,15 @@ splits : `docs/superpowers/specs/2026-05-20-versioned-taxonomy-design.md`
 
 ## 11. Pages & UI
 
-| Page         | Rôle                                                                            |
-| ------------ | ------------------------------------------------------------------------------- |
-| Dashboard    | KPIs (solde, revenus, dépenses, épargne), charts (cat + tendance), dernières tx |
-| Transactions | Liste filtrable et éditable, recherche, bulk actions                            |
-| Catégories   | CRUD catégories, règles, sous-catégories                                        |
-| Rapports     | Analyses sur période, comparatifs, exports                                      |
-| Import       | Upload + page de Review (split PDF / extracted)                                 |
-| Chat IA      | Interface conversationnelle avec contexte intelligent                           |
-| Paramètres   | Comptes, modèle LLM, OCR on/off, export/backup, thème                           |
+| Page         | Rôle                                                                                                                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dashboard    | KPIs (solde, revenus, dépenses, épargne), charts (cat + tendance), dernières tx                                                                                                             |
+| Transactions | Liste filtrable et éditable, recherche, bulk actions — transactions are editable (date/label/amount) and deletable post-import; extracted figures are preserved as an audit trail (ADR-012) |
+| Catégories   | CRUD catégories, règles, sous-catégories                                                                                                                                                    |
+| Rapports     | Analyses sur période, comparatifs, exports                                                                                                                                                  |
+| Import       | Upload + page de Review (split PDF / extracted)                                                                                                                                             |
+| Chat IA      | Interface conversationnelle avec contexte intelligent                                                                                                                                       |
+| Paramètres   | Comptes, modèle LLM, OCR on/off, export/backup, thème                                                                                                                                       |
 
 **Design** : dark theme par défaut (cohérent avec mockup validé). Light theme prévu en v2. shadcn/ui + Tailwind. Sidebar persistante à gauche, contenu principal au centre.
 
@@ -448,7 +447,7 @@ Sans ce spike, on grave dans le marbre des choix qui peuvent être fragiles.
 | ----------------------------------------- | ----------- | ----------------------------------------------------------------------------- |
 | Modèle LLM trop lent sur CPU moyen        | Moyenne     | Spike obligatoire, fallback vers modèle plus petit                            |
 | Extraction PDF échoue sur banque exotique | Moyenne     | LLM fallback pour mapping initial, message clair si échec                     |
-| Hallucination de catégorisation           | Faible      | Score de confiance, Review obligatoire, apprentissage                         |
+| Hallucination de catégorisation           | Faible      | Review obligatoire (catégos LLM mises en évidence), apprentissage             |
 | OCR qualité variable                      | Moyenne     | Marqué optionnel, message si qualité basse                                    |
 | Native deps cross-platform                | Moyenne     | CI multi-OS dès le début, prebuilds pour `better-sqlite3` et `node-llama-cpp` |
 | RAM excessive                             | Faible      | Q4 quantization, mode low-power, monitoring intégré                           |

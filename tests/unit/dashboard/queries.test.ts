@@ -38,12 +38,11 @@ function seedTx(
     amount: number;
     label?: string;
     categoryId?: string | null;
-    confidence?: number | null;
   },
 ): void {
   db.prepare(
-    `INSERT INTO transactions (id, account_id, tx_hash, date, amount, label_raw, label_clean, category_id, confidence)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO transactions (id, account_id, tx_hash, date, amount, label_raw, label_clean, category_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     args.id,
     args.accountId,
@@ -53,7 +52,6 @@ function seedTx(
     args.label ?? args.id,
     args.label ?? args.id,
     args.categoryId ?? null,
-    args.confidence ?? null,
   );
 }
 
@@ -150,5 +148,18 @@ describe('getTransactions', () => {
     const rows = getTransactions(db, { accountId: 'a1' });
     expect(rows.map((r) => r.id)).toEqual(['t1']);
     db.close();
+  });
+
+  it('returns the audit fields (originalDate, originalAmount, editedAt)', () => {
+    const db = freshDb();
+    seedAccount(db, 'a1', 'Compte courant');
+    db.prepare(
+      `INSERT INTO transactions (id, account_id, tx_hash, date, amount, label_raw, label_clean, original_date, original_amount, edited_at)
+       VALUES ('e1', 'a1', 'e1', '2026-05-20', -90, 'X', 'X', '2026-05-14', -84.3, '2026-06-03 10:00:00')`,
+    ).run();
+    const tx = getTransactions(db, { accountId: 'a1' }).find((t) => t.id === 'e1');
+    expect(tx?.originalDate).toBe('2026-05-14');
+    expect(tx?.originalAmount).toBe(-84.3);
+    expect(tx?.editedAt).toBe('2026-06-03 10:00:00');
   });
 });

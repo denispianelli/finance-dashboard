@@ -1,4 +1,4 @@
-# ADR-012 — Learned account routing for multi-file import
+# ADR-013 — Learned account routing for multi-file import
 
 - **Status** : Accepted
 - **Date** : 2026-06-03
@@ -105,7 +105,7 @@ detectedBank? }`. The existing `import:extract` / `import:confirm` then run
 ## Consequences
 
 - New persistent concept: a learned identifier→account map. Small, well-bounded
-  (`account_identifiers`, migration 008), cascading on account delete.
+  (`account_identifiers`, migration 010), cascading on account delete.
 - The import flow inverts at the front: account is resolved _from_ the file, not
   chosen _before_ it. The per-file extraction/dedup/overlap internals are
   untouched — the change is a new `resolveAccount` step plus a confirm-time
@@ -128,6 +128,6 @@ detectedBank? }`. The existing `import:extract` / `import:confirm` then run
   no network.
 
 > Not reflected in the README (stack/engine/model unchanged) — no README update
-> needed. Accepted: the implementation landed (migration 008, `resolveAccount`,
+> needed. Accepted: the implementation landed (migration 010, `resolveAccount`,
 > renderer queue, confirm-time upsert) with the design spec's Definition of Done
 > met — lint/tsc/build clean, unit + integration tests green.

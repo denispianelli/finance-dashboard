@@ -20,5 +20,5 @@ DELETE FROM categorization_rules WHERE id IN ('cr-220', 'cr-221', 'cr-222');
 -- not since touched, so they count again. user_modified = 1 (an explicit user choice)
 -- is preserved. category_id NULL means "non catégorisé", which the dashboard counts.
 UPDATE transactions
-SET category_id = NULL, confidence = NULL
+SET category_id = NULL
 WHERE category_id = 'cat-transferts' AND user_modified = 0;

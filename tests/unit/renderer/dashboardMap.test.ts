@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   formatBalance,
   formatTxDate,
-  formatConfidence,
   txKind,
   toAccount,
   toTxRow,
@@ -21,7 +20,9 @@ function makeTx(over: Partial<DashboardTransaction> = {}): DashboardTransaction 
     categoryName: null,
     categoryColor: null,
     categoryIcon: null,
-    confidence: null,
+    originalDate: null,
+    originalAmount: null,
+    editedAt: null,
     isInternalTransfer: false,
     userModified: false,
     ...over,
@@ -45,15 +46,6 @@ describe('formatTxDate', () => {
   });
   it('passes through a non-ISO input unchanged', () => {
     expect(formatTxDate('garbage')).toBe('garbage');
-  });
-});
-
-describe('formatConfidence', () => {
-  it('formats a score with a comma', () => {
-    expect(formatConfidence(0.94)).toBe('0,94');
-  });
-  it('renders an em dash when unscored', () => {
-    expect(formatConfidence(null)).toBe('—');
   });
 });
 
@@ -102,7 +94,7 @@ describe('toAccount', () => {
 });
 
 describe('toTxRow', () => {
-  it('falls back to neutral category + em-dash confidence when uncategorized', () => {
+  it('falls back to neutral category when uncategorized', () => {
     const row = toTxRow(makeTx());
     expect(row).toMatchObject({
       date: '14/05',
@@ -111,29 +103,45 @@ describe('toTxRow', () => {
       catName: 'Non catégorisé',
       catColor: '#6E6E78',
       amountKind: 'expense',
-      conf: '—',
-      confLow: false,
     });
   });
-  it('flags low confidence and uses the category fields when present', () => {
+  it('uses the category fields when present', () => {
     const row = toTxRow(
       makeTx({
         categoryName: 'Transport',
         categoryColor: '#8AA8C7',
         categoryIcon: 'car',
-        confidence: 0.71,
       }),
     );
     expect(row).toMatchObject({
       catName: 'Transport',
       catColor: '#8AA8C7',
       icon: 'car',
-      conf: '0,71',
-      confLow: true,
     });
   });
-  it('does not flag confidence at or above the 0.8 threshold', () => {
-    expect(toTxRow(makeTx({ confidence: 0.8 })).confLow).toBe(false);
-    expect(toTxRow(makeTx({ confidence: 0.94 })).confLow).toBe(false);
+
+  it('marks an edited row and builds an original-values hint', () => {
+    const row = toTxRow(
+      makeTx({
+        editedAt: '2026-06-03 10:00:00',
+        originalAmount: -84.3,
+        originalDate: '2026-05-14',
+      }),
+    );
+    expect(row.edited).toBe(true);
+    expect(row.originalHint).toContain('84,30');
+    expect(row.originalHint).toContain('14/05');
+  });
+
+  it('is not marked edited when editedAt is null', () => {
+    expect(toTxRow(makeTx()).edited).toBe(false);
+    expect(toTxRow(makeTx()).originalHint).toBeNull();
+  });
+
+  it('exposes raw editable values for the inline editor', () => {
+    const row = toTxRow(makeTx({ date: '2026-05-14', amount: -84.3, labelClean: 'Carrefour' }));
+    expect(row.editDate).toBe('2026-05-14');
+    expect(row.editAmount).toBe(-84.3);
+    expect(row.editLabel).toBe('Carrefour');
   });
 });

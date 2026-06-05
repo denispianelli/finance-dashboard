@@ -46,13 +46,14 @@ export async function insertStatement(
     const insertTx = db.prepare(
       `INSERT INTO transactions
          (id, account_id, import_id, tx_hash, date, amount,
-          label_raw, label_clean, category_id, confidence,
+          label_raw, label_clean, category_id,
           is_internal_transfer, user_modified, fitid)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 0, 0, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?)`,
     );
     // Deterministic categorization cascade (design §7): history (a previously
     // seen / user-corrected label) wins, then the under-the-hood seed rules.
-    // confidence stays NULL — it is the LLM score, and no model has run.
+    // An LLM categorization tier will land later; uncertainty is surfaced only
+    // in the import Review screen (cascade tier), not stored as a score.
     const rules = loadRules(db);
     const hits = new Map<string, number>();
     const selectedSet =

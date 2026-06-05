@@ -3,8 +3,6 @@ import type { Account } from '@renderer/components/dashboard/AccountTabs';
 import type { TxRow } from '@renderer/components/dashboard/TxTable';
 import type { MoneyKind } from '@renderer/components/ui/money';
 
-/** Confidence below this is flagged for review in the table. */
-const CONF_LOW_THRESHOLD = 0.8;
 /** Neutral dot color for uncategorized transactions. */
 const NEUTRAL_CAT_COLOR = '#6E6E78';
 
@@ -13,17 +11,19 @@ export function formatBalance(amount: number): string {
   return amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+/** Parse a French-formatted amount ("-90,5" / "-90.5") to a number, or null. */
+export function parseAmount(input: string): number | null {
+  const normalized = input.trim().replace(/\s/g, '').replace(',', '.');
+  if (normalized === '' || normalized === '-') return null;
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : null;
+}
+
 /** ISO `yyyy-mm-dd` → `dd/mm`; passes the input through unchanged if it isn't ISO. */
 export function formatTxDate(iso: string): string {
   const [, month, day] = iso.split('-');
   if (month === undefined || day === undefined) return iso;
   return `${day}/${month}`;
-}
-
-/** Confidence score → `0,94`, or `—` when unscored (no classifier has run). */
-export function formatConfidence(confidence: number | null): string {
-  if (confidence === null) return '—';
-  return confidence.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 /** Income / expense / transfer, derived from sign and the internal-transfer flag. */
@@ -41,6 +41,15 @@ export function toAccount(summary: AccountSummary): Account {
   };
 }
 
+/** "extrait : -84,30 · 14/05" from the snapshotted figures, or null if none. */
+function originalHint(tx: DashboardTransaction): string | null {
+  if (tx.editedAt === null) return null;
+  const parts: string[] = [];
+  if (tx.originalAmount !== null) parts.push(formatBalance(tx.originalAmount));
+  if (tx.originalDate !== null) parts.push(formatTxDate(tx.originalDate));
+  return parts.length > 0 ? `extrait : ${parts.join(' · ')}` : 'Modifié manuellement';
+}
+
 export function toTxRow(tx: DashboardTransaction): TxRow {
   return {
     id: tx.id,
@@ -52,7 +61,10 @@ export function toTxRow(tx: DashboardTransaction): TxRow {
     catName: tx.categoryName ?? 'Non catégorisé',
     amount: tx.amount,
     amountKind: txKind(tx),
-    conf: formatConfidence(tx.confidence),
-    confLow: tx.confidence !== null && tx.confidence < CONF_LOW_THRESHOLD,
+    edited: tx.editedAt !== null,
+    originalHint: originalHint(tx),
+    editDate: tx.date,
+    editAmount: tx.amount,
+    editLabel: tx.labelClean,
   };
 }

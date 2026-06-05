@@ -8,7 +8,7 @@
 
 **Tech Stack:** Electron 42, TypeScript strict, Node `node:sqlite` (`DatabaseSync`), Vitest 4 (+ jsdom for renderer), React + shadcn/ui, pdfjs-dist (PDF text), better-sqlite-style prepared statements.
 
-**Reference docs:** Spec `docs/superpowers/specs/2026-06-03-multi-file-import-account-routing-design.md`; ADR-012 `docs/adr/012-account-identifier-routing.md`.
+**Reference docs:** Spec `docs/superpowers/specs/2026-06-03-multi-file-import-account-routing-design.md`; ADR-013 `docs/adr/013-account-identifier-routing.md`.
 
 ---
 
@@ -2108,11 +2108,11 @@ git commit -m "test(import): integration test for learned account routing"
 
 ---
 
-## Task 9: Promote ADR-012, full verification, open PR
+## Task 9: Promote ADR-013, full verification, open PR
 
 **Files:**
 
-- Modify: `docs/adr/012-account-identifier-routing.md` (Status → Accepted)
+- Modify: `docs/adr/013-account-identifier-routing.md` (Status → Accepted)
 
 - [ ] **Step 1: Full Definition-of-Done sweep**
 
@@ -2133,7 +2133,7 @@ Launch the app, open Import, drop two OFX statements: the first asks for an acco
 
 - [ ] **Step 3: Promote the ADR**
 
-In `docs/adr/012-account-identifier-routing.md`, change the status line:
+In `docs/adr/013-account-identifier-routing.md`, change the status line:
 
 ```md
 - **Status** : Accepted
@@ -2144,10 +2144,10 @@ And replace the closing promotion note with a one-line record that it shipped.
 - [ ] **Step 4: Commit and open the PR**
 
 ```bash
-git add docs/adr/012-account-identifier-routing.md
-git commit -m "docs: promote ADR-012 to Accepted"
+git add docs/adr/013-account-identifier-routing.md
+git commit -m "docs: promote ADR-013 to Accepted"
 git push -u origin worktree-multi-file-import-account-routing
-gh pr create --title "feat(import): multi-file import with learned account routing" --body "Implements ADR-012 / the multi-file import spec: multi-select + drag & drop, deterministic identifier extraction (OFX ACCTID / PDF IBAN), a learned identifier→account map, and a per-file import queue. See docs/superpowers/specs/2026-06-03-multi-file-import-account-routing-design.md."
+gh pr create --title "feat(import): multi-file import with learned account routing" --body "Implements ADR-013 / the multi-file import spec: multi-select + drag & drop, deterministic identifier extraction (OFX ACCTID / PDF IBAN), a learned identifier→account map, and a per-file import queue. See docs/superpowers/specs/2026-06-03-multi-file-import-account-routing-design.md."
 ```
 
 - [ ] **Step 5: Self-merge once CI is green** (per CLAUDE.md MVP light gate — 0 required reviews, branch up to date).
