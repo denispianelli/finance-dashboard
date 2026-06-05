@@ -71,7 +71,7 @@ export function parseCategorization(
       const id = nameToId.get(normName(value));
       if (id !== undefined) categoryId = id;
     }
-    return { tx_hash: item.tx_hash, categoryId };
+    return { id: item.id, categoryId };
   });
 }
 

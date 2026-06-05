@@ -37,12 +37,13 @@ Out of scope (deferred):
 - Inline editing of transactions → later story (this flow is read-only)
 - Multi-account management / account creation UI → later story (one seeded
   default account is used)
-- LLM categorization → not wired _in this story_; the deterministic cascade
-  (rule → history) ran at insert. Since shipped as tier-3 in a later story: the
-  cascade is computed at **extract** and the LLM fills the residual
-  **progressively in the Review** (the `confidence` column was dropped; uncertainty
-  is a Review-only cascade-tier signal). See ADR-013 and
-  `specs/2026-06-05-llm-batch-categorization-design.md`.
+- LLM categorization → not wired _in this story_. The deterministic cascade
+  (rule → history) runs at **insert** (unchanged). The LLM tier-3 shipped later as
+  an **async background pass after import** (not in this Review flow): it
+  categorizes the residual (`category_id IS NULL`) rows and surfaces them in the
+  Transactions/dashboard views. The `confidence` column was dropped; there is no
+  Review-time category signal. See **ADR-013 (amended)** and
+  `specs/2026-06-05-llm-batch-categorization-design.md` §11.
 
 ## 3. Architecture
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import type { AppOutletContext } from '@renderer/lib/outletContext';
+import { useBackgroundCategorization } from '@renderer/hooks/useBackgroundCategorization';
 import { ImportModal } from './ImportModal';
 import { CreateAccountModal } from './accounts/CreateAccountModal';
 import { Sidebar } from './Sidebar';
@@ -10,6 +11,11 @@ export function AppShell() {
   const [importOpen, setImportOpen] = useState(false);
   const [createAccountOpen, setCreateAccountOpen] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
+  const bg = useBackgroundCategorization({
+    onApplied: () => {
+      setRefreshToken((t) => t + 1);
+    },
+  });
 
   return (
     <div className="flex h-full bg-ink-1">
@@ -19,6 +25,8 @@ export function AppShell() {
           onImport={() => {
             setImportOpen(true);
           }}
+          categorizing={bg.running}
+          categorizeRemaining={bg.remaining}
         />
         {/* min-h-0 lets this flex child shrink to the viewport and scroll;
             [&>*]:shrink-0 stops page sections from being vertically
@@ -47,6 +55,7 @@ export function AppShell() {
         }}
         onImported={() => {
           setRefreshToken((t) => t + 1);
+          void bg.run();
         }}
       />
       <CreateAccountModal

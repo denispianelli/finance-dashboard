@@ -115,7 +115,9 @@ Si la somme ne matche pas, l'import est **bloqué** avec un message explicite. C
 
 ### 5.2. Mise en évidence des catégorisations à relire (pas de score)
 
-Pas de score de confiance : un nombre 0-1 auto-déclaré par le LLM n'est pas calibré, ce serait de la fausse précision (cf. amendement ADR-005, 2026-06-03). Le signal honnête « celle-ci est incertaine » est un **fait** que le logiciel connaît : l'étage de la cascade d'attribution (§7) qui a posé la catégorie. Une catégorie issue d'une **règle** ou de l'**historique** est de confiance implicite ; une catégorie **proposée par le LLM** (libellé jamais validé) ou une transaction **non catégorisée** sont mises en évidence dans la page de Review. Ce signal est **éphémère** : il n'existe que le temps de la Review. Une fois l'import validé, tout est confirmé et rien n'est stocké.
+Pas de score de confiance : un nombre 0-1 auto-déclaré par le LLM n'est pas calibré, ce serait de la fausse précision (cf. amendement ADR-005, 2026-06-03). Le seul signal d'incertitude est binaire et honnête : une transaction est **catégorisée** ou **non catégorisée**.
+
+> **Amendé (2026-06-05, ADR-013 amendé).** Il n'y a plus de signal de catégorie dans la page de Review : l'import ne montre que date/libellé/montant/statut et reste instantané. La catégorisation LLM tourne **en tâche de fond après l'import** et se révèle dans la vue Transactions + le dashboard (indicateur discret « Catégorisation IA… » dans le bandeau). Les lignes que le LLM laisse sans catégorie restent simplement « non catégorisées » et corrigeables à la main là où elles vivent.
 
 ### 5.3. Review utilisateur obligatoire
 
@@ -179,7 +181,7 @@ Catégories extensibles : l'utilisateur peut ajouter, renommer, supprimer. Sous-
 Pour chaque transaction :
   1. RÈGLE UTILISATEUR ("libellé contient X → catégorie Y") → instantané
   2. HISTORIQUE (libellé déjà vu) → instantané, propose la catégorie la plus utilisée
-  3. LLM → catégorie proposée (mise en évidence dans la Review, pas de score)
+  3. LLM → catégorise le résidu **en tâche de fond après l'import** (pas dans la Review, pas de score ; cf. ADR-013 amendé)
 ```
 
 ### Apprentissage continu
