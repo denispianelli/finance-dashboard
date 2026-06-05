@@ -13,9 +13,15 @@ export async function handleImportConfirm(payload: ConfirmPayload): Promise<Conf
       acknowledgedCannotVerify: payload.acknowledgedCannotVerify,
       selectedHashes: payload.selectedHashes,
     });
-    const { identifier } = await readIdentifier(content, payload.path);
-    if (identifier !== null) {
-      learnAccountRoute(getDb(), identifier, payload.accountId);
+    // Route learning is best-effort: a failure here must never fail an import
+    // whose rows were already written.
+    try {
+      const { identifier } = await readIdentifier(content, payload.path);
+      if (identifier !== null) {
+        learnAccountRoute(getDb(), identifier, payload.accountId);
+      }
+    } catch {
+      // ignore — the import succeeded; routing just won't be remembered this time
     }
     return { ok: true, ...result };
   } catch (e) {

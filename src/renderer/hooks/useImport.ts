@@ -77,6 +77,19 @@ function fileNameOf(path: string): string {
   return path.split('/').pop() ?? path;
 }
 
+// Returns the IPC response, or null if the call rejected (main threw
+// unexpectedly). A rejection isolates to the current file rather than
+// wedging the whole batch.
+async function safeInvoke<T>(p: Promise<T>): Promise<T | null> {
+  try {
+    return await p;
+  } catch {
+    return null;
+  }
+}
+
+const UNEXPECTED_ERROR = 'Erreur inattendue';
+
 export function useImport(): UseImport {
   const [state, setState] = useState<ImportState>({ step: 'idle' });
   const stateRef = useRef<ImportState>(state);
@@ -114,7 +127,14 @@ export function useImport(): UseImport {
     const file = files[index];
     if (file === undefined) return;
     setS({ step: 'queue', files, index, results, sub: { step: 'resolving' } });
-    const res = await ipc.invoke('import:resolveAccount', { path: file.path });
+    const res = await safeInvoke(ipc.invoke('import:resolveAccount', { path: file.path }));
+    if (res === null) {
+      await advance(files, index, [
+        ...results,
+        { fileName: file.fileName, status: 'failed', error: UNEXPECTED_ERROR },
+      ]);
+      return;
+    }
     if (!res.ok) {
       await advance(files, index, [
         ...results,
@@ -154,7 +174,14 @@ export function useImport(): UseImport {
     const file = files[index];
     if (file === undefined) return;
     setS({ step: 'queue', files, index, results, sub: { step: 'extracting' } });
-    const res = await ipc.invoke('import:extract', { path: file.path, accountId });
+    const res = await safeInvoke(ipc.invoke('import:extract', { path: file.path, accountId }));
+    if (res === null) {
+      await advance(files, index, [
+        ...results,
+        { fileName: file.fileName, status: 'failed', error: UNEXPECTED_ERROR },
+      ]);
+      return;
+    }
     if (!res.ok) {
       if (res.error === 'unknown_bank') {
         setS({ step: 'queue', files, index, results, sub: { step: 'unknownBank', accountId } });
@@ -229,8 +256,8 @@ export function useImport(): UseImport {
     const file = cur.files[cur.index];
     if (file === undefined) return;
     setS({ ...cur, sub: { step: 'learning', accountId } });
-    const res = await ipc.invoke('banks:learn', { path: file.path, bankName });
-    if (res.ok) {
+    const res = await safeInvoke(ipc.invoke('banks:learn', { path: file.path, bankName }));
+    if (res?.ok) {
       await runExtract(cur.files, cur.index, cur.results, accountId, false);
     } else {
       await advance(cur.files, cur.index, [
@@ -238,7 +265,7 @@ export function useImport(): UseImport {
         {
           fileName: file.fileName,
           status: 'failed',
-          error: ERROR_MESSAGES[res.error] ?? res.error,
+          error: res === null ? UNEXPECTED_ERROR : (ERROR_MESSAGES[res.error] ?? res.error),
         },
       ]);
     }
@@ -285,13 +312,20 @@ export function useImport(): UseImport {
     if (file === undefined) return;
     setS({ ...cur, sub: { step: 'confirming' } });
     const ack = extraction.sourceType === 'ofx' ? true : acknowledgedCannotVerify;
-    const res = await ipc.invoke('import:confirm', {
-      path: file.path,
-      accountId,
-      selectedHashes: [...selected],
-      acknowledgedCannotVerify: ack,
-    });
-    if (res.ok) {
+    const res = await safeInvoke(
+      ipc.invoke('import:confirm', {
+        path: file.path,
+        accountId,
+        selectedHashes: [...selected],
+        acknowledgedCannotVerify: ack,
+      }),
+    );
+    if (res === null) {
+      await advance(cur.files, cur.index, [
+        ...cur.results,
+        { fileName: file.fileName, status: 'failed', error: UNEXPECTED_ERROR },
+      ]);
+    } else if (res.ok) {
       await advance(cur.files, cur.index, [
         ...cur.results,
         {

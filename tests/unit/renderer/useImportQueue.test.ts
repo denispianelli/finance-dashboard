@@ -185,6 +185,51 @@ describe('useImport — queue', () => {
     expect(reviewSelected().size).toBe(1);
   });
 
+  it('isolates an IPC rejection to the failing file and still finishes the batch', async () => {
+    // File 1's resolve rejects (main threw unexpectedly). That must mark only
+    // file 1 as failed and never wedge the batch — file 2 imports normally.
+    mockInvoke
+      .mockRejectedValueOnce(new Error('boom')) // file 1 resolve → throws
+      .mockResolvedValueOnce({
+        ok: true,
+        identifier: 'ofx:1:2',
+        matchedAccountId: 'acc-b',
+        sourceType: 'ofx',
+        detectedBank: 'LCL',
+      }) // file 2 resolve → matched
+      .mockResolvedValueOnce({ ok: true, extraction: extraction() }) // file 2 extract
+      .mockResolvedValueOnce({ ok: true, importId: 'i2', insertedCount: 1, skippedCount: 0 }); // file 2 confirm
+
+    const { result } = renderHook(() => useImport());
+
+    // file 1 fails at resolve → batch advances → file 2 paused at review
+    await act(async () => {
+      await result.current.startFromPaths(['/x/a.ofx', '/x/b.ofx']);
+    });
+    expect(result.current.state).toMatchObject({
+      step: 'queue',
+      index: 1,
+      sub: { step: 'review' },
+    });
+
+    await act(async () => {
+      await result.current.confirm();
+    });
+
+    expect(result.current.state.step).toBe('summary');
+    const summary = result.current.state as { step: 'summary'; results: unknown[] };
+    expect(summary.results).toEqual([
+      { fileName: 'a.ofx', status: 'failed', error: 'Erreur inattendue' },
+      {
+        fileName: 'b.ofx',
+        status: 'imported',
+        accountId: 'acc-b',
+        insertedCount: 1,
+        autoRouted: true,
+      },
+    ]);
+  });
+
   it('marks an invalid extension as failed without calling resolve', async () => {
     const { result } = renderHook(() => useImport());
     await act(async () => {
