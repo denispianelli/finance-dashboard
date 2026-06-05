@@ -4,6 +4,7 @@ export const CHANNELS = {
   appPing: 'app:ping',
   importPickFile: 'import:pickFile',
   importExtract: 'import:extract',
+  importResolveAccount: 'import:resolveAccount',
   importConfirm: 'import:confirm',
   importCategorize: 'import:categorize',
   dashboardGetAccounts: 'dashboard:getAccounts',

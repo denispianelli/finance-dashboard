@@ -24,6 +24,7 @@ import {
   handleTransactionsSetCategory,
 } from './handlers/categories';
 import { handleBanksLearn } from './handlers/learnBank';
+import { handleImportResolveAccount } from './handlers/importResolveAccount';
 import {
   handleTransactionsUpdate,
   handleTransactionsDelete,
@@ -73,4 +74,5 @@ export function registerAllHandlers(): void {
   register(CHANNELS.transactionsDelete, handleTransactionsDelete);
   register(CHANNELS.transactionsRestore, handleTransactionsRestore);
   register(CHANNELS.banksLearn, handleBanksLearn);
+  register(CHANNELS.importResolveAccount, handleImportResolveAccount);
 }

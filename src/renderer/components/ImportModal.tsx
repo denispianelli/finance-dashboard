@@ -1,8 +1,16 @@
-import { AlertTriangle, CheckCircle, Plus, Sparkles, XCircle } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle,
+  Plus,
+  Sparkles,
+  Upload,
+  XCircle,
+  SkipForward,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ipc } from '@renderer/ipc/client';
-import { useImport } from '../hooks/useImport';
+import { useImport, type FileResult, type SubState, type ReviewCategory } from '../hooks/useImport';
 import { TransactionReviewTable } from './TransactionReviewTable';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
@@ -17,7 +25,6 @@ import {
 import type { StatementExtraction } from '@shared/types/import';
 import type { AccountSummary, CreateAccountInput } from '@shared/types/dashboard';
 import type { CategoryDTO, CreateCategoryInput } from '@shared/types/category';
-import type { ReviewCategory } from '../hooks/useImport';
 
 const FIELD =
   'h-9 w-full rounded-md border border-line-2 bg-ink-3 px-2.5 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
@@ -25,22 +32,25 @@ const FIELD =
 interface ImportModalProps {
   open: boolean;
   onClose: () => void;
-  /** Fired once after a successful import (transactions persisted). */
   onImported?: () => void;
 }
 
 export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
   const {
     state,
-    pickAndExtract,
+    pickFiles,
+    startFromPaths,
+    chooseAccount,
     learnBank,
     toggleTx,
     toggleAll,
     setAcknowledgedCannotVerify,
     pickCategory,
     confirm,
+    skipFile,
     reset,
   } = useImport();
+
   const onCloseRef = useRef(onClose);
   const onImportedRef = useRef(onImported);
   useEffect(() => {
@@ -50,29 +60,28 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
 
   const [overlapDismissed, setOverlapDismissed] = useState(false);
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
-  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [categories, setCategories] = useState<CategoryDTO[]>([]);
-  const insertedCount = state.step === 'done' ? state.insertedCount : 0;
+  const [dragOver, setDragOver] = useState(false);
 
-  // Load the account list whenever the modal opens, so the user can pick which
-  // account the statement goes into (or create a new one).
+  // Reopening always starts fresh: closing mid-queue must not resume on stale
+  // sub-state (or show a summary for work the user abandoned).
+  useEffect(() => {
+    if (open) reset();
+  }, [open, reset]);
+
   useEffect(() => {
     if (!open) return;
     let active = true;
     void ipc.invoke('dashboard:getAccounts', {}).then(({ accounts: next }) => {
-      if (!active) return;
-      setAccounts(next);
-      setSelectedAccountId((prev) =>
-        prev !== '' && next.some((a) => a.id === prev) ? prev : (next[0]?.id ?? ''),
-      );
+      if (active) setAccounts(next);
     });
     return () => {
       active = false;
     };
   }, [open]);
 
-  // Load the category list whenever the modal opens, so the Review step can show
-  // each row's category in an inline picker. Failure is non-fatal (picker shows none).
+  // Load the category list whenever the modal opens, so each Review row can show
+  // its category in an inline picker. Failure is non-fatal (picker shows none).
   useEffect(() => {
     if (!open) return;
     let active = true;
@@ -82,7 +91,7 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
         if (active) setCategories(next);
       })
       .catch(() => {
-        // Categories are optional in Review; on failure the picker simply has no choices.
+        // Categories are optional in Review; on failure the picker has no choices.
       });
     return () => {
       active = false;
@@ -101,28 +110,33 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
     }
   }
 
-  async function createAccountInline(input: CreateAccountInput): Promise<void> {
+  async function createAccountInline(input: CreateAccountInput): Promise<string | null> {
     try {
       const { account } = await ipc.invoke('accounts:create', input);
       setAccounts((prev) => [...prev, account]);
-      setSelectedAccountId(account.id);
-      onImportedRef.current?.(); // refresh the dashboard tabs so the new account shows
+      onImportedRef.current?.();
       toast.success(`Compte « ${account.name} » créé`);
+      return account.id;
     } catch {
       toast.error('Compte non créé');
+      return null;
     }
   }
 
+  // On reaching the summary, refresh the dashboard; auto-close the trivial
+  // single-imported-file case with the familiar toast.
   useEffect(() => {
-    if (state.step !== 'done') return;
-    toast(
-      `${String(insertedCount)} transaction${insertedCount > 1 ? 's' : ''} importée${insertedCount > 1 ? 's' : ''}`,
-      { duration: 3000 },
-    );
-    reset();
+    if (state.step !== 'summary') return;
     onImportedRef.current?.();
-    onCloseRef.current();
-  }, [state.step, insertedCount, reset]);
+    if (state.results.length === 1 && state.results[0]?.status === 'imported') {
+      const n = state.results[0].insertedCount;
+      toast(`${String(n)} transaction${n > 1 ? 's' : ''} importée${n > 1 ? 's' : ''}`, {
+        duration: 3000,
+      });
+      reset();
+      onCloseRef.current();
+    }
+  }, [state, reset]);
 
   function handleClose() {
     reset();
@@ -130,19 +144,22 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
     onClose();
   }
 
-  function canConfirm(): boolean {
-    if (state.step !== 'review') return false;
-    if (state.selected.size === 0) return false;
-    if (state.extraction.arithmetic.status === 'failed') return false;
-    if (
-      state.extraction.sourceType === 'pdf' &&
-      state.extraction.arithmetic.status === 'cannot_verify' &&
-      !state.acknowledgedCannotVerify
-    ) {
-      return false;
-    }
-    return true;
+  function accountName(id: string): string {
+    return accounts.find((a) => a.id === id)?.name ?? id;
   }
+
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+    const paths = window.electronAPI.getDroppedPaths(files).filter(Boolean);
+    if (paths.length > 0) void startFromPaths(paths);
+  }
+
+  const sub: SubState | null = state.step === 'queue' ? state.sub : null;
+  const progress =
+    state.step === 'queue' ? ` (${String(state.index + 1)}/${String(state.files.length)})` : '';
 
   return (
     <Dialog
@@ -153,24 +170,80 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Importer un relevé</DialogTitle>
+          <DialogTitle>Importer des relevés{progress}</DialogTitle>
           <DialogDescription className="sr-only">
-            Sélectionnez un fichier OFX ou PDF, vérifiez les transactions, puis confirmez l'import.
+            Sélectionnez ou déposez des fichiers OFX ou PDF, vérifiez les transactions, confirmez.
           </DialogDescription>
         </DialogHeader>
 
-        {state.step === 'error' && <ErrorView message={state.message} onClose={handleClose} />}
+        {state.step === 'idle' && (
+          <DropPickView
+            dragOver={dragOver}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => {
+              setDragOver(false);
+            }}
+            onDrop={onDrop}
+            onPick={() => {
+              void pickFiles();
+            }}
+          />
+        )}
 
-        {state.step === 'review' && (
+        {(sub?.step === 'resolving' || sub?.step === 'extracting') && (
+          <div className="flex items-center justify-center py-8">
+            <p className="text-sm text-muted-foreground">
+              {sub.step === 'resolving' ? 'Analyse du compte…' : 'Extraction du relevé…'}
+            </p>
+          </div>
+        )}
+
+        {sub?.step === 'chooseAccount' && (
+          <ChooseAccountView
+            fileName={state.step === 'queue' ? (state.files[state.index]?.fileName ?? '') : ''}
+            detectedBank={sub.detectedBank}
+            accounts={accounts}
+            onChoose={(id) => {
+              void chooseAccount(id);
+            }}
+            onCreateAccount={createAccountInline}
+            onSkip={skipFile}
+          />
+        )}
+
+        {sub?.step === 'unknownBank' && (
+          <LearnBankView
+            onLearn={(name) => {
+              void learnBank(name);
+            }}
+            onCancel={skipFile}
+          />
+        )}
+
+        {sub?.step === 'learning' && (
+          <div className="flex flex-col items-center gap-2 py-8">
+            <p className="text-sm text-paper">Analyse de la banque par l'IA…</p>
+            <p className="text-xs text-paper-mute">
+              Environ une minute, une seule fois par banque.
+            </p>
+          </div>
+        )}
+
+        {sub?.step === 'review' && (
           <ReviewView
-            extraction={state.extraction}
-            filePath={state.filePath}
-            selected={state.selected}
-            acknowledgedCannotVerify={state.acknowledgedCannotVerify}
+            extraction={sub.extraction}
+            fileName={state.step === 'queue' ? (state.files[state.index]?.fileName ?? '') : ''}
+            accountLabel={accountName(sub.accountId)}
+            autoRouted={sub.autoRouted}
+            selected={sub.selected}
+            acknowledgedCannotVerify={sub.acknowledgedCannotVerify}
             categories={categories}
-            reviewCategories={state.categories}
-            pending={state.pending}
-            suggested={state.suggested}
+            reviewCategories={sub.categories}
+            pending={sub.pending}
+            suggested={sub.suggested}
             onPickCategory={pickCategory}
             onCreateCategory={createCategoryInline}
             overlapDismissed={overlapDismissed}
@@ -180,52 +253,253 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
             onToggleTx={toggleTx}
             onToggleAll={toggleAll}
             onAcknowledge={setAcknowledgedCannotVerify}
-            onCancel={handleClose}
+            onSkip={skipFile}
             onConfirm={() => {
               void confirm();
             }}
-            confirmDisabled={!canConfirm()}
+            confirmDisabled={!canConfirm(sub)}
           />
         )}
 
-        {state.step === 'confirming' && (
+        {sub?.step === 'confirming' && (
           <div className="flex items-center justify-center py-8">
             <p className="text-sm text-muted-foreground">Import en cours…</p>
           </div>
         )}
 
-        {state.step === 'learning' && (
-          <div className="flex flex-col items-center gap-2 py-8">
-            <p className="text-sm text-paper">Analyse de la banque par l'IA…</p>
-            <p className="text-xs text-paper-mute">
-              Cela prend environ une minute, une seule fois par banque.
-            </p>
+        {sub?.step === 'fileError' && (
+          <div className="flex flex-col gap-4 py-4">
+            <p className="text-sm text-destructive">{sub.message}</p>
+            <DialogFooter>
+              <Button variant="outline" onClick={skipFile}>
+                <SkipForward size={14} strokeWidth={1.8} />
+                Ignorer ce fichier
+              </Button>
+            </DialogFooter>
           </div>
         )}
 
-        {state.step === 'unknownBank' && (
-          <LearnBankView
-            onLearn={(name) => {
-              void learnBank(name);
-            }}
-            onCancel={handleClose}
-          />
-        )}
-
-        {(state.step === 'idle' || state.step === 'picking' || state.step === 'extracting') && (
-          <PickView
-            accounts={accounts}
-            selectedAccountId={selectedAccountId}
-            onSelectAccount={setSelectedAccountId}
-            onCreateAccount={createAccountInline}
-            onPick={() => {
-              if (selectedAccountId !== '') void pickAndExtract(selectedAccountId);
-            }}
-            loading={state.step === 'picking' || state.step === 'extracting'}
-          />
+        {state.step === 'summary' && (
+          <SummaryView results={state.results} accountName={accountName} onClose={handleClose} />
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function canConfirm(sub: SubState): boolean {
+  if (sub.step !== 'review') return false;
+  if (sub.selected.size === 0) return false;
+  if (sub.extraction.arithmetic.status === 'failed') return false;
+  if (
+    sub.extraction.sourceType === 'pdf' &&
+    sub.extraction.arithmetic.status === 'cannot_verify' &&
+    !sub.acknowledgedCannotVerify
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function DropPickView({
+  dragOver,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onPick,
+}: {
+  dragOver: boolean;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent) => void;
+  onPick: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-4 py-6">
+      <div
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        className={`flex flex-col items-center gap-3 rounded-md border border-dashed p-8 text-center transition-colors ${
+          dragOver ? 'border-brass bg-brass/5' : 'border-line-2'
+        }`}
+      >
+        <Upload size={22} strokeWidth={1.6} className="text-paper-mute" />
+        <p className="text-sm text-paper-soft">Dépose tes relevés ici</p>
+        <p className="text-xs text-paper-mute">OFX recommandé · PDF pour les archives</p>
+        <Button onClick={onPick}>Parcourir…</Button>
+      </div>
+    </div>
+  );
+}
+
+function ChooseAccountView({
+  fileName,
+  detectedBank,
+  accounts,
+  onChoose,
+  onCreateAccount,
+  onSkip,
+}: {
+  fileName: string;
+  detectedBank: string | null;
+  accounts: AccountSummary[];
+  onChoose: (accountId: string) => void;
+  onCreateAccount: (input: CreateAccountInput) => Promise<string | null>;
+  onSkip: () => void;
+}) {
+  const [selected, setSelected] = useState<string>(accounts[0]?.id ?? '');
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState('');
+  const [bank, setBank] = useState(detectedBank ?? '');
+
+  async function submitNew() {
+    if (name.trim() === '') return;
+    const id = await onCreateAccount({ name, bankId: bank.trim() === '' ? null : bank });
+    if (id !== null) onChoose(id);
+  }
+
+  return (
+    <div className="flex flex-col gap-4 py-4">
+      <p className="text-sm text-paper-soft">
+        Compte non reconnu pour <span className="font-medium text-paper">{fileName}</span>. Choisis
+        son compte — il sera mémorisé pour les prochains imports.
+      </p>
+
+      {creating ? (
+        <div className="flex flex-col gap-2 rounded-md border border-line-2 bg-ink-2/60 p-2.5">
+          <input
+            autoFocus
+            value={name}
+            placeholder="Nom du compte (ex. Compte joint)"
+            onChange={(e) => {
+              setName(e.target.value);
+            }}
+            className={FIELD}
+          />
+          <input
+            value={bank}
+            placeholder="Banque (optionnel)"
+            onChange={(e) => {
+              setBank(e.target.value);
+            }}
+            className={FIELD}
+          />
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              disabled={name.trim() === ''}
+              onClick={() => {
+                void submitNew();
+              }}
+            >
+              Créer et utiliser
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setCreating(false);
+              }}
+            >
+              Annuler
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <select
+            value={selected}
+            aria-label="Compte de destination"
+            onChange={(e) => {
+              setSelected(e.target.value);
+            }}
+            className={FIELD}
+          >
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+                {a.bankId !== null ? ` · ${a.bankId}` : ''}
+              </option>
+            ))}
+          </select>
+          <Button
+            size="sm"
+            variant="secondary"
+            aria-label="Nouveau compte"
+            onClick={() => {
+              setCreating(true);
+            }}
+          >
+            <Plus size={14} strokeWidth={1.8} />
+          </Button>
+        </div>
+      )}
+
+      <DialogFooter>
+        <Button variant="outline" onClick={onSkip}>
+          <SkipForward size={14} strokeWidth={1.8} />
+          Ignorer ce fichier
+        </Button>
+        {!creating && (
+          <Button
+            disabled={selected === ''}
+            onClick={() => {
+              onChoose(selected);
+            }}
+          >
+            Continuer →
+          </Button>
+        )}
+      </DialogFooter>
+    </div>
+  );
+}
+
+function SummaryView({
+  results,
+  accountName,
+  onClose,
+}: {
+  results: FileResult[];
+  accountName: (id: string) => string;
+  onClose: () => void;
+}) {
+  const total = results.reduce(
+    (sum, r) => sum + (r.status === 'imported' ? r.insertedCount : 0),
+    0,
+  );
+  return (
+    <div className="flex flex-col gap-4 py-2">
+      <ul className="flex flex-col gap-1.5 text-sm">
+        {results.map((r) => (
+          <li key={r.fileName} className="flex items-center gap-2">
+            {r.status === 'imported' && (
+              <CheckCircle size={14} strokeWidth={1.6} className="text-sage" />
+            )}
+            {r.status === 'skipped' && (
+              <SkipForward size={14} strokeWidth={1.6} className="text-paper-mute" />
+            )}
+            {r.status === 'failed' && (
+              <XCircle size={14} strokeWidth={1.6} className="text-coral" />
+            )}
+            <span className="font-medium text-paper">{r.fileName}</span>
+            <span className="text-muted-foreground">
+              {r.status === 'imported' &&
+                `${String(r.insertedCount)} tx → ${accountName(r.accountId)}${r.autoRouted ? ' (auto)' : ''}`}
+              {r.status === 'skipped' && r.reason}
+              {r.status === 'failed' && r.error}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="text-sm text-muted-foreground">
+        {total} transaction{total > 1 ? 's' : ''} importée{total > 1 ? 's' : ''} au total.
+      </p>
+      <DialogFooter>
+        <Button onClick={onClose}>Fermer</Button>
+      </DialogFooter>
+    </div>
   );
 }
 
@@ -260,7 +534,8 @@ function LearnBankView({
       />
       <DialogFooter>
         <Button variant="outline" onClick={onCancel}>
-          Annuler
+          <SkipForward size={14} strokeWidth={1.8} />
+          Ignorer ce fichier
         </Button>
         <Button
           disabled={name.trim() === ''}
@@ -276,136 +551,11 @@ function LearnBankView({
   );
 }
 
-function PickView({
-  accounts,
-  selectedAccountId,
-  onSelectAccount,
-  onCreateAccount,
-  onPick,
-  loading,
-}: {
-  accounts: AccountSummary[];
-  selectedAccountId: string;
-  onSelectAccount: (id: string) => void;
-  onCreateAccount: (input: CreateAccountInput) => Promise<void>;
-  onPick: () => void;
-  loading: boolean;
-}) {
-  const [creating, setCreating] = useState(false);
-  const [name, setName] = useState('');
-  const [bank, setBank] = useState('');
-
-  async function submitNew() {
-    if (name.trim() === '') return;
-    await onCreateAccount({ name, bankId: bank.trim() === '' ? null : bank });
-    setCreating(false);
-    setName('');
-    setBank('');
-  }
-
-  return (
-    <div className="flex flex-col gap-4 py-6">
-      <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-[11px] font-medium uppercase tracking-[0.06em] text-paper-mute">
-          Importer dans
-        </label>
-        {creating ? (
-          <div className="flex flex-col gap-2 rounded-md border border-line-2 bg-ink-2/60 p-2.5">
-            <input
-              autoFocus
-              value={name}
-              placeholder="Nom du compte (ex. Compte joint)"
-              onChange={(e) => {
-                setName(e.target.value);
-              }}
-              className={FIELD}
-            />
-            <input
-              value={bank}
-              placeholder="Banque (optionnel, ex. Boursorama)"
-              onChange={(e) => {
-                setBank(e.target.value);
-              }}
-              className={FIELD}
-            />
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                disabled={name.trim() === ''}
-                onClick={() => {
-                  void submitNew();
-                }}
-              >
-                Créer le compte
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setCreating(false);
-                }}
-              >
-                Annuler
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <select
-              value={selectedAccountId}
-              aria-label="Compte de destination"
-              onChange={(e) => {
-                onSelectAccount(e.target.value);
-              }}
-              className={FIELD}
-            >
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                  {a.bankId !== null ? ` · ${a.bankId}` : ''}
-                </option>
-              ))}
-            </select>
-            <Button
-              size="sm"
-              variant="secondary"
-              aria-label="Nouveau compte"
-              onClick={() => {
-                setCreating(true);
-              }}
-            >
-              <Plus size={14} strokeWidth={1.8} />
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <div className="flex flex-col items-center gap-3 border-t border-line-2 pt-4">
-        <p className="text-sm text-muted-foreground">OFX recommandé · PDF pour les archives</p>
-        <Button onClick={onPick} disabled={loading || selectedAccountId === '' || creating}>
-          {loading ? 'Chargement…' : 'Parcourir…'}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function ErrorView({ message, onClose }: { message: string; onClose: () => void }) {
-  return (
-    <div className="flex flex-col gap-4">
-      <p className="text-sm text-destructive">{message}</p>
-      <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
-          Fermer
-        </Button>
-      </DialogFooter>
-    </div>
-  );
-}
-
 interface ReviewViewProps {
   extraction: StatementExtraction;
-  filePath: string;
+  fileName: string;
+  accountLabel: string;
+  autoRouted: boolean;
   selected: Set<string>;
   acknowledgedCannotVerify: boolean;
   categories: CategoryDTO[];
@@ -419,14 +569,16 @@ interface ReviewViewProps {
   onToggleTx: (hash: string) => void;
   onToggleAll: () => void;
   onAcknowledge: (v: boolean) => void;
-  onCancel: () => void;
+  onSkip: () => void;
   onConfirm: () => void;
   confirmDisabled: boolean;
 }
 
 function ReviewView({
   extraction,
-  filePath,
+  fileName,
+  accountLabel,
+  autoRouted,
   selected,
   acknowledgedCannotVerify,
   categories,
@@ -440,16 +592,21 @@ function ReviewView({
   onToggleTx,
   onToggleAll,
   onAcknowledge,
-  onCancel,
+  onSkip,
   onConfirm,
   confirmDisabled,
 }: ReviewViewProps) {
   const selectedCount = selected.size;
-
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <div className="text-sm font-medium">{filePath.split('/').pop() ?? filePath}</div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">{fileName}</span>
+          <span className="text-xs text-paper-mute">
+            → {accountLabel}
+            {autoRouted ? ' (auto)' : ''}
+          </span>
+        </div>
         <div className="text-sm text-muted-foreground">
           {extraction.dateRangeStart} → {extraction.dateRangeEnd} · {extraction.transactions.length}{' '}
           transaction
@@ -506,8 +663,9 @@ function ReviewView({
       />
 
       <DialogFooter>
-        <Button variant="outline" onClick={onCancel}>
-          Annuler
+        <Button variant="outline" onClick={onSkip}>
+          <SkipForward size={14} strokeWidth={1.8} />
+          Ignorer
         </Button>
         <Button onClick={onConfirm} disabled={confirmDisabled}>
           Importer {selectedCount} transaction{selectedCount > 1 ? 's' : ''} →

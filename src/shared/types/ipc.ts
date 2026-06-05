@@ -1,9 +1,4 @@
-import type {
-  StatementExtraction,
-  ImportFileType,
-  CategorizeItem,
-  CategorizeResult,
-} from './import';
+import type { StatementExtraction, CategorizeItem, CategorizeResult } from './import';
 import type {
   AccountSummary,
   CreateAccountInput,
@@ -35,16 +30,7 @@ export interface PingResponse {
 
 export type PickFilePayload = Record<string, never>;
 
-export type PickFileResponse =
-  | { cancelled: true }
-  | {
-      cancelled: false;
-      path: string;
-      type: ImportFileType;
-      hash: string;
-      size: number;
-      alreadyImported: boolean;
-    };
+export type PickFileResponse = { cancelled: true } | { cancelled: false; paths: string[] };
 
 export interface ExtractPayload {
   path: string;
@@ -57,6 +43,20 @@ export type ExtractResponse =
       ok: false;
       error: 'unknown_bank' | 'no_text' | 'not_pdf' | 'unsupported_format' | 'malformed_ofx';
     };
+
+export interface ResolveAccountPayload {
+  path: string;
+}
+
+export type ResolveAccountResponse =
+  | {
+      ok: true;
+      identifier: string | null;
+      matchedAccountId: string | null;
+      sourceType: 'ofx' | 'pdf';
+      detectedBank: string | null;
+    }
+  | { ok: false; error: 'unsupported_format' };
 
 export interface ConfirmCategory {
   tx_hash: string;
@@ -99,6 +99,7 @@ export interface IpcContract {
   'app:ping': { payload: PingPayload; response: PingResponse };
   'import:pickFile': { payload: PickFilePayload; response: PickFileResponse };
   'import:extract': { payload: ExtractPayload; response: ExtractResponse };
+  'import:resolveAccount': { payload: ResolveAccountPayload; response: ResolveAccountResponse };
   'import:confirm': { payload: ConfirmPayload; response: ConfirmResponse };
   'import:categorize': { payload: CategorizePayload; response: CategorizeResponse };
   'dashboard:getAccounts': {
@@ -137,4 +138,5 @@ export type IpcResponse<C extends IpcChannel> = IpcContract[C]['response'];
 
 export interface ElectronAPI {
   invoke: <C extends IpcChannel>(channel: C, payload: IpcPayload<C>) => Promise<IpcResponse<C>>;
+  getDroppedPaths: (files: File[]) => string[];
 }
