@@ -54,6 +54,8 @@ function makeExtraction(
     alreadyImported: false,
     dateRangeStart: '2026-01-01',
     dateRangeEnd: '2026-01-31',
+    closingBalance: 10,
+    closingBalanceDate: '2026-01-31',
     sourceType: 'ofx',
     ...overrides,
   };

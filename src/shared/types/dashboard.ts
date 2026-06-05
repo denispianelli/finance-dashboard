@@ -22,11 +22,12 @@ export interface AccountSummary {
   readonly bankId: string | null;
   readonly currency: string;
   /**
-   * Net of all stored transaction amounts for this account. No opening balance
-   * is tracked yet, so this is the running sum of imported movements, not a
-   * bank-statement closing balance.
+   * Real account balance (ADR-014): the most recent statement's closing balance
+   * plus transactions dated after it. `null` when no imported statement carries
+   * a closing balance to anchor on — the UI renders "—" rather than a sum of
+   * movements.
    */
-  readonly balance: number;
+  readonly balance: number | null;
   readonly txCount: number;
 }
 

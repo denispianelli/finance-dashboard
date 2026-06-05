@@ -10,7 +10,8 @@ import { getAccountSummaries } from '../dashboard/queries';
 /**
  * Create a new account. `type` defaults to 'checking' and currency to 'EUR';
  * bank is an optional free-text label kept for display. Returns the new
- * account's summary (balance 0, no transactions yet).
+ * account's summary (balance null until a statement anchors it, no transactions
+ * yet).
  */
 export function createAccount(db: DatabaseSync, input: CreateAccountInput): AccountSummary {
   const name = input.name.trim();

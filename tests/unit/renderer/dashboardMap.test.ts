@@ -79,6 +79,18 @@ describe('toAccount', () => {
       balance: '70,00',
     });
   });
+  it('shows an em dash for the balance when no statement anchors it (null)', () => {
+    const summary: AccountSummary = {
+      id: 'a1',
+      name: 'X',
+      type: 'checking',
+      bankId: 'lcl',
+      currency: 'EUR',
+      balance: null,
+      txCount: 0,
+    };
+    expect(toAccount(summary).balance).toBe('—');
+  });
   it('shows an em dash when the bank is unknown', () => {
     const summary: AccountSummary = {
       id: 'a1',
