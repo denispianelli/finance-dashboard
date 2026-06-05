@@ -223,6 +223,142 @@ describe('insertStatement — history cascade', () => {
   });
 });
 
+describe('insertStatement — validated category overlay', () => {
+  it('inserts the payload categoryId and sets user_modified=1 for a user correction', async () => {
+    const db = freshDb();
+    extractMock.mockResolvedValue(
+      baseExtraction({
+        transactions: [
+          {
+            date: '2025-11-01',
+            label: 'ZZZ UNKNOWN MERCHANT 4242',
+            amount: -42,
+            tx_hash: 'h1',
+            fitid: null,
+            isDuplicate: false,
+            categoryId: null,
+            tier: null,
+          },
+        ],
+        newCount: 1,
+        duplicateCount: 0,
+      }),
+    );
+    await insertStatement(db, 'acc-lcl-default', Buffer.from('x'), {
+      categories: [{ tx_hash: 'h1', categoryId: 'cat-loisirs', userModified: true }],
+    });
+    const row = db
+      .prepare("SELECT category_id, user_modified FROM transactions WHERE tx_hash = 'h1'")
+      .get() as {
+      category_id: string | null;
+      user_modified: number;
+    };
+    expect(row.category_id).toBe('cat-loisirs');
+    expect(row.user_modified).toBe(1);
+    db.close();
+  });
+
+  it('inserts NULL with user_modified=1 when the override clears the category', async () => {
+    const db = freshDb();
+    extractMock.mockResolvedValue(
+      baseExtraction({
+        transactions: [
+          {
+            date: '2025-11-01',
+            label: 'CB CARREFOUR MARKET PARIS 11',
+            amount: -42,
+            tx_hash: 'h1',
+            fitid: null,
+            isDuplicate: false,
+            categoryId: null,
+            tier: null,
+          },
+        ],
+        newCount: 1,
+        duplicateCount: 0,
+      }),
+    );
+    await insertStatement(db, 'acc-lcl-default', Buffer.from('x'), {
+      categories: [{ tx_hash: 'h1', categoryId: null, userModified: true }],
+    });
+    const row = db
+      .prepare("SELECT category_id, user_modified FROM transactions WHERE tx_hash = 'h1'")
+      .get() as {
+      category_id: string | null;
+      user_modified: number;
+    };
+    expect(row.category_id).toBeNull();
+    expect(row.user_modified).toBe(1);
+    db.close();
+  });
+
+  it('keeps the deterministic result with user_modified=0 when no categories opt is passed', async () => {
+    const db = freshDb();
+    extractMock.mockResolvedValue(
+      baseExtraction({
+        transactions: [
+          {
+            date: '2025-11-01',
+            label: 'CB CARREFOUR MARKET PARIS 11',
+            amount: -42,
+            tx_hash: 'h1',
+            fitid: null,
+            isDuplicate: false,
+            categoryId: null,
+            tier: null,
+          },
+        ],
+        newCount: 1,
+        duplicateCount: 0,
+      }),
+    );
+    await insertStatement(db, 'acc-lcl-default', Buffer.from('x'));
+    const row = db
+      .prepare("SELECT category_id, user_modified FROM transactions WHERE tx_hash = 'h1'")
+      .get() as {
+      category_id: string | null;
+      user_modified: number;
+    };
+    expect(row.category_id).toBe('cat-alimentation');
+    expect(row.user_modified).toBe(0);
+    db.close();
+  });
+
+  it('bumps a matched rule hit_count even when the row is overridden to another category', async () => {
+    const db = freshDb();
+    extractMock.mockResolvedValue(
+      baseExtraction({
+        transactions: [
+          {
+            date: '2025-11-01',
+            label: 'CB CARREFOUR MARKET PARIS 11',
+            amount: -42,
+            tx_hash: 'h1',
+            fitid: null,
+            isDuplicate: false,
+            categoryId: null,
+            tier: null,
+          },
+        ],
+        newCount: 1,
+        duplicateCount: 0,
+      }),
+    );
+    await insertStatement(db, 'acc-lcl-default', Buffer.from('x'), {
+      categories: [{ tx_hash: 'h1', categoryId: 'cat-loisirs', userModified: true }],
+    });
+    const row = db.prepare("SELECT category_id FROM transactions WHERE tx_hash = 'h1'").get() as {
+      category_id: string | null;
+    };
+    expect(row.category_id).toBe('cat-loisirs');
+    const carrefourRule = db
+      .prepare('SELECT hit_count FROM categorization_rules WHERE match_value = ?')
+      .get('CARREFOUR') as { hit_count: number };
+    expect(carrefourRule.hit_count).toBe(1);
+    db.close();
+  });
+});
+
 describe('insertStatement — atomicity', () => {
   it('rolls back fully when a transaction insert violates UNIQUE mid-batch', async () => {
     const db = freshDb();

@@ -53,11 +53,18 @@ export type ExtractResponse =
       error: 'unknown_bank' | 'no_text' | 'not_pdf' | 'unsupported_format' | 'malformed_ofx';
     };
 
+export interface ConfirmCategory {
+  tx_hash: string;
+  categoryId: string | null;
+  userModified: boolean;
+}
+
 export interface ConfirmPayload {
   path: string;
   accountId: string;
   selectedHashes?: string[];
   acknowledgedCannotVerify?: boolean;
+  categories?: ConfirmCategory[];
 }
 
 export type ConfirmResponse =
