@@ -1,6 +1,6 @@
 # ADR-014 — Real account balance from statement closing balances
 
-- **Status** : Proposed
+- **Status** : Accepted
 - **Date** : 2026-06-05
 - **Category** : Data, UI
 - **Related** : ADR-002 (privacy-first local), ADR-003 (deterministic extraction + arithmetic guard), ADR-008 (OFX primary / PDF backfill, frozen identity contract), ADR-009 (north star)
@@ -97,5 +97,7 @@ reaches the `imports` table, so the dashboard cannot use it.
 - Independent of the import flow internals (no pipeline change) — this is a
   persistence-plus-query change.
 
-> Not reflected in the README (stack/engine/model unchanged). Promote to Accepted
-> once the implementation lands and the spec's Definition of Done is met.
+> Not reflected in the README (stack/engine/model unchanged). Accepted: the
+> implementation landed (migration 011, closing-balance persistence, anchor query,
+> "—" fallback) with the spec Definition of Done met — lint/tsc/build clean, unit
+> tests green.

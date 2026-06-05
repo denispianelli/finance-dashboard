@@ -1,8 +1,8 @@
 # Real account balance — Design spec
 
 **Date:** 2026-06-05
-**Status:** Draft, pending implementation
-**Related ADR:** [ADR-014 — Real account balance from statement closing balances](../../adr/014-real-account-balance.md) (Proposed)
+**Status:** Accepted
+**Related ADR:** [ADR-014 — Real account balance from statement closing balances](../../adr/014-real-account-balance.md) (Accepted)
 **References:** ADR-008 (OFX primary / PDF backfill), ADR-003 (deterministic extraction + arithmetic guard), ADR-002 (privacy-first local)
 
 ---
