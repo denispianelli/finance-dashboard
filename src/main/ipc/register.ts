@@ -6,6 +6,7 @@ import { handlePing } from './handlers/ping';
 import { handlePickFile } from './handlers/importPickFile';
 import { handleImportExtract } from './handlers/importExtract';
 import { handleImportConfirm } from './handlers/importConfirm';
+import { handleImportCategorize } from './handlers/importCategorize';
 import { handleDashboardGetAccounts } from './handlers/dashboardGetAccounts';
 import { handleDashboardGetTransactions } from './handlers/dashboardGetTransactions';
 import { handleDashboardAggregate } from './handlers/dashboardAggregate';
@@ -55,6 +56,7 @@ export function registerAllHandlers(): void {
   register(CHANNELS.importPickFile, () => handlePickFile());
   register(CHANNELS.importExtract, handleImportExtract);
   register(CHANNELS.importConfirm, handleImportConfirm);
+  register(CHANNELS.importCategorize, handleImportCategorize);
   register(CHANNELS.dashboardGetAccounts, () => handleDashboardGetAccounts());
   register(CHANNELS.dashboardGetTransactions, handleDashboardGetTransactions);
   register(CHANNELS.dashboardAggregate, handleDashboardAggregate);
