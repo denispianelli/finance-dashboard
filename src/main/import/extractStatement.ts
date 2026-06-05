@@ -1,14 +1,20 @@
 import type { DatabaseSync } from 'node:sqlite';
-import type { ReviewTransaction, StatementExtraction } from '@shared/types/import';
+import type {
+  CategorizationTier,
+  ReviewTransaction,
+  StatementExtraction,
+} from '@shared/types/import';
 import { detectType } from './detectType';
 import { extractPdf } from './extractPdf';
 import { extractOfx } from './ofx/extractOfx';
-import { assignTxHashes } from './txHash';
+import { assignTxHashes, normalizeLabel } from './txHash';
 import { verifyArithmetic } from './verifyArithmetic';
 import { checkPeriodOverlap } from './periodOverlap';
 import { hashFile } from './hashFile';
 import { isAlreadyImported, findExistingHashes } from './duplicateCheck';
 import { ImportError } from './importError';
+import { loadRules, matchRule, type CategorizationRule } from '../categorize/rules';
+import { findHistoryCategory } from '../categorize/history';
 
 export async function extractStatement(
   db: DatabaseSync,
@@ -42,14 +48,28 @@ export async function extractStatement(
   const periodOverlap = checkPeriodOverlap(db, accountId, dateRangeStart, dateRangeEnd);
   const existing = findExistingHashes(db, accountId);
 
-  const transactions: ReviewTransaction[] = withHashes.map((t) => ({
-    date: t.date,
-    label: t.label,
-    amount: t.amount,
-    tx_hash: t.tx_hash,
-    fitid: t.fitid,
-    isDuplicate: existing.has(t.tx_hash),
-  }));
+  // Deterministic cascade (design §7) computed here, read-only, so the Review can
+  // show each line's category and the user can validate it (ADR-005). The residual
+  // (tier null) is what the LLM tier fills in the Review. The rule hit-count bump
+  // is a write and stays at insert time (insertStatement).
+  const rules = loadRules(db);
+
+  const transactions: ReviewTransaction[] = withHashes.map((t) => {
+    const isDuplicate = existing.has(t.tx_hash);
+    const { categoryId, tier } = isDuplicate
+      ? { categoryId: null, tier: null as CategorizationTier }
+      : categorizeDeterministic(db, rules, normalizeLabel(t.label));
+    return {
+      date: t.date,
+      label: t.label,
+      amount: t.amount,
+      tx_hash: t.tx_hash,
+      fitid: t.fitid,
+      isDuplicate,
+      categoryId,
+      tier,
+    };
+  });
 
   const duplicateCount = transactions.filter((t) => t.isDuplicate).length;
   const newCount = transactions.length - duplicateCount;
@@ -66,4 +86,17 @@ export async function extractStatement(
     dateRangeEnd,
     sourceType: type,
   };
+}
+
+/** History wins, then the seed rules. Both reads only — no writes here. */
+function categorizeDeterministic(
+  db: DatabaseSync,
+  rules: readonly CategorizationRule[],
+  labelClean: string,
+): { categoryId: string | null; tier: CategorizationTier } {
+  const fromHistory = findHistoryCategory(db, labelClean);
+  if (fromHistory !== null) return { categoryId: fromHistory, tier: 'history' };
+  const rule = matchRule(rules, labelClean);
+  if (rule !== null) return { categoryId: rule.categoryId, tier: 'rule' };
+  return { categoryId: null, tier: null };
 }
