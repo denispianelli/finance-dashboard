@@ -85,12 +85,18 @@ The in-Review approach above was built (PR #143) and tested hands-on. It was
 **New decision.** The import Review goes back to date / label / amount / status, and
 **Import is instant and never blocked**. The deterministic cascade (rule → history)
 still runs at **insert** (most rows are categorized immediately). The LLM tier then
-runs **automatically in the background after the import completes**, classifying the
-residual (`category_id IS NULL`, non-transfer) rows in batches; results appear in the
-**Transactions view and dashboard** as they land, surfaced only by a **discreet global
-indicator** ("Catégorisation IA… (N)") in the Topbar. The user reviews/corrects
-categories where they already live — the Transactions table's inline picker — not in
-the import flow.
+classifies the residual (`category_id IS NULL`, non-transfer) rows in batches in the
+background; results appear in the **Transactions view and dashboard** as they land.
+
+**The heavy LLM pass is user-triggered, not automatic** (refined 2026-06-05 on the
+maintainer's feedback — "garder la main"): the Topbar shows a discreet
+**button** "Catégoriser (N)" whenever there is a residual, and the pass runs only on
+click (while running it becomes a non-interactive "Catégorisation IA… (N)"
+indicator). The count `N` is a cheap `COUNT` that never loads the model; only the
+click spins up the 1.9 GB GGUF. This keeps the user in control of when the model
+runs, while the app still **signals** that there is uncategorized work. The user
+reviews/corrects categories where they already live — the Transactions table's inline
+picker — not in the import flow.
 
 What stays from the original decision: the LLM is a constrained classifier into
 existing categories (never invents one, no persisted score), it feeds the history

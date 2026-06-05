@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import type { AppOutletContext } from '@renderer/lib/outletContext';
 import { useBackgroundCategorization } from '@renderer/hooks/useBackgroundCategorization';
@@ -17,6 +17,14 @@ export function AppShell() {
     },
   });
 
+  // Keep the pending count current (on mount, and after each import / edit) so the
+  // Topbar can offer the "Catégoriser (N)" trigger. This is a cheap COUNT — it never
+  // loads the model; only the user's click does (`bg.run`).
+  const refresh = bg.refresh;
+  useEffect(() => {
+    void refresh();
+  }, [refresh, refreshToken]);
+
   return (
     <div className="flex h-full bg-ink-1">
       <Sidebar />
@@ -27,6 +35,10 @@ export function AppShell() {
           }}
           categorizing={bg.running}
           categorizeRemaining={bg.remaining}
+          pendingCount={bg.pending}
+          onCategorize={() => {
+            void bg.run();
+          }}
         />
         {/* min-h-0 lets this flex child shrink to the viewport and scroll;
             [&>*]:shrink-0 stops page sections from being vertically
@@ -55,7 +67,6 @@ export function AppShell() {
         }}
         onImported={() => {
           setRefreshToken((t) => t + 1);
-          void bg.run();
         }}
       />
       <CreateAccountModal

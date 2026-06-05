@@ -349,13 +349,17 @@ the rationale. The new model:
 - After each batch that writes anything, the views **refetch** (the existing
   `refreshToken`) so categories appear progressively in the **Transactions view and
   dashboard** — where the inline `CategoryPicker` already lets the user correct them.
-- **Surfacing**: a single **discreet, non-interactive indicator** in the Topbar —
-  "Catégorisation IA… (N)" with a Lucide `Sparkles` — shown only while a pass runs.
-- **Degradation / triggering**: `model_unavailable` on the first batch stops the pass
-  (residual stays manually categorizable); `inference_failed` skips a batch and
-  continues; `run()` is idempotent (concurrent imports don't double-run). Trigger is
-  **auto-after-import only** (no on-mount sweep, no manual button — YAGNI; re-importing
-  re-triggers, and leftovers can be set by hand).
+- **Surfacing & trigger**: a single discreet Topbar control with a Lucide `Sparkles`.
+  Whenever there is a residual it is a **button** "Catégoriser (N)" that starts the
+  pass on click; while a pass runs it becomes the **non-interactive** indicator
+  "Catégorisation IA… (N)"; when nothing is pending it is hidden. `N` comes from a
+  cheap `categorize:pending` count (`refresh()`), recomputed on mount and after each
+  import/edit (via `refreshToken`) — it never loads the model. **The heavy pass is
+  user-triggered only** (refined 2026-06-05 — "garder la main"): nothing runs without
+  the click.
+- **Degradation**: `model_unavailable` on the first batch stops the pass (residual
+  stays manually categorizable); `inference_failed` skips a batch and continues;
+  `run()` is idempotent (a second trigger mid-pass is a no-op).
 
 ### IPC delta vs §6
 

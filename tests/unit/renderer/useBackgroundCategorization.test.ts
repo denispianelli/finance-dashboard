@@ -55,7 +55,7 @@ describe('useBackgroundCategorization', () => {
   });
 
   it('does nothing when pending is empty', async () => {
-    mockInvoke.mockResolvedValueOnce({ items: [] });
+    mockInvoke.mockResolvedValue({ items: [] });
     const onApplied = vi.fn();
     const { result } = renderHook(() => useBackgroundCategorization({ onApplied }));
 
@@ -125,8 +125,21 @@ describe('useBackgroundCategorization', () => {
       await Promise.all([result.current.run(), result.current.run()]);
     });
 
-    const pendingCalls = mockInvoke.mock.calls.filter(([c]) => c === 'categorize:pending');
-    expect(pendingCalls).toHaveLength(1);
+    // Only one pass ran its batches — the concurrent second run() was a no-op.
+    expect(batchCalls()).toHaveLength(1);
+  });
+
+  it('refresh() updates the pending count without running the model', async () => {
+    mockInvoke.mockResolvedValue({ items: items(5) });
+    const onApplied = vi.fn();
+    const { result } = renderHook(() => useBackgroundCategorization({ onApplied }));
+
+    await act(async () => {
+      await result.current.refresh();
+    });
+
+    expect(result.current.pending).toBe(5);
+    expect(batchCalls()).toHaveLength(0); // no model work — just the count
   });
 
   it('splits >12 items into two batches', async () => {

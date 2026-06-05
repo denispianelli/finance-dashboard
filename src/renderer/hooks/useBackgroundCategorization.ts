@@ -6,11 +6,15 @@ import { ipc } from '@renderer/ipc/client';
 const LLM_BATCH_SIZE = 12;
 
 export interface BackgroundCategorization {
-  /** True while a categorization pass is in flight. Drives the Topbar chip's visibility. */
+  /** True while a categorization pass is in flight. */
   running: boolean;
-  /** Transactions still to process. Drives the chip's count. */
+  /** Count of uncategorized transactions — drives the Topbar trigger button. */
+  pending: number;
+  /** Transactions still to process in the active pass. Drives the running count. */
   remaining: number;
-  /** Start a pass. Idempotent: a no-op while one is already running. */
+  /** Recompute the pending count (cheap — a COUNT, never loads the model). */
+  refresh: () => Promise<void>;
+  /** Run a pass over the residual. Idempotent: a no-op while one is already running. */
   run: () => Promise<void>;
 }
 
@@ -23,10 +27,12 @@ function chunk<T>(items: readonly T[], size: number): T[][] {
 }
 
 /**
- * Background classifier for the residual (uncategorized) transactions left after an
- * import. Pulls the pending set over IPC, categorizes batch by batch in the main
- * process, and calls `onApplied` whenever a batch lands so the views refetch and show
- * the new categories. Never blocks the UI; surfaced only by the discreet Topbar chip.
+ * Background classifier for the residual (uncategorized) transactions. The heavy
+ * LLM pass is **user-triggered** (the Topbar button) — it never runs on its own, so
+ * the user keeps control of when the 1.9 GB model spins up. `refresh()` keeps a cheap
+ * count of pending rows so the button can offer "Catégoriser (N)"; `run()` pulls the
+ * pending set and categorizes batch by batch in main, calling `onApplied` as each
+ * batch lands so the views refetch.
  */
 export function useBackgroundCategorization(opts: {
   onApplied: () => void;
@@ -34,9 +40,15 @@ export function useBackgroundCategorization(opts: {
   const { onApplied } = opts;
   const [running, setRunning] = useState(false);
   const [remaining, setRemaining] = useState(0);
-  // Guards idempotency (concurrent imports must not double-run) without waiting on
-  // the async `running` state to settle.
+  const [pending, setPending] = useState(0);
+  // Guards idempotency (a second trigger mid-pass must not double-run) without
+  // waiting on the async `running` state to settle.
   const runningRef = useRef(false);
+
+  const refresh = useCallback(async () => {
+    const { items } = await ipc.invoke('categorize:pending', {});
+    setPending(items.length);
+  }, []);
 
   const run = useCallback(async () => {
     if (runningRef.current) return;
@@ -44,7 +56,10 @@ export function useBackgroundCategorization(opts: {
 
     try {
       const { items } = await ipc.invoke('categorize:pending', {});
-      if (items.length === 0) return;
+      if (items.length === 0) {
+        setPending(0);
+        return;
+      }
 
       setRunning(true);
       setRemaining(items.length);
@@ -65,8 +80,9 @@ export function useBackgroundCategorization(opts: {
       runningRef.current = false;
       setRunning(false);
       setRemaining(0);
+      await refresh();
     }
-  }, [onApplied]);
+  }, [onApplied, refresh]);
 
-  return { running, remaining, run };
+  return { running, pending, remaining, refresh, run };
 }
