@@ -30,11 +30,19 @@ function makeHook(state: ImportState, overrides: Partial<UseImport> = {}): UseIm
     toggleTx: vi.fn(),
     toggleAll: vi.fn(),
     setAcknowledgedCannotVerify: vi.fn(),
+    pickCategory: vi.fn(),
     confirm: vi.fn(),
     reset: vi.fn(),
     ...overrides,
   };
 }
+
+/** Default empty category-tracking fields for a `review` ImportState fixture. */
+const emptyReviewCategoryState = {
+  categories: new Map<string, { categoryId: string | null; userModified: boolean }>(),
+  pending: new Set<string>(),
+  suggested: new Set<string>(),
+};
 
 function makeReviewExtraction(over: Partial<StatementExtraction> = {}): StatementExtraction {
   return {
@@ -159,6 +167,7 @@ describe('ImportModal — review state', () => {
       accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: false,
+      ...emptyReviewCategoryState,
     };
     mockUseImport.mockReturnValue(makeHook(state));
     render(<ImportModal open={true} onClose={vi.fn()} />);
@@ -182,6 +191,7 @@ describe('ImportModal — review state', () => {
       accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: false,
+      ...emptyReviewCategoryState,
     };
     mockUseImport.mockReturnValue(makeHook(state));
     render(<ImportModal open={true} onClose={vi.fn()} />);
@@ -206,6 +216,7 @@ describe('ImportModal — review state', () => {
       accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: false,
+      ...emptyReviewCategoryState,
     };
     mockUseImport.mockReturnValue(makeHook(state));
     render(<ImportModal open={true} onClose={vi.fn()} />);
@@ -228,6 +239,7 @@ describe('ImportModal — review state', () => {
       accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: false,
+      ...emptyReviewCategoryState,
     };
     mockUseImport.mockReturnValue(makeHook(state));
     render(<ImportModal open={true} onClose={vi.fn()} />);
@@ -243,6 +255,7 @@ describe('ImportModal — review state', () => {
       accountId: 'acc-lcl-default',
       selected: new Set(),
       acknowledgedCannotVerify: false,
+      ...emptyReviewCategoryState,
     };
     mockUseImport.mockReturnValue(makeHook(state));
     render(<ImportModal open={true} onClose={vi.fn()} />);
@@ -266,6 +279,7 @@ describe('ImportModal — review state', () => {
       accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: false,
+      ...emptyReviewCategoryState,
     };
     mockUseImport.mockReturnValue(makeHook(state));
     render(<ImportModal open={true} onClose={vi.fn()} />);
@@ -289,6 +303,7 @@ describe('ImportModal — review state', () => {
       accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: true,
+      ...emptyReviewCategoryState,
     };
     mockUseImport.mockReturnValue(makeHook(state));
     render(<ImportModal open={true} onClose={vi.fn()} />);
@@ -315,6 +330,7 @@ describe('ImportModal — review state', () => {
       accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: false,
+      ...emptyReviewCategoryState,
     };
     mockUseImport.mockReturnValue(makeHook(state));
     render(<ImportModal open={true} onClose={vi.fn()} />);
@@ -341,6 +357,7 @@ describe('ImportModal — review state', () => {
       accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: false,
+      ...emptyReviewCategoryState,
     };
     mockUseImport.mockReturnValue(makeHook(state));
     render(<ImportModal open={true} onClose={vi.fn()} />);
@@ -357,6 +374,7 @@ describe('ImportModal — review state', () => {
       accountId: 'acc-lcl-default',
       selected: new Set(['h1']),
       acknowledgedCannotVerify: false,
+      ...emptyReviewCategoryState,
     });
     mockUseImport.mockReturnValue(hook);
     render(<ImportModal open={true} onClose={vi.fn()} />);
