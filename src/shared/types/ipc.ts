@@ -1,4 +1,4 @@
-import type { StatementExtraction, ImportFileType } from './import';
+import type { StatementExtraction, ImportFileType, CategorizeItem } from './import';
 import type {
   AccountSummary,
   CreateAccountInput,
@@ -75,11 +75,25 @@ export type ConfirmResponse =
         | 'malformed_ofx';
     };
 
+export interface CategorizePendingResponse {
+  items: CategorizeItem[];
+}
+
+export interface CategorizeBatchPayload {
+  items: CategorizeItem[];
+}
+
+export type CategorizeBatchResponse =
+  | { ok: true; applied: number }
+  | { ok: false; error: 'model_unavailable' | 'inference_failed' };
+
 export interface IpcContract {
   'app:ping': { payload: PingPayload; response: PingResponse };
   'import:pickFile': { payload: PickFilePayload; response: PickFileResponse };
   'import:extract': { payload: ExtractPayload; response: ExtractResponse };
   'import:confirm': { payload: ConfirmPayload; response: ConfirmResponse };
+  'categorize:pending': { payload: Record<string, never>; response: CategorizePendingResponse };
+  'categorize:batch': { payload: CategorizeBatchPayload; response: CategorizeBatchResponse };
   'dashboard:getAccounts': {
     payload: Record<string, never>;
     response: { accounts: AccountSummary[] };

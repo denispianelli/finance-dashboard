@@ -5,6 +5,8 @@ export const CHANNELS = {
   importPickFile: 'import:pickFile',
   importExtract: 'import:extract',
   importConfirm: 'import:confirm',
+  categorizePending: 'categorize:pending',
+  categorizeBatch: 'categorize:batch',
   dashboardGetAccounts: 'dashboard:getAccounts',
   dashboardGetTransactions: 'dashboard:getTransactions',
   dashboardAggregate: 'dashboard:aggregate',
