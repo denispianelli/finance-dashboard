@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { registerAllHandlers } from './ipc/register';
 import { getDb, closeDb } from './db';
 import { detectTransfers } from './transfers/detect';
+import { detectRefunds } from './refunds/detect';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -42,6 +43,7 @@ void app.whenReady().then(() => {
   // corrected without needing a fresh import. Idempotent; respects user locks.
   try {
     detectTransfers(getDb());
+    detectRefunds(getDb());
   } catch {
     // best-effort — never block startup on this
   }

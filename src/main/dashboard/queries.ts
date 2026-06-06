@@ -97,6 +97,7 @@ interface TransactionRow {
   original_amount: number | null;
   edited_at: string | null;
   is_internal_transfer: number;
+  is_refund: number;
   user_modified: number;
 }
 
@@ -131,7 +132,7 @@ export function getTransactions(
               t.category_id, c.name AS category_name, c.color AS category_color,
               c.icon AS category_icon,
               t.original_date, t.original_amount, t.edited_at,
-              t.is_internal_transfer, t.user_modified
+              t.is_internal_transfer, t.is_refund, t.user_modified
        FROM transactions t
        LEFT JOIN categories c ON c.id = t.category_id
        ${whereSql}
@@ -155,6 +156,7 @@ export function getTransactions(
     originalAmount: r.original_amount,
     editedAt: r.edited_at,
     isInternalTransfer: r.is_internal_transfer === 1,
+    isRefund: r.is_refund === 1,
     userModified: r.user_modified === 1,
   }));
 }

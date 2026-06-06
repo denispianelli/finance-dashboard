@@ -31,6 +31,7 @@ function tx(p: Partial<DashboardTransaction>): DashboardTransaction {
     originalAmount: null,
     editedAt: null,
     isInternalTransfer: false,
+    isRefund: false,
     userModified: false,
     ...p,
   };

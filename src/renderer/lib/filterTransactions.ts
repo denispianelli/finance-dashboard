@@ -1,7 +1,12 @@
 import type { DashboardTransaction } from '@shared/types/dashboard';
 
 export type TxPeriod = 'all' | '30d' | '3m' | 'year';
-export type TxType = 'all' | 'income' | 'expense';
+export type TxType = 'all' | 'income' | 'expense' | 'transfer' | 'refund';
+
+/** A transaction is a transfer when flagged internal or tagged the transfers category. */
+export function isTransferTx(t: DashboardTransaction): boolean {
+  return t.isInternalTransfer || t.categoryId === 'cat-transferts';
+}
 /** Sentinel `'all'`, uncategorized (`null`), or a specific category id. */
 export type TxCategoryFilter = 'all' | null | (string & Record<never, never>);
 
@@ -58,8 +63,13 @@ export function filterTransactions(
     if (filters.from !== null && t.date < filters.from) return false;
     if (filters.to !== null && t.date > filters.to) return false;
     if (filters.categoryId !== 'all' && t.categoryId !== filters.categoryId) return false;
-    if (filters.type === 'income' && t.amount <= 0) return false;
-    if (filters.type === 'expense' && t.amount >= 0) return false;
+    // 'income' / 'expense' mean *real* flows — transfers and refunds are their own
+    // buckets and are excluded from both.
+    const transfer = isTransferTx(t);
+    if (filters.type === 'income' && (t.amount <= 0 || transfer || t.isRefund)) return false;
+    if (filters.type === 'expense' && (t.amount >= 0 || transfer || t.isRefund)) return false;
+    if (filters.type === 'transfer' && !transfer) return false;
+    if (filters.type === 'refund' && !t.isRefund) return false;
     if (q.length > 0 && !normalize(t.labelClean).includes(q)) return false;
     return true;
   });

@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { DashboardMetrics, MonthPoint } from '@shared/types/dashboard';
-import { NOT_TRANSFER } from './transferFilter';
+import { COUNTABLE } from './transferFilter';
 
 const MAX_SERIES_MONTHS = 12;
 
@@ -24,8 +24,8 @@ export function getDashboardMetrics(db: DatabaseSync, accountId: string): Dashbo
   const rows = db
     .prepare(
       `SELECT substr(date, 1, 7) AS month,
-              COALESCE(SUM(CASE WHEN amount >= 0 AND ${NOT_TRANSFER} THEN amount ELSE 0 END), 0) AS income,
-              COALESCE(SUM(CASE WHEN amount <  0 AND ${NOT_TRANSFER} THEN amount ELSE 0 END), 0) AS expense,
+              COALESCE(SUM(CASE WHEN amount >= 0 AND ${COUNTABLE} THEN amount ELSE 0 END), 0) AS income,
+              COALESCE(SUM(CASE WHEN amount <  0 AND ${COUNTABLE} THEN amount ELSE 0 END), 0) AS expense,
               COALESCE(SUM(amount), 0) AS delta
        FROM transactions
        WHERE account_id = ?

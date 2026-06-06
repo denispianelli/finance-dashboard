@@ -29,6 +29,8 @@ const TYPES: { value: TxType; label: string }[] = [
   { value: 'all', label: 'Tous' },
   { value: 'income', label: 'Revenus' },
   { value: 'expense', label: 'Dépenses' },
+  { value: 'transfer', label: 'Transferts' },
+  { value: 'refund', label: 'Remboursements' },
 ];
 
 const SEG_BTN = 'h-7 rounded-md px-2.5 font-sans text-xs font-medium transition-colors';
