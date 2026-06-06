@@ -9,12 +9,50 @@ const config: Config = {
         serif: ['"Instrument Serif"', 'Cambria', '"Times New Roman"', 'serif'],
         mono: ['"Geist Mono"', 'ui-monospace', 'Menlo', 'Consolas', 'monospace'],
       },
+      // Identity type scale (see globals.css --text-*). Keys are chosen to NOT
+      // collide with Tailwind defaults (no sm/xs override), so adding them is
+      // inert until a class opts in. Display sizes are set in Instrument Serif
+      // italic at call sites; these only carry the px value.
+      fontSize: {
+        hero: 'var(--text-hero)',
+        display: 'var(--text-display)',
+        'title-lg': 'var(--text-title-lg)',
+        title: 'var(--text-title)',
+        '2xs': 'var(--text-2xs)',
+        overline: 'var(--text-overline)',
+        label: 'var(--text-label)',
+        'mono-md': 'var(--text-mono-md)',
+        'mono-sm': 'var(--text-mono-sm)',
+      },
+      // Non-colliding names only (Tailwind default `tight` is -0.025em; ours is
+      // -0.005em, so it is exposed as `amount`).
+      letterSpacing: {
+        figure: 'var(--tracking-figure)',
+        title: 'var(--tracking-title)',
+        amount: 'var(--tracking-tight)',
+        overline: 'var(--tracking-overline)',
+        label: 'var(--tracking-label)',
+        loose: 'var(--tracking-loose)',
+      },
+      // Tailwind defaults `tight`/`snug` differ in value, so ours are exposed
+      // under non-colliding names.
+      lineHeight: {
+        figure: 'var(--leading-tight)',
+        quote: 'var(--leading-snug)',
+      },
+      // `modal` rather than `xl` to avoid overriding Tailwind's default shadow-xl.
+      boxShadow: {
+        1: 'var(--shadow-1)',
+        2: 'var(--shadow-2)',
+        modal: 'var(--shadow-xl)',
+      },
       borderRadius: {
         xs: 'var(--radius-xs)',
         sm: 'var(--radius-sm)',
         md: 'var(--radius-md)',
         lg: 'var(--radius-lg)',
         xl: 'var(--radius-xl)',
+        full: 'var(--radius-full)',
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -74,6 +112,24 @@ const config: Config = {
         sage: { DEFAULT: 'hsl(var(--sage))', soft: 'hsl(var(--sage-soft))' },
         coral: { DEFAULT: 'hsl(var(--coral))', soft: 'hsl(var(--coral-soft))' },
         flag: { DEFAULT: 'hsl(var(--flag))', soft: 'hsl(var(--flag-soft))' },
+        // Category swatch palette (mirrors lib/categoryOptions.ts CATEGORY_COLORS).
+        cat: {
+          1: 'var(--cat-1)',
+          2: 'var(--cat-2)',
+          3: 'var(--cat-3)',
+          4: 'var(--cat-4)',
+          5: 'var(--cat-5)',
+          6: 'var(--cat-6)',
+          7: 'var(--cat-7)',
+          8: 'var(--cat-8)',
+          9: 'var(--cat-9)',
+          10: 'var(--cat-10)',
+          11: 'var(--cat-11)',
+          12: 'var(--cat-12)',
+          13: 'var(--cat-13)',
+          14: 'var(--cat-14)',
+          15: 'var(--cat-15)',
+        },
       },
     },
   },

@@ -1,5 +1,8 @@
 /** Color palette and icon keys offered when creating/editing a category.
- *  Icon keys must exist in `categoryIcon` (CategoryIcon falls back to wallet). */
+ *  Icon keys must exist in `categoryIcon` (CategoryIcon falls back to wallet).
+ *  These hex values are the PERSISTED source of truth (a category stores its
+ *  chosen hex). The `--cat-1..15` CSS tokens / Tailwind `cat-*` colors mirror
+ *  this list for chart palettes — keep both in sync. */
 export const CATEGORY_COLORS = [
   '#7AB890',
   '#6FA582',
