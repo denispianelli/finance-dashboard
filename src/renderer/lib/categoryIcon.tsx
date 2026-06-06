@@ -13,6 +13,7 @@ import {
   ShoppingBag,
   ShoppingCart,
   Tv,
+  Undo2,
   Utensils,
   Wallet,
   type LucideIcon,
@@ -35,6 +36,7 @@ const MAP: Record<string, LucideIcon> = {
   work: Briefcase,
   bank: Landmark,
   transfer: ArrowLeftRight,
+  refund: Undo2,
 };
 
 export function CategoryIcon({ name }: { name: string }) {
