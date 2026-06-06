@@ -17,7 +17,6 @@ const baseRow: TxRow = {
   catName: 'Courses',
   amount: -84.3,
   amountKind: 'expense',
-  isTransfer: false,
   edited: false,
   originalHint: null,
   editDate: '2026-05-14',

@@ -6,7 +6,6 @@ import { ImportError } from '../../import/importError';
 import { readIdentifier } from '../../import/accountIdentifier';
 import { learnAccountRoute } from '../../import/accountRoutes';
 import { detectTransfers } from '../../transfers/detect';
-import { detectRefunds } from '../../refunds/detect';
 
 export async function handleImportConfirm(payload: ConfirmPayload): Promise<ConfirmResponse> {
   try {
@@ -30,7 +29,6 @@ export async function handleImportConfirm(payload: ConfirmPayload): Promise<Conf
     // set. Best-effort — a failure must not fail an import already written.
     try {
       detectTransfers(getDb());
-      detectRefunds(getDb());
     } catch {
       // ignore — figures will be corrected on the next import / re-run
     }

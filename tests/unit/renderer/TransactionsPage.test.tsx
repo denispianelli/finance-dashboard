@@ -53,7 +53,6 @@ function tx(over: Partial<DashboardTransaction>): DashboardTransaction {
     originalAmount: null,
     editedAt: null,
     isInternalTransfer: false,
-    isRefund: false,
     userModified: false,
     ...over,
   };

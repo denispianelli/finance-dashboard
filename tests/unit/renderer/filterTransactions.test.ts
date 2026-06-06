@@ -18,7 +18,6 @@ function tx(over: Partial<DashboardTransaction> = {}): DashboardTransaction {
     originalAmount: null,
     editedAt: null,
     isInternalTransfer: false,
-    isRefund: false,
     userModified: false,
     ...over,
   };
@@ -167,7 +166,7 @@ describe('filterTransactions — transfer / refund buckets', () => {
     tx({ id: 'salary', amount: 2000 }),
     tx({ id: 'rent', amount: -800 }),
     tx({ id: 'vir', amount: 500, isInternalTransfer: true }),
-    tx({ id: 'remb', amount: 40, isRefund: true }),
+    tx({ id: 'remb', amount: 40, categoryId: 'cat-remboursement' }),
   ];
 
   it("'income' excludes transfers and refunds", () => {

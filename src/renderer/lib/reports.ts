@@ -1,4 +1,5 @@
 import type { CashflowPoint, DashboardTransaction, NetWorth } from '@shared/types/dashboard';
+import { isTransferTx, isRefundTx } from './filterTransactions';
 
 export interface CategoryShare {
   name: string;
@@ -32,8 +33,10 @@ const MONTHS_SHORT = [
   'déc',
 ];
 
-function isSpend(t: DashboardTransaction): boolean {
-  return !t.isInternalTransfer && !t.isRefund && t.categoryId !== 'cat-transferts';
+/** A flow that counts toward the result: anything that is not a transfer.
+ *  (Refunds still count here — they net against expenses, see periodTotals.) */
+function counts(t: DashboardTransaction): boolean {
+  return !isTransferTx(t);
 }
 
 /** Distinct years and months present in a month-granularity cash-flow series, newest first. */
@@ -68,27 +71,32 @@ export function txInPeriod(
   return txns.filter((t) => t.date.startsWith(period.value));
 }
 
-/** Income / expense / net of a transaction set (transfers excluded). */
+/**
+ * Income / expense / net of a transaction set under the category-driven model:
+ * transfers are excluded entirely; the net is everything else; income is the
+ * positive non-refund flows; expense is the remainder (so refunds — positive
+ * amounts tagged « Remboursement » — reduce the expense magnitude).
+ */
 export function periodTotals(txns: DashboardTransaction[]): {
   income: number;
   expense: number;
   net: number;
 } {
   let income = 0;
-  let expense = 0;
+  let net = 0;
   for (const t of txns) {
-    if (!isSpend(t)) continue;
-    if (t.amount >= 0) income += t.amount;
-    else expense += t.amount;
+    if (!counts(t)) continue;
+    net += t.amount;
+    if (t.amount > 0 && !isRefundTx(t)) income += t.amount;
   }
-  return { income, expense, net: income + expense };
+  return { income, expense: net - income, net };
 }
 
 /** Cumulative net by day across the transactions of a month (`yyyy-mm`), transfers excluded. */
 export function dailyCumulativeNet(txns: DashboardTransaction[], month: string): NetPoint[] {
   const byDay = new Map<string, number>();
   for (const t of txns) {
-    if (!t.date.startsWith(month) || !isSpend(t)) continue;
+    if (!t.date.startsWith(month) || !counts(t)) continue;
     const day = t.date.slice(8, 10);
     byDay.set(day, (byDay.get(day) ?? 0) + t.amount);
   }
@@ -156,7 +164,7 @@ export function topCategories(txns: DashboardTransaction[], limit = 5): Category
   const totals = new Map<string, number>();
   for (const tx of txns) {
     if (tx.amount >= 0) continue;
-    if (tx.isInternalTransfer || tx.isRefund || tx.categoryId === 'cat-transferts') continue;
+    if (isTransferTx(tx) || isRefundTx(tx)) continue;
     if (tx.categoryName === null) continue;
     totals.set(tx.categoryName, (totals.get(tx.categoryName) ?? 0) + Math.abs(tx.amount));
   }
@@ -194,22 +202,26 @@ export function yearOverYear(yearSeries: CashflowPoint[]): YearComparison | null
 /** Largest movements by magnitude (non-transfer), most extreme first. */
 export function biggestMovements(txns: DashboardTransaction[], limit = 5): DashboardTransaction[] {
   return [...txns]
-    .filter((t) => !t.isInternalTransfer && !t.isRefund && t.categoryId !== 'cat-transferts')
+    .filter((t) => !isTransferTx(t) && !isRefundTx(t))
     .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
     .slice(0, limit);
 }
 
-/** The countable flows behind a verdict figure (real income/expense — transfers
- *  and refunds excluded), largest first. `sign` filters to inflows / outflows. */
+/**
+ * The flows behind a verdict figure, largest first. Transfers are always
+ * excluded. `'in'` = income (positive, non-refund); `'out'` = the expense side
+ * (spends *and* refunds, so the refund lines show as the credits that reduce the
+ * total); no sign = the whole net set.
+ */
 export function countableTransactions(
   txns: DashboardTransaction[],
   sign?: 'in' | 'out',
 ): DashboardTransaction[] {
   return txns
     .filter((t) => {
-      if (!isSpend(t)) return false;
-      if (sign === 'in') return t.amount > 0;
-      if (sign === 'out') return t.amount < 0;
+      if (isTransferTx(t)) return false;
+      if (sign === 'in') return t.amount > 0 && !isRefundTx(t);
+      if (sign === 'out') return t.amount < 0 || isRefundTx(t);
       return true;
     })
     .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));

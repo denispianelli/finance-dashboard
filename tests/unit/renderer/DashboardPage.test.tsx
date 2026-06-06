@@ -44,7 +44,6 @@ const TX: DashboardTransaction[] = [
     originalAmount: null,
     editedAt: null,
     isInternalTransfer: false,
-    isRefund: false,
     userModified: false,
   },
 ];

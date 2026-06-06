@@ -59,7 +59,6 @@ export interface DashboardTransaction {
   readonly originalAmount: number | null;
   readonly editedAt: string | null;
   readonly isInternalTransfer: boolean;
-  readonly isRefund: boolean;
   readonly userModified: boolean;
 }
 

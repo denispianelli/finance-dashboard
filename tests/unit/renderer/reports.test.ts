@@ -31,7 +31,6 @@ function tx(p: Partial<DashboardTransaction>): DashboardTransaction {
     originalAmount: null,
     editedAt: null,
     isInternalTransfer: false,
-    isRefund: false,
     userModified: false,
     ...p,
   };
@@ -149,8 +148,19 @@ describe('periodTotals', () => {
       tx({ amount: 2000 }),
       tx({ amount: -500 }),
       tx({ amount: -300, isInternalTransfer: true }),
+      tx({ amount: 400, categoryId: 'cat-transferts' }), // transfer by category, also excluded
     ];
     expect(periodTotals(txns)).toEqual({ income: 2000, expense: -500, net: 1500 });
+  });
+
+  it('subtracts a refund from expenses instead of counting it as income', () => {
+    // 1000 in, 500 spent on shoes, 250 refunded → 1000 in / 250 out, net 750.
+    const txns = [
+      tx({ amount: 1000 }),
+      tx({ amount: -500 }),
+      tx({ amount: 250, categoryId: 'cat-remboursement' }),
+    ];
+    expect(periodTotals(txns)).toEqual({ income: 1000, expense: -250, net: 750 });
   });
 });
 

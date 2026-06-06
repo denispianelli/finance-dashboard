@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { CashflowGranularity, CashflowPoint, NetWorth } from '@shared/types/dashboard';
-import { COUNTABLE } from './transferFilter';
+import { INCOME_ROW, EXPENSE_ROW } from './transferFilter';
 import { getAccountSummaries } from './queries';
 
 interface CashflowRow {
@@ -23,8 +23,8 @@ export function getConsolidatedCashflow(
   const rows = db
     .prepare(
       `SELECT ${periodExpr} AS period,
-              COALESCE(SUM(CASE WHEN amount >= 0 AND ${COUNTABLE} THEN amount ELSE 0 END), 0) AS income,
-              COALESCE(SUM(CASE WHEN amount <  0 AND ${COUNTABLE} THEN amount ELSE 0 END), 0) AS expense
+              COALESCE(SUM(CASE WHEN ${INCOME_ROW} THEN amount ELSE 0 END), 0) AS income,
+              COALESCE(SUM(CASE WHEN ${EXPENSE_ROW} THEN amount ELSE 0 END), 0) AS expense
        FROM transactions
        GROUP BY period
        ORDER BY period ASC`,
