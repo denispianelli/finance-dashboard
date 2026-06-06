@@ -18,6 +18,43 @@ function renderTopbar(props: Partial<Parameters<typeof Topbar>[0]> = {}) {
   );
 }
 
+function renderTopbarAt(path: string) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <Topbar onImport={() => undefined} />
+    </MemoryRouter>,
+  );
+}
+
+describe('Topbar page title + breadcrumb per route', () => {
+  // Every route carries its own serif title and breadcrumb (kit chrome contract).
+  const cases: { path: string; title: string; crumbs: string[] }[] = [
+    { path: '/', title: 'Tableau de bord', crumbs: ['Vue', 'Dashboard'] },
+    { path: '/transactions', title: 'Transactions', crumbs: ['Vue', 'Transactions'] },
+    { path: '/accounts', title: 'Comptes', crumbs: ['Vue', 'Comptes'] },
+    { path: '/categories', title: 'Catégories', crumbs: ['Vue', 'Catégories'] },
+    { path: '/reports', title: 'Rapports', crumbs: ['Vue', 'Rapports'] },
+    { path: '/settings', title: 'Paramètres', crumbs: ['Outils', 'Paramètres'] },
+  ];
+
+  it.each(cases)('shows the title and breadcrumb for $path', ({ path, title, crumbs }) => {
+    renderTopbarAt(path);
+    expect(screen.getByRole('heading', { level: 1, name: title })).toBeInTheDocument();
+    // The trailing crumb can equal the title (e.g. "Transactions"), so allow >= 1.
+    for (const crumb of crumbs) {
+      expect(screen.getAllByText(crumb).length).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('never falls back to the generic "Finance Dashboard" title on a known route', () => {
+    for (const { path } of cases) {
+      cleanup();
+      renderTopbarAt(path);
+      expect(screen.queryByRole('heading', { level: 1, name: 'Finance Dashboard' })).toBeNull();
+    }
+  });
+});
+
 describe('Topbar categorization chip', () => {
   it('shows the chip with the remaining count when categorizing', () => {
     renderTopbar({ categorizing: true, categorizeRemaining: 7 });

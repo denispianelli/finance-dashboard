@@ -8,12 +8,19 @@ interface PageMeta {
   account?: string;
 }
 
+// One entry per route. The serif page title + breadcrumb live in the Topbar
+// (the screens never repeat the page title); keep this in lockstep with the
+// router in App.tsx and the design-system kit's per-screen contract.
 const PAGE_META: Record<string, PageMeta> = {
   '/': {
     title: 'Tableau de bord',
     breadcrumb: ['Vue', 'Dashboard'],
     account: 'Compte joint · Boursorama',
   },
+  '/transactions': { title: 'Transactions', breadcrumb: ['Vue', 'Transactions'] },
+  '/accounts': { title: 'Comptes', breadcrumb: ['Vue', 'Comptes'] },
+  '/categories': { title: 'Catégories', breadcrumb: ['Vue', 'Catégories'] },
+  '/reports': { title: 'Rapports', breadcrumb: ['Vue', 'Rapports'] },
   '/settings': { title: 'Paramètres', breadcrumb: ['Outils', 'Paramètres'] },
 };
 
