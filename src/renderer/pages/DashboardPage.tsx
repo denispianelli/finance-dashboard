@@ -115,7 +115,7 @@ export function DashboardPage() {
           sub={netMois.sub}
           ctx="revenus − dépenses"
           spark={sparkPoints(series.map((s) => s.net))}
-          sparkColor="#8D7DC4"
+          sparkColor="var(--cat-11)"
         />
       </KpiGrid>
 

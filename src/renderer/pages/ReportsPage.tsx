@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Overline } from '../components/ui/overline';
 import { PeriodPicker } from '../components/reports/PeriodPicker';
 import { VerdictRow, type VerdictKind } from '../components/reports/VerdictRow';
 import { CashflowBarChart } from '../components/reports/CashflowBarChart';
@@ -67,15 +68,23 @@ export function ReportsPage() {
         ? `Sorties · ${periodLabel(period)}`
         : `Flux réels · ${periodLabel(period)}`;
 
+  // The serif page title lives in the Topbar; this header carries the editorial
+  // section overline + the selected-period label, per the design-system kit.
+  const headerLabel =
+    period.granularity === 'year'
+      ? `Année ${period.value}`
+      : `${monthLabelFr(period.value).replace(/^./, (c) => c.toUpperCase())} ${period.value.slice(0, 4)}`;
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="font-sans text-base font-semibold tracking-[-0.015em] text-paper">
-          Rapports
-        </h1>
-        <div className="ml-auto">
-          <PeriodPicker period={period} available={available} onChange={setPicked} />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3.5">
+          <Overline>— Rapport</Overline>
+          <span className="font-serif text-[20px] italic leading-none text-paper">
+            {headerLabel}
+          </span>
         </div>
+        <PeriodPicker period={period} available={available} onChange={setPicked} />
       </div>
 
       <VerdictRow verdict={verdict} periodLabel={periodLabel(period)} onSelect={setDetail} />
@@ -94,14 +103,14 @@ export function ReportsPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <CategoryDonut
           overline="— II"
-          title="Entrées par catégorie"
+          title="D'où vient l'argent"
           slices={categoryBreakdown(scoped, 'in')}
           totalColor="var(--sage)"
           emptyHint="Aucune entrée sur la période."
         />
         <CategoryDonut
           overline="— III"
-          title="Sorties par catégorie"
+          title="Où part l'argent"
           slices={categoryBreakdown(scoped, 'out')}
           totalColor="var(--coral)"
           emptyHint="Aucune dépense sur la période."
