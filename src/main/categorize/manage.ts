@@ -5,6 +5,7 @@ import type {
   CreateCategoryInput,
   SetTransactionCategoryInput,
 } from '@shared/types/category';
+import { stableLabelKey } from './labelKey';
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
@@ -85,15 +86,68 @@ export function deleteCategory(db: DatabaseSync, id: string): { uncategorizedCou
   }
 }
 
+/** Categories whose assignment propagates to every similar label (Transfert,
+ *  Remboursement) — the user-initiated label-rule behaviour (see the
+ *  category-driven accounting spec). */
+const PROPAGATING_CATEGORIES = new Set(['cat-transferts', 'cat-remboursement']);
+
 /** Reassign a transaction's category. Marks it user_modified so it sticks and,
- *  via the history cascade, propagates to future imports of the same label. */
+ *  via the history cascade, propagates to future imports of the same label.
+ *  Assigning a *propagating* category (Transfert / Remboursement) also applies it
+ *  to all existing similar labels and saves a rule for future imports. */
 export function setTransactionCategory(db: DatabaseSync, input: SetTransactionCategoryInput): void {
   const cat = db.prepare('SELECT id FROM categories WHERE id = ?').get(input.categoryId);
   if (!cat) throw new Error(`setTransactionCategory: category ${input.categoryId} not found`);
-  const res = db
-    .prepare('UPDATE transactions SET category_id = ?, user_modified = 1 WHERE id = ?')
-    .run(input.categoryId, input.transactionId);
-  if (res.changes === 0) {
+
+  const row = db
+    .prepare('SELECT label_clean FROM transactions WHERE id = ?')
+    .get(input.transactionId) as { label_clean: string } | undefined;
+  if (row === undefined) {
     throw new Error(`setTransactionCategory: transaction ${input.transactionId} not found`);
+  }
+
+  // The explicitly clicked row is always set — even if it was already filed
+  // under another category by hand.
+  db.prepare('UPDATE transactions SET category_id = ?, user_modified = 1 WHERE id = ?').run(
+    input.categoryId,
+    input.transactionId,
+  );
+
+  if (PROPAGATING_CATEGORIES.has(input.categoryId)) {
+    propagateCategory(db, input.transactionId, row.label_clean, input.categoryId);
+  }
+}
+
+/** Apply `categoryId` to every *other* transaction whose label contains the stable
+ *  key of `sampleLabel` (skipping rows manually filed under a different category),
+ *  and upsert a `contains` rule so future imports inherit it. The originating row
+ *  (`sourceId`) is set by the caller, unconditionally. */
+function propagateCategory(
+  db: DatabaseSync,
+  sourceId: string,
+  sampleLabel: string,
+  categoryId: string,
+): void {
+  const key = stableLabelKey(sampleLabel);
+
+  db.prepare(
+    `UPDATE transactions
+        SET category_id = ?, user_modified = 1
+      WHERE INSTR(UPPER(label_clean), ?) > 0
+        AND id != ?
+        AND NOT (user_modified = 1 AND category_id IS NOT NULL AND category_id != ?)`,
+  ).run(categoryId, key, sourceId, categoryId);
+
+  const exists = db
+    .prepare(
+      `SELECT id FROM categorization_rules
+        WHERE match_type = 'contains' AND UPPER(match_value) = ? AND category_id = ?`,
+    )
+    .get(key, categoryId);
+  if (exists === undefined) {
+    db.prepare(
+      `INSERT INTO categorization_rules (id, match_type, match_value, category_id)
+       VALUES (?, 'contains', ?, ?)`,
+    ).run(`cr-user-${randomUUID()}`, key, categoryId);
   }
 }

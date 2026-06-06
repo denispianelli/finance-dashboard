@@ -2,6 +2,7 @@ import type { AccountSummary, DashboardTransaction } from '@shared/types/dashboa
 import type { Account } from '@renderer/components/dashboard/AccountTabs';
 import type { TxRow } from '@renderer/components/dashboard/TxTable';
 import type { MoneyKind } from '@renderer/components/ui/money';
+import { isTransferTx } from './filterTransactions';
 
 /** Neutral dot color for uncategorized transactions. */
 const NEUTRAL_CAT_COLOR = '#6E6E78';
@@ -26,9 +27,10 @@ export function formatTxDate(iso: string): string {
   return `${day}/${month}`;
 }
 
-/** Income / expense / transfer, derived from sign and the internal-transfer flag. */
+/** Income / expense / transfer, derived from sign and transfer-ness (flag or
+ *  the « Transferts internes » category). */
 export function txKind(tx: DashboardTransaction): MoneyKind {
-  if (tx.isInternalTransfer) return 'transfer';
+  if (isTransferTx(tx)) return 'transfer';
   return tx.amount >= 0 ? 'income' : 'expense';
 }
 

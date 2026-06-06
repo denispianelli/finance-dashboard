@@ -1,6 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import type { CashflowPoint, DashboardTransaction } from '@shared/types/dashboard';
-import { topCategories, savingsRate, yearOverYear, biggestMovements } from '@renderer/lib/reports';
+import {
+  topCategories,
+  savingsRate,
+  yearOverYear,
+  biggestMovements,
+  availablePeriods,
+  monthlyNetForYear,
+  txInPeriod,
+  periodTotals,
+  dailyCumulativeNet,
+  previousPeriod,
+  periodVerdict,
+  accountComposition,
+  categoryBreakdown,
+} from '@renderer/lib/reports';
 
 function tx(p: Partial<DashboardTransaction>): DashboardTransaction {
   return {
@@ -84,5 +98,164 @@ describe('biggestMovements', () => {
       tx({ id: 'd', amount: -120 }),
     ];
     expect(biggestMovements(txns, 2).map((t) => t.id)).toEqual(['b', 'd']);
+  });
+});
+
+const series2y: CashflowPoint[] = [
+  { period: '2025-11', income: 100, expense: -40, net: 60 },
+  { period: '2026-03', income: 200, expense: -50, net: 150 },
+  { period: '2026-05', income: 300, expense: -100, net: 200 },
+];
+
+describe('availablePeriods', () => {
+  it('lists distinct years and months newest-first', () => {
+    expect(availablePeriods(series2y)).toEqual({
+      years: ['2026', '2025'],
+      months: ['2026-05', '2026-03', '2025-11'],
+    });
+  });
+});
+
+describe('monthlyNetForYear', () => {
+  it('returns 12 zero-filled months for the year', () => {
+    const pts = monthlyNetForYear(series2y, '2026');
+    expect(pts).toHaveLength(12);
+    expect(pts[2]).toEqual({ label: 'mars', net: 150 }); // March
+    expect(pts[4]).toEqual({ label: 'mai', net: 200 }); // May
+    expect(pts[0]).toEqual({ label: 'janv', net: 0 }); // January, no data
+  });
+});
+
+describe('txInPeriod', () => {
+  it('keeps only transactions whose date matches the period value', () => {
+    const txns = [
+      tx({ id: 'a', date: '2023-06-10' }),
+      tx({ id: 'b', date: '2024-06-10' }),
+      tx({ id: 'c', date: '2024-07-10' }),
+    ];
+    expect(txInPeriod(txns, { granularity: 'year', value: '2024' }).map((t) => t.id)).toEqual([
+      'b',
+      'c',
+    ]);
+    expect(txInPeriod(txns, { granularity: 'month', value: '2024-06' }).map((t) => t.id)).toEqual([
+      'b',
+    ]);
+  });
+});
+
+describe('periodTotals', () => {
+  it('sums income/expense/net, excluding transfers', () => {
+    const txns = [
+      tx({ amount: 2000 }),
+      tx({ amount: -500 }),
+      tx({ amount: -300, isInternalTransfer: true }),
+      tx({ amount: 400, categoryId: 'cat-transferts' }), // transfer by category, also excluded
+    ];
+    expect(periodTotals(txns)).toEqual({ income: 2000, expense: -500, net: 1500 });
+  });
+
+  it('subtracts a refund from expenses instead of counting it as income', () => {
+    // 1000 in, 500 spent on shoes, 250 refunded → 1000 in / 250 out, net 750.
+    const txns = [
+      tx({ amount: 1000 }),
+      tx({ amount: -500 }),
+      tx({ amount: 250, categoryId: 'cat-remboursement' }),
+    ];
+    expect(periodTotals(txns)).toEqual({ income: 1000, expense: -250, net: 750 });
+  });
+});
+
+describe('categoryBreakdown', () => {
+  it('groups income by category, excluding transfers/refunds and folding uncategorised', () => {
+    const txns = [
+      tx({ amount: 2000, categoryName: 'Salaire', categoryColor: '#0a0' }),
+      tx({ amount: 500, categoryName: 'Salaire', categoryColor: '#0a0' }),
+      tx({ amount: 300, categoryName: null, categoryColor: null }),
+      tx({ amount: -800, categoryName: 'Loyer' }), // expense — ignored for 'in'
+      tx({ amount: 400, categoryId: 'cat-transferts' }), // transfer — ignored
+      tx({ amount: 250, categoryId: 'cat-remboursement' }), // refund — ignored
+    ];
+    expect(categoryBreakdown(txns, 'in')).toEqual([
+      { name: 'Salaire', value: 2500, color: '#0a0' },
+      { name: 'Non catégorisé', value: 300, color: '#6E6E78' },
+    ]);
+  });
+
+  it('groups expenses by magnitude, largest first', () => {
+    const txns = [
+      tx({ amount: -800, categoryName: 'Loyer', categoryColor: '#a00' }),
+      tx({ amount: -120, categoryName: 'Courses', categoryColor: '#0a0' }),
+      tx({ amount: -30, categoryName: 'Courses', categoryColor: '#0a0' }),
+      tx({ amount: 2000, categoryName: 'Salaire' }), // income — ignored for 'out'
+    ];
+    expect(categoryBreakdown(txns, 'out')).toEqual([
+      { name: 'Loyer', value: 800, color: '#a00' },
+      { name: 'Courses', value: 150, color: '#0a0' },
+    ]);
+  });
+});
+
+describe('dailyCumulativeNet', () => {
+  it('accumulates net by day within the month, excluding transfers', () => {
+    const txns = [
+      tx({ date: '2024-06-02', amount: 1000 }),
+      tx({ date: '2024-06-05', amount: -300 }),
+      tx({ date: '2024-06-05', amount: -200, isInternalTransfer: true }),
+      tx({ date: '2024-07-01', amount: -999 }),
+    ];
+    expect(dailyCumulativeNet(txns, '2024-06')).toEqual([
+      { label: '02', net: 1000 },
+      { label: '05', net: 700 },
+    ]);
+  });
+});
+
+describe('previousPeriod', () => {
+  it('steps back a year or the same month last year', () => {
+    expect(previousPeriod({ granularity: 'year', value: '2024' })).toEqual({
+      granularity: 'year',
+      value: '2023',
+    });
+    expect(previousPeriod({ granularity: 'month', value: '2024-06' })).toEqual({
+      granularity: 'month',
+      value: '2023-06',
+    });
+  });
+});
+
+describe('periodVerdict', () => {
+  it('reports income/spend/net, positive flag, savings rate and delta vs previous', () => {
+    const scoped = [tx({ amount: 2000 }), tx({ amount: -1500 })];
+    const prev = [tx({ amount: 1000 }), tx({ amount: -900 })]; // prev net 100
+    const v = periodVerdict(scoped, prev);
+    expect(v).toMatchObject({ income: 2000, expense: -1500, net: 500, positive: true });
+    expect(v.savingsRate).toBeCloseTo(25, 5); // 500/2000
+    expect(v.deltaPct).toBeCloseTo(400, 5); // (500-100)/100
+  });
+
+  it('flags a negative period and nulls savings/delta when there is no base', () => {
+    const v = periodVerdict([tx({ amount: 100 }), tx({ amount: -400 })], []);
+    expect(v.positive).toBe(false);
+    expect(v.net).toBe(-300);
+    expect(v.deltaPct).toBeNull(); // no previous income/net
+  });
+});
+
+describe('accountComposition', () => {
+  it('keeps positive balances as slices, dropping null/zero', () => {
+    const nw = {
+      total: 9200,
+      accounts: [
+        { accountId: 'a', name: 'Perso', balance: 1200 },
+        { accountId: 'b', name: 'Livret', balance: 8000 },
+        { accountId: 'c', name: 'Vide', balance: null },
+        { accountId: 'd', name: 'Zero', balance: 0 },
+      ],
+    };
+    expect(accountComposition(nw)).toEqual([
+      { name: 'Perso', value: 1200 },
+      { name: 'Livret', value: 8000 },
+    ]);
+    expect(accountComposition(null)).toEqual([]);
   });
 });

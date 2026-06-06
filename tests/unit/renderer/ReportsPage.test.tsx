@@ -1,8 +1,23 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach, beforeAll } from 'vitest';
 import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import * as ipcMod from '@renderer/ipc/client';
 import { ReportsPage } from '@renderer/pages/ReportsPage';
+
+// Recharts' ResponsiveContainer (bars + donut) needs ResizeObserver.
+beforeAll(() => {
+  globalThis.ResizeObserver = class {
+    observe(): void {
+      return undefined;
+    }
+    unobserve(): void {
+      return undefined;
+    }
+    disconnect(): void {
+      return undefined;
+    }
+  };
+});
 
 afterEach(() => {
   cleanup();
@@ -63,19 +78,20 @@ beforeEach(() => {
 });
 
 describe('ReportsPage', () => {
-  it('renders the cash-flow card from the channel data', async () => {
+  it('leads with the verdict pastilles and the month-by-month chart', async () => {
     render(<ReportsPage />);
     await waitFor(() => {
-      expect(screen.getByText(/gains et pertes/i)).toBeTruthy();
+      expect(screen.getByText('Résultat')).toBeTruthy();
     });
-    // "avril 2026" appears in both the cash-flow rows and the biggest-movements list.
-    expect(screen.getAllByText(/avril 2026/i).length).toBeGreaterThan(0);
+    expect(screen.getByText('Entrées')).toBeTruthy();
+    expect(screen.getByText('Sorties')).toBeTruthy();
+    expect(screen.getByText('Mois par mois')).toBeTruthy();
   });
 
-  it('renders the net worth, top categories, recurring and biggest-movements sections', async () => {
+  it('renders the net worth donut, top categories, recurring and biggest movements', async () => {
     render(<ReportsPage />);
     await waitFor(() => {
-      expect(screen.getByText(/patrimoine · tous comptes/i)).toBeTruthy();
+      expect(screen.getByText('Patrimoine')).toBeTruthy();
     });
     expect(screen.getByText('Compte A')).toBeTruthy();
     expect(screen.getByText('Courses')).toBeTruthy();

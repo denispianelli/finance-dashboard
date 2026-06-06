@@ -16,10 +16,10 @@ function freshDb(): DatabaseSync {
 }
 
 describe('listCategories', () => {
-  it('returns the 10 seeded categories ordered by position', () => {
+  it('returns the 11 seeded categories ordered by position', () => {
     const db = freshDb();
     const cats = listCategories(db);
-    expect(cats).toHaveLength(10);
+    expect(cats).toHaveLength(11);
     expect(cats[0]?.position).toBeLessThanOrEqual(cats[1]?.position ?? Infinity);
     expect(cats.find((c) => c.id === 'cat-alimentation')).toMatchObject({
       name: 'Alimentation',
@@ -50,7 +50,7 @@ describe('createCategory', () => {
       isDefault: false,
     });
     expect(cat.id.startsWith('cat-')).toBe(true);
-    expect(listCategories(db)).toHaveLength(11);
+    expect(listCategories(db)).toHaveLength(12);
     expect(cat.position).toBeGreaterThan(10);
     db.close();
   });

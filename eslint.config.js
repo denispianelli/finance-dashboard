@@ -41,6 +41,24 @@ export default tseslint.config(
     },
   },
 
+  // shadcn `chart` is generated, Recharts-typed vendored code (loose `any` at the
+  // Recharts boundary). Relax the type-aware strictness for this one file only.
+  {
+    files: ['src/renderer/components/ui/chart.tsx'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
+      '@typescript-eslint/consistent-indexed-object-style': 'off',
+      '@typescript-eslint/consistent-type-definitions': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+      '@typescript-eslint/no-unnecessary-condition': 'off',
+    },
+  },
+
   // --- Prettier last: disable rules that conflict with formatting ---
   prettier,
 

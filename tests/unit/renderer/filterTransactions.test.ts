@@ -160,3 +160,34 @@ describe('filterTransactions', () => {
     expect(out.map((t) => t.id)).toEqual(['hit']);
   });
 });
+
+describe('filterTransactions — transfer / refund buckets', () => {
+  const txns = [
+    tx({ id: 'salary', amount: 2000 }),
+    tx({ id: 'rent', amount: -800 }),
+    tx({ id: 'vir', amount: 500, isInternalTransfer: true }),
+    tx({ id: 'remb', amount: 40, categoryId: 'cat-remboursement' }),
+  ];
+
+  it("'income' excludes transfers and refunds", () => {
+    expect(filterTransactions(txns, { ...ALL, type: 'income' }).map((t) => t.id)).toEqual([
+      'salary',
+    ]);
+  });
+
+  it("'expense' excludes transfers and refunds", () => {
+    expect(filterTransactions(txns, { ...ALL, type: 'expense' }).map((t) => t.id)).toEqual([
+      'rent',
+    ]);
+  });
+
+  it("'transfer' keeps only transfers", () => {
+    expect(filterTransactions(txns, { ...ALL, type: 'transfer' }).map((t) => t.id)).toEqual([
+      'vir',
+    ]);
+  });
+
+  it("'refund' keeps only refunds", () => {
+    expect(filterTransactions(txns, { ...ALL, type: 'refund' }).map((t) => t.id)).toEqual(['remb']);
+  });
+});
