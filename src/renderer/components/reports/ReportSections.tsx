@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
-import type { DashboardTransaction, NetWorth } from '@shared/types/dashboard';
+import type { DashboardTransaction } from '@shared/types/dashboard';
 import type { RecurringReport } from '@shared/types/recurring';
 import { Overline } from '../ui/overline';
 import { formatBalance } from '../../lib/dashboardMap';
 import { monthLabelFr } from '../../lib/dashboardCharts';
-import type { CategoryShare, YearComparison } from '../../lib/reports';
+import type { CategoryShare } from '../../lib/reports';
 
 function Section({ mark, title, children }: { mark: string; title: string; children: ReactNode }) {
   return (
@@ -38,53 +38,30 @@ function dayLabel(date: string): string {
   return `${monthLabelFr(date.slice(0, 7))} ${date.slice(0, 4)}`;
 }
 
-export function NetWorthCard({ netWorth }: { netWorth: NetWorth | null }) {
-  return (
-    <Section mark="— IV" title="Patrimoine · tous comptes">
-      {netWorth === null ? (
-        <Empty>Aucune donnée.</Empty>
-      ) : (
-        <>
-          <span
-            className="font-serif text-[28px] italic leading-none tracking-[-0.02em] text-paper"
-            style={{ color: netWorth.total >= 0 ? undefined : 'var(--coral)' }}
-          >
-            {euro(netWorth.total)}
-          </span>
-          <table className="w-full border-collapse font-sans text-[13px]">
-            <tbody>
-              {netWorth.accounts.map((a) => (
-                <tr key={a.accountId} className="border-t border-line-2/70">
-                  <td className="py-1.5 text-paper-soft">{a.name}</td>
-                  <td className="py-1.5 text-right tabular-nums text-paper-mute">
-                    {a.balance === null ? '—' : euro(a.balance)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
-    </Section>
-  );
-}
-
+/** Top spending categories as ranked horizontal bars. */
 export function TopCategoriesCard({ categories }: { categories: CategoryShare[] }) {
+  const max = categories.reduce((m, c) => Math.max(m, c.total), 0);
   return (
-    <Section mark="— V" title="Où part l'argent">
+    <Section mark="— III" title="Où part l'argent">
       {categories.length === 0 ? (
         <Empty>Pas encore de dépenses catégorisées.</Empty>
       ) : (
-        <table className="w-full border-collapse font-sans text-[13px]">
-          <tbody>
-            {categories.map((c) => (
-              <tr key={c.name} className="border-t border-line-2/70">
-                <td className="py-1.5 text-paper-soft">{c.name}</td>
-                <td className="py-1.5 text-right tabular-nums text-paper-mute">{euro(c.total)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ul className="flex flex-col gap-2.5">
+          {categories.map((c) => (
+            <li key={c.name} className="flex flex-col gap-1">
+              <div className="flex items-baseline justify-between font-sans text-[12.5px]">
+                <span className="text-paper-soft">{c.name}</span>
+                <span className="tabular-nums text-paper-mute">{euro(c.total)}</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-line-2/60">
+                <div
+                  className="h-full rounded-full bg-brass"
+                  style={{ width: `${String(max > 0 ? (c.total / max) * 100 : 0)}%` }}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </Section>
   );
@@ -93,7 +70,7 @@ export function TopCategoriesCard({ categories }: { categories: CategoryShare[] 
 export function RecurringCard({ recurring }: { recurring: RecurringReport | null }) {
   const subs = recurring?.subscriptions ?? [];
   return (
-    <Section mark="— VI" title="Abonnements & récurrents">
+    <Section mark="— IV" title="Abonnements & récurrents">
       {subs.length === 0 ? (
         <Empty>Aucun abonnement détecté.</Empty>
       ) : (
@@ -126,44 +103,9 @@ export function RecurringCard({ recurring }: { recurring: RecurringReport | null
   );
 }
 
-export function YearComparisonCard({ comparison }: { comparison: YearComparison | null }) {
-  return (
-    <Section mark="— VII" title="Cette année vs l'an dernier">
-      {comparison === null ? (
-        <Empty>Pas encore de données annuelles.</Empty>
-      ) : (
-        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 font-sans text-[13px]">
-          <span className="text-paper-soft">
-            {comparison.current.period} ·{' '}
-            <span
-              className="font-medium tabular-nums"
-              style={{ color: comparison.current.net >= 0 ? 'var(--sage)' : 'var(--coral)' }}
-            >
-              {signedEuro(comparison.current.net)}
-            </span>
-          </span>
-          {comparison.previous && (
-            <span className="text-paper-dim">
-              {comparison.previous.period} · {signedEuro(comparison.previous.net)}
-            </span>
-          )}
-          {comparison.netDelta !== null && (
-            <span
-              className="ml-auto font-medium tabular-nums"
-              style={{ color: comparison.netDelta >= 0 ? 'var(--sage)' : 'var(--coral)' }}
-            >
-              {signedEuro(comparison.netDelta)} vs N-1
-            </span>
-          )}
-        </div>
-      )}
-    </Section>
-  );
-}
-
 export function BiggestMovementsCard({ movements }: { movements: DashboardTransaction[] }) {
   return (
-    <Section mark="— VIII" title="Plus gros mouvements">
+    <Section mark="— V" title="Plus gros mouvements">
       {movements.length === 0 ? (
         <Empty>Aucun mouvement.</Empty>
       ) : (

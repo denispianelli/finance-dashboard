@@ -1,14 +1,11 @@
 import { useMemo, useState } from 'react';
-import type { CashflowPoint, DashboardTransaction } from '@shared/types/dashboard';
-import { Kpi } from '../components/dashboard/Kpi';
-import { KpiGrid } from '../components/dashboard/layout';
 import { PeriodPicker } from '../components/reports/PeriodPicker';
-import { CashflowAreaChart } from '../components/reports/CashflowAreaChart';
+import { VerdictRow } from '../components/reports/VerdictRow';
+import { CashflowBarChart } from '../components/reports/CashflowBarChart';
+import { NetWorthDonut } from '../components/reports/NetWorthDonut';
 import {
-  NetWorthCard,
   TopCategoriesCard,
   RecurringCard,
-  YearComparisonCard,
   BiggestMovementsCard,
 } from '../components/reports/ReportSections';
 import { useCashflow } from '../hooks/useCashflow';
@@ -20,38 +17,28 @@ import {
   monthlyNetForYear,
   dailyCumulativeNet,
   txInPeriod,
-  periodTotals,
   previousPeriod,
+  periodVerdict,
   type ReportPeriod,
 } from '../lib/reports';
-import { formatBalance } from '../lib/dashboardMap';
 import { monthLabelFr } from '../lib/dashboardCharts';
 
-function totalsAsPoint(txns: DashboardTransaction[], period: ReportPeriod): CashflowPoint {
-  const t = periodTotals(txInPeriod(txns, period));
-  return { period: period.value, income: t.income, expense: t.expense, net: t.net };
-}
-
-function periodTitle(period: ReportPeriod): string {
-  const label =
-    period.granularity === 'year'
-      ? period.value
-      : `${monthLabelFr(period.value)} ${period.value.slice(0, 4)}`;
-  return `Gains et pertes · ${label}`;
+function periodLabel(period: ReportPeriod): string {
+  return period.granularity === 'year'
+    ? period.value
+    : `${monthLabelFr(period.value)} ${period.value.slice(0, 4)}`;
 }
 
 /**
- * Reports — the retrospective surface (ADR-009). A period selector (a specific
- * year or month) scopes the whole page; the gained/lost trend is a shadcn area
- * chart. Net worth stays "actuel" (point-in-time). Reads F1/F2/D1 channels.
+ * Reports — verdict-first. The header carries the period; the hero is three
+ * pastilles (Entrées / Sorties / Résultat) answering "did I gain or lose?" for
+ * the selected period; then the month-by-month bars and the supporting cards.
  */
 export function ReportsPage() {
   const { series } = useCashflow();
   const { netWorth, recurring, transactions } = useReports();
 
   const available = useMemo(() => availablePeriods(series), [series]);
-  // Derived current period: the user's pick, else the latest available year.
-  // (Derived rather than an effect, so no setState-in-effect cascade.)
   const [picked, setPicked] = useState<ReportPeriod | null>(null);
   const firstYear = available.years[0];
   const period: ReportPeriod | null =
@@ -61,54 +48,40 @@ export function ReportsPage() {
     return <p className="py-8 text-center text-sm text-paper-mute">Chargement des rapports…</p>;
   }
 
+  const scoped = txInPeriod(transactions, period);
+  const prev = txInPeriod(transactions, previousPeriod(period));
+  const verdict = periodVerdict(scoped, prev);
+
   const chartData =
     period.granularity === 'year'
       ? monthlyNetForYear(series, period.value)
       : dailyCumulativeNet(transactions, period.value);
-
-  const scoped = txInPeriod(transactions, period);
-  const totals = periodTotals(scoped);
-  const rate = totals.income > 0 ? (totals.net / totals.income) * 100 : null;
-
-  const prev = previousPeriod(period);
-  const hasPrev = txInPeriod(transactions, prev).length > 0;
-  const current = totalsAsPoint(transactions, period);
-  const previous = hasPrev ? totalsAsPoint(transactions, prev) : null;
-  const comparison = {
-    current,
-    previous,
-    netDelta: previous ? current.net - previous.net : null,
-  };
+  const chartTitle = period.granularity === 'year' ? 'Mois par mois' : 'Jour par jour';
 
   return (
     <div className="flex flex-col gap-4">
-      <PeriodPicker period={period} available={available} onChange={setPicked} />
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="font-sans text-base font-semibold tracking-[-0.015em] text-paper">
+          Rapports
+        </h1>
+        <div className="ml-auto">
+          <PeriodPicker period={period} available={available} onChange={setPicked} />
+        </div>
+      </div>
 
-      <KpiGrid>
-        <Kpi
-          label="Patrimoine net"
-          value={netWorth === null ? '—' : `${formatBalance(netWorth.total)} €`}
-          ctx="actuel · tous comptes"
-        />
-        <Kpi
-          label="Taux d'épargne"
-          value={rate === null ? '—' : `${rate.toFixed(0)} %`}
-          ctx="sur la période"
-        />
-        <Kpi
-          label="Abonnements"
-          value={recurring === null ? '—' : `${formatBalance(recurring.monthlyTotal)} €`}
-          ctx="par mois"
-        />
-      </KpiGrid>
+      <VerdictRow verdict={verdict} periodLabel={periodLabel(period)} />
 
-      <CashflowAreaChart data={chartData} title={periodTitle(period)} />
+      <CashflowBarChart data={chartData} title={chartTitle} />
 
-      <NetWorthCard netWorth={netWorth} />
-      <YearComparisonCard comparison={comparison} />
-      <TopCategoriesCard categories={topCategories(scoped)} />
-      <RecurringCard recurring={recurring} />
-      <BiggestMovementsCard movements={biggestMovements(scoped)} />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <NetWorthDonut netWorth={netWorth} />
+        <TopCategoriesCard categories={topCategories(scoped)} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <RecurringCard recurring={recurring} />
+        <BiggestMovementsCard movements={biggestMovements(scoped)} />
+      </div>
     </div>
   );
 }
