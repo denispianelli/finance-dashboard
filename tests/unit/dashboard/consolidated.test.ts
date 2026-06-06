@@ -142,6 +142,20 @@ describe('getNetWorth', () => {
     });
     db.close();
   });
+
+  it('counts a declared balance toward net worth', () => {
+    const db = freshDb(); // perso + livret, unanchored
+    db.prepare("UPDATE accounts SET declared_balance = 5000 WHERE id = 'livret'").run();
+
+    const result = getNetWorth(db);
+    expect(result.total).toBe(5000);
+    expect(result.accounts).toContainEqual({
+      accountId: 'livret',
+      name: 'Livret A',
+      balance: 5000,
+    });
+    db.close();
+  });
 });
 
 describe('getNetWorth — empty', () => {

@@ -17,6 +17,7 @@ export const CHANNELS = {
   accountsCreate: 'accounts:create',
   accountsUpdate: 'accounts:update',
   accountsDelete: 'accounts:delete',
+  accountsSetDeclaredBalance: 'accounts:setDeclaredBalance',
   categoriesList: 'categories:list',
   categoriesRename: 'categories:rename',
   categoriesCreate: 'categories:create',
