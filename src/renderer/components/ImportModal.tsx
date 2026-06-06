@@ -24,6 +24,7 @@ import {
 } from './ui/dialog';
 import type { StatementExtraction } from '@shared/types/import';
 import type { AccountSummary, CreateAccountInput } from '@shared/types/dashboard';
+import { formatEuro } from '@renderer/lib/euro';
 
 const FIELD =
   'h-9 w-full rounded-md border border-line-2 bg-ink-3 px-2.5 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
@@ -638,7 +639,7 @@ function ArithmeticBadge({
         <CheckCircle size={14} strokeWidth={1.6} />
         <span>
           Solde vérifié —{' '}
-          {arithmetic.closingBalance?.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+          {arithmetic.closingBalance !== null ? formatEuro(arithmetic.closingBalance) : '—'}
         </span>
       </div>
     );
@@ -651,9 +652,7 @@ function ArithmeticBadge({
         style={{ background: 'hsl(var(--coral-soft))', color: 'hsl(var(--coral))' }}
       >
         <XCircle size={14} strokeWidth={1.6} />
-        <span>
-          Écart de {arithmetic.delta?.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
-        </span>
+        <span>Écart de {arithmetic.delta !== null ? formatEuro(arithmetic.delta) : '—'}</span>
       </div>
     );
   }

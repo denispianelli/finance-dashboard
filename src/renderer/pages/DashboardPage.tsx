@@ -9,7 +9,8 @@ import { ChartCard } from '../components/dashboard/ChartCard';
 import { Insight, Quote, QuoteNum } from '../components/dashboard/Insight';
 import { TxTable } from '../components/dashboard/TxTable';
 import { useDashboard } from '../hooks/useDashboard';
-import { toAccount, toTxRow, formatBalance } from '../lib/dashboardMap';
+import { toAccount, toTxRow } from '../lib/dashboardMap';
+import { formatEuro } from '../lib/euro';
 import {
   chartGeometry,
   kpiDelta,
@@ -122,7 +123,7 @@ export function DashboardPage() {
             <>
               <Quote>
                 Ce mois, ta plus grosse dépense est <QuoteNum>{topCat.name}</QuoteNum> à{' '}
-                <QuoteNum>{formatBalance(topCat.total)} €</QuoteNum>.
+                <QuoteNum>{formatEuro(topCat.total)}</QuoteNum>.
               </Quote>
               {restCats.length > 0 && (
                 <>

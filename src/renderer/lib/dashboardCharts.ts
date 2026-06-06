@@ -1,5 +1,6 @@
 import type { DashboardTransaction, MonthPoint } from '@shared/types/dashboard';
 import { formatBalance } from './dashboardMap';
+import { MINUS, NBSP } from './euro';
 
 const MONTHS_FR = [
   'janvier',
@@ -26,7 +27,7 @@ export function monthLabelFr(month: string): string {
  *  matching the KPI tile's large-number / small-suffix layout. */
 export function splitEuro(amount: number): { value: string; sub: string } {
   const [intPart, decPart] = formatBalance(amount).split(',');
-  return { value: intPart ?? '0', sub: `,${decPart ?? '00'} €` };
+  return { value: intPart ?? '0', sub: `,${decPart ?? '00'}${NBSP}€` };
 }
 
 export interface KpiDelta {
@@ -48,13 +49,13 @@ export function kpiDelta(
   if (previous === 0) return undefined;
   const pct = ((current - previous) / Math.abs(previous)) * 100;
   const rose = current >= previous;
-  const sign = rose ? '+' : '−';
+  const sign = rose ? '+' : MINUS;
   const magnitude = Math.abs(pct).toLocaleString('fr-FR', {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   });
   const good = higherIsBetter ? rose : !rose;
-  return { delta: `${sign} ${magnitude} %`, deltaDir: good ? 'up' : 'down' };
+  return { delta: `${sign}${NBSP}${magnitude}${NBSP}%`, deltaDir: good ? 'up' : 'down' };
 }
 
 /** Normalize y so the largest value sits near the top of the box (small y). */

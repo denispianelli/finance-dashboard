@@ -3,7 +3,7 @@ import type { NetWorth } from '@shared/types/dashboard';
 import { ChartContainer, type ChartConfig } from '../ui/chart';
 import { Overline } from '../ui/overline';
 import { accountComposition } from '../../lib/reports';
-import { formatBalance } from '../../lib/dashboardMap';
+import { formatEuro } from '../../lib/euro';
 
 const PALETTE = ['var(--sage)', 'var(--brass)', '#8D7DC4', 'var(--coral)', '#6FA8C7'];
 const config = {} satisfies ChartConfig;
@@ -47,7 +47,7 @@ export function NetWorthDonut({ netWorth }: NetWorthDonutProps) {
           </ChartContainer>
           <div className="min-w-0 flex-1">
             <div className="font-serif text-[22px] italic leading-none tracking-[-0.02em] text-paper">
-              {formatBalance(netWorth?.total ?? 0)} €
+              {formatEuro(netWorth?.total ?? 0)}
             </div>
             <ul className="mt-3 flex flex-col gap-1.5">
               {slices.map((s, i) => (
@@ -58,7 +58,7 @@ export function NetWorthDonut({ netWorth }: NetWorthDonutProps) {
                   />
                   <span className="truncate text-paper-soft">{s.name}</span>
                   <span className="ml-auto tabular-nums text-paper-mute">
-                    {formatBalance(s.value)} €
+                    {formatEuro(s.value)}
                   </span>
                 </li>
               ))}

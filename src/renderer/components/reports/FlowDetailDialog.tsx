@@ -1,6 +1,6 @@
 import type { DashboardTransaction } from '@shared/types/dashboard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
-import { formatBalance } from '../../lib/dashboardMap';
+import { formatEuro, formatSignedEuro } from '../../lib/euro';
 
 export interface FlowDetailDialogProps {
   open: boolean;
@@ -39,8 +39,7 @@ export function FlowDetailDialog({
                     className="whitespace-nowrap py-1.5 pl-2 text-right tabular-nums"
                     style={{ color: t.amount >= 0 ? 'var(--sage)' : 'var(--coral)' }}
                   >
-                    {t.amount >= 0 ? '+ ' : '− '}
-                    {formatBalance(Math.abs(t.amount))} €
+                    {formatSignedEuro(t.amount)}
                   </td>
                 </tr>
               ))}
@@ -49,7 +48,7 @@ export function FlowDetailDialog({
         </div>
         <div className="flex justify-between border-t border-line-2 pt-2 font-sans text-[13px]">
           <span className="text-paper-mute">Total</span>
-          <span className="font-medium tabular-nums text-paper">{formatBalance(total)} €</span>
+          <span className="font-medium tabular-nums text-paper">{formatEuro(total)}</span>
         </div>
       </DialogContent>
     </Dialog>

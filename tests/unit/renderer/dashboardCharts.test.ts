@@ -41,10 +41,12 @@ describe('monthLabelFr', () => {
 
 describe('splitEuro', () => {
   it('splits the integer part from the decimals + symbol', () => {
-    expect(splitEuro(1487.32)).toEqual({ value: '1 487', sub: ',32 €' });
+    const r = splitEuro(1487.32);
+    expect(r.value.replace(/\s/g, ' ')).toBe('1 487');
+    expect(r.sub.replace(/\s/g, ' ')).toBe(',32 €');
   });
   it('handles whole amounts', () => {
-    expect(splitEuro(0)).toEqual({ value: '0', sub: ',00 €' });
+    expect(splitEuro(0).sub.replace(/\s/g, ' ')).toBe(',00 €');
   });
 });
 
@@ -53,13 +55,17 @@ describe('kpiDelta', () => {
     expect(kpiDelta(100, 0, true)).toBeUndefined();
   });
   it('colors a rise green when higher is better (income)', () => {
-    expect(kpiDelta(110, 100, true)).toEqual({ delta: '+ 10,0 %', deltaDir: 'up' });
+    const d = kpiDelta(110, 100, true);
+    expect(d?.delta.replace(/\s/g, ' ')).toBe('+ 10,0 %');
+    expect(d?.deltaDir).toBe('up');
   });
   it('colors a rise red when higher is worse (expenses)', () => {
-    expect(kpiDelta(110, 100, false)).toEqual({ delta: '+ 10,0 %', deltaDir: 'down' });
+    const d = kpiDelta(110, 100, false);
+    expect(d?.delta.replace(/\s/g, ' ')).toBe('+ 10,0 %');
+    expect(d?.deltaDir).toBe('down');
   });
   it('uses a minus sign for a decrease', () => {
-    expect(kpiDelta(90, 100, true)?.delta).toBe('− 10,0 %');
+    expect(kpiDelta(90, 100, true)?.delta.replace(/\s/g, ' ')).toBe('− 10,0 %');
   });
 });
 

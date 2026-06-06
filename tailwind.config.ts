@@ -6,6 +6,17 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
+        // Map `font-sans` to Geist so labelled elements match the Geist body
+        // font instead of falling back to the system stack (mirrors --font-sans).
+        sans: [
+          '"Geist Sans"',
+          'ui-sans-serif',
+          'system-ui',
+          '-apple-system',
+          '"Segoe UI"',
+          'Roboto',
+          'sans-serif',
+        ],
         serif: ['"Instrument Serif"', 'Cambria', '"Times New Roman"', 'serif'],
         mono: ['"Geist Mono"', 'ui-monospace', 'Menlo', 'Consolas', 'monospace'],
       },

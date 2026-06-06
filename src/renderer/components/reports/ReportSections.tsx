@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { DashboardTransaction } from '@shared/types/dashboard';
 import type { RecurringReport } from '@shared/types/recurring';
 import { Overline } from '../ui/overline';
-import { formatBalance } from '../../lib/dashboardMap';
+import { formatEuro, formatSignedEuro } from '../../lib/euro';
 import { monthLabelFr } from '../../lib/dashboardCharts';
 import type { CategoryShare } from '../../lib/reports';
 
@@ -27,11 +27,11 @@ function Empty({ children }: { children: ReactNode }) {
 }
 
 function euro(n: number): string {
-  return `${formatBalance(n)} €`;
+  return formatEuro(n);
 }
 
 function signedEuro(n: number): string {
-  return `${n >= 0 ? '+ ' : '− '}${formatBalance(Math.abs(n))} €`;
+  return formatSignedEuro(n);
 }
 
 function dayLabel(date: string): string {
