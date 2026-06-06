@@ -6,6 +6,13 @@ export interface CategoryShare {
   total: number;
 }
 
+/** A donut slice: a category's share of income or expenses, with its colour. */
+export interface DonutSlice {
+  name: string;
+  value: number;
+  color: string;
+}
+
 /** A specific report period: a whole year (`value` = `yyyy`) or a month (`yyyy-mm`). */
 export interface ReportPeriod {
   granularity: 'year' | 'month';
@@ -172,6 +179,33 @@ export function topCategories(txns: DashboardTransaction[], limit = 5): Category
     .map(([name, total]) => ({ name, total }))
     .sort((a, b) => b.total - a.total)
     .slice(0, limit);
+}
+
+/** Income (`'in'`) or expense (`'out'`) broken down by category, as donut slices
+ *  (magnitudes, largest first). Transfers and refunds are excluded; uncategorised
+ *  flows fall under « Non catégorisé ». Categories beyond `limit` collapse into
+ *  « Autres » so the donut stays readable. */
+export function categoryBreakdown(
+  txns: DashboardTransaction[],
+  sign: 'in' | 'out',
+  limit = 6,
+): DonutSlice[] {
+  const NEUTRAL = '#6E6E78';
+  const map = new Map<string, { value: number; color: string }>();
+  for (const t of txns) {
+    if (isTransferTx(t) || isRefundTx(t)) continue;
+    if (sign === 'in' ? t.amount <= 0 : t.amount >= 0) continue;
+    const name = t.categoryName ?? 'Non catégorisé';
+    const entry = map.get(name);
+    if (entry) entry.value += Math.abs(t.amount);
+    else map.set(name, { value: Math.abs(t.amount), color: t.categoryColor ?? NEUTRAL });
+  }
+  const all = [...map.entries()]
+    .map(([name, v]) => ({ name, value: v.value, color: v.color }))
+    .sort((a, b) => b.value - a.value);
+  if (all.length <= limit) return all;
+  const rest = all.slice(limit).reduce((s, x) => s + x.value, 0);
+  return [...all.slice(0, limit), { name: 'Autres', value: rest, color: NEUTRAL }];
 }
 
 /** Savings rate over a cash-flow series: net / income, as a 0-100 percentage.

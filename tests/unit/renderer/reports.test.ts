@@ -13,6 +13,7 @@ import {
   previousPeriod,
   periodVerdict,
   accountComposition,
+  categoryBreakdown,
 } from '@renderer/lib/reports';
 
 function tx(p: Partial<DashboardTransaction>): DashboardTransaction {
@@ -161,6 +162,36 @@ describe('periodTotals', () => {
       tx({ amount: 250, categoryId: 'cat-remboursement' }),
     ];
     expect(periodTotals(txns)).toEqual({ income: 1000, expense: -250, net: 750 });
+  });
+});
+
+describe('categoryBreakdown', () => {
+  it('groups income by category, excluding transfers/refunds and folding uncategorised', () => {
+    const txns = [
+      tx({ amount: 2000, categoryName: 'Salaire', categoryColor: '#0a0' }),
+      tx({ amount: 500, categoryName: 'Salaire', categoryColor: '#0a0' }),
+      tx({ amount: 300, categoryName: null, categoryColor: null }),
+      tx({ amount: -800, categoryName: 'Loyer' }), // expense — ignored for 'in'
+      tx({ amount: 400, categoryId: 'cat-transferts' }), // transfer — ignored
+      tx({ amount: 250, categoryId: 'cat-remboursement' }), // refund — ignored
+    ];
+    expect(categoryBreakdown(txns, 'in')).toEqual([
+      { name: 'Salaire', value: 2500, color: '#0a0' },
+      { name: 'Non catégorisé', value: 300, color: '#6E6E78' },
+    ]);
+  });
+
+  it('groups expenses by magnitude, largest first', () => {
+    const txns = [
+      tx({ amount: -800, categoryName: 'Loyer', categoryColor: '#a00' }),
+      tx({ amount: -120, categoryName: 'Courses', categoryColor: '#0a0' }),
+      tx({ amount: -30, categoryName: 'Courses', categoryColor: '#0a0' }),
+      tx({ amount: 2000, categoryName: 'Salaire' }), // income — ignored for 'out'
+    ];
+    expect(categoryBreakdown(txns, 'out')).toEqual([
+      { name: 'Loyer', value: 800, color: '#a00' },
+      { name: 'Courses', value: 150, color: '#0a0' },
+    ]);
   });
 });
 

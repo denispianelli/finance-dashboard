@@ -3,17 +3,14 @@ import { PeriodPicker } from '../components/reports/PeriodPicker';
 import { VerdictRow, type VerdictKind } from '../components/reports/VerdictRow';
 import { CashflowBarChart } from '../components/reports/CashflowBarChart';
 import { NetWorthDonut } from '../components/reports/NetWorthDonut';
+import { CategoryDonut } from '../components/reports/CategoryDonut';
 import { FlowDetailDialog } from '../components/reports/FlowDetailDialog';
-import {
-  TopCategoriesCard,
-  RecurringCard,
-  BiggestMovementsCard,
-} from '../components/reports/ReportSections';
+import { RecurringCard, BiggestMovementsCard } from '../components/reports/ReportSections';
 import { useCashflow } from '../hooks/useCashflow';
 import { useReports } from '../hooks/useReports';
 import {
-  topCategories,
   biggestMovements,
+  categoryBreakdown,
   availablePeriods,
   monthlyNetForYear,
   dailyCumulativeNet,
@@ -95,14 +92,28 @@ export function ReportsPage() {
       <CashflowBarChart data={chartData} title={chartTitle} />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <NetWorthDonut netWorth={netWorth} />
-        <TopCategoriesCard categories={topCategories(scoped)} />
+        <CategoryDonut
+          overline="— II"
+          title="Entrées par catégorie"
+          slices={categoryBreakdown(scoped, 'in')}
+          totalColor="var(--sage)"
+          emptyHint="Aucune entrée sur la période."
+        />
+        <CategoryDonut
+          overline="— III"
+          title="Sorties par catégorie"
+          slices={categoryBreakdown(scoped, 'out')}
+          totalColor="var(--coral)"
+          emptyHint="Aucune dépense sur la période."
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
+        <NetWorthDonut netWorth={netWorth} />
         <RecurringCard recurring={recurring} />
-        <BiggestMovementsCard movements={biggestMovements(scoped)} />
       </div>
+
+      <BiggestMovementsCard movements={biggestMovements(scoped)} />
     </div>
   );
 }
