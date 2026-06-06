@@ -35,6 +35,7 @@ export function CategoryPicker({ categories, current, onSelect, onCreate }: Cate
   const [creating, setCreating] = useState(false);
   const [pos, setPos] = useState<MenuPos | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   function openMenu() {
     const r = btnRef.current?.getBoundingClientRect();
@@ -53,17 +54,23 @@ export function CategoryPicker({ categories, current, onSelect, onCreate }: Cate
   }
 
   // Close on scroll / resize rather than chase the trigger — the list scrolls
-  // underneath and a detached menu would drift out of alignment.
+  // underneath and a detached menu would drift out of alignment. But ignore
+  // scrolls that happen *inside* the menu's own category list.
   useEffect(() => {
     if (!open) return;
-    const onChange = () => {
+    const onScroll = (e: Event) => {
+      const target = e.target;
+      if (target instanceof Node && menuRef.current?.contains(target)) return;
       close();
     };
-    window.addEventListener('scroll', onChange, true);
-    window.addEventListener('resize', onChange);
+    const onResize = () => {
+      close();
+    };
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onResize);
     return () => {
-      window.removeEventListener('scroll', onChange, true);
-      window.removeEventListener('resize', onChange);
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onResize);
     };
   }, [open]);
 
@@ -99,6 +106,7 @@ export function CategoryPicker({ categories, current, onSelect, onCreate }: Cate
           <>
             <div className="fixed inset-0 z-[100]" onClick={close} aria-hidden />
             <div
+              ref={menuRef}
               style={{
                 position: 'fixed',
                 left: pos.left,
