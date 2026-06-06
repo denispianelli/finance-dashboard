@@ -91,7 +91,7 @@ describe('ReportsPage', () => {
   it('renders the net worth donut, top categories, recurring and biggest movements', async () => {
     render(<ReportsPage />);
     await waitFor(() => {
-      expect(screen.getByText('Patrimoine')).toBeTruthy();
+      expect(screen.getByText(/Patrimoine/)).toBeTruthy();
     });
     expect(screen.getByText('Compte A')).toBeTruthy();
     expect(screen.getByText('Courses')).toBeTruthy();

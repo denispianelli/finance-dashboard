@@ -5,7 +5,8 @@ import { Overline } from '../ui/overline';
 import { accountComposition } from '../../lib/reports';
 import { formatEuro } from '../../lib/euro';
 
-const PALETTE = ['var(--sage)', 'var(--brass)', '#8D7DC4', 'var(--coral)', '#6FA8C7'];
+// On-palette only: sage / brass / coral plus category-swatch tokens (drift #7).
+const PALETTE = ['var(--sage)', 'var(--brass)', 'var(--cat-11)', 'var(--coral)', 'var(--cat-6)'];
 const config = {} satisfies ChartConfig;
 
 export interface NetWorthDonutProps {
@@ -19,8 +20,10 @@ export function NetWorthDonut({ netWorth }: NetWorthDonutProps) {
   return (
     <div className="flex flex-col gap-3.5 rounded-lg border border-line-2 bg-ink-2 px-[22px] pb-4 pt-5">
       <div className="flex items-center gap-3.5">
-        <Overline>— II</Overline>
-        <span className="font-sans text-sm font-medium tracking-[-0.012em]">Patrimoine</span>
+        <Overline>— IV</Overline>
+        <span className="font-sans text-sm font-medium tracking-[-0.012em]">
+          Patrimoine · tous comptes
+        </span>
         <span className="ml-auto font-sans text-[11px] text-paper-mute">actuel</span>
       </div>
       {slices.length === 0 ? (

@@ -70,7 +70,7 @@ export function TopCategoriesCard({ categories }: { categories: CategoryShare[] 
 export function RecurringCard({ recurring }: { recurring: RecurringReport | null }) {
   const subs = recurring?.subscriptions ?? [];
   return (
-    <Section mark="— IV" title="Abonnements & récurrents">
+    <Section mark="— V" title="Abonnements & récurrents">
       {subs.length === 0 ? (
         <Empty>Aucun abonnement détecté.</Empty>
       ) : (
@@ -105,7 +105,7 @@ export function RecurringCard({ recurring }: { recurring: RecurringReport | null
 
 export function BiggestMovementsCard({ movements }: { movements: DashboardTransaction[] }) {
   return (
-    <Section mark="— V" title="Plus gros mouvements">
+    <Section mark="— VI" title="Plus gros mouvements">
       {movements.length === 0 ? (
         <Empty>Aucun mouvement.</Empty>
       ) : (

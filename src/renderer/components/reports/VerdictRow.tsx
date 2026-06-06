@@ -28,9 +28,15 @@ function Pastille({
 }) {
   const content = (
     <>
-      <Label>{label}</Label>
+      <div className="flex items-center gap-2">
+        <span
+          className="h-1.5 w-1.5 shrink-0 rounded-full"
+          style={{ background: color ?? 'var(--paper)' }}
+        />
+        <Label>{label}</Label>
+      </div>
       <span
-        className="font-serif text-[28px] italic leading-none tracking-[-0.02em]"
+        className="whitespace-nowrap font-serif text-[34px] italic leading-none tracking-[-0.02em] [font-variant-numeric:lining-nums_tabular-nums]"
         style={{ color: color ?? 'var(--paper)' }}
       >
         {value}
@@ -38,7 +44,7 @@ function Pastille({
       {sub !== undefined && <span className="font-sans text-[11px] text-paper-mute">{sub}</span>}
     </>
   );
-  const base = 'flex flex-1 flex-col gap-2 rounded-lg border border-line-2 bg-ink-2 px-5 py-[18px]';
+  const base = 'flex flex-1 flex-col gap-3 rounded-lg border border-line-2 bg-ink-2 px-[22px] py-5';
   if (onClick === undefined) return <div className={base}>{content}</div>;
   return (
     <button
