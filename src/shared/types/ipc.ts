@@ -141,6 +141,10 @@ export interface IpcContract {
     payload: { transaction: DeletedTransactionSnapshot };
     response: { ok: true };
   };
+  'transactions:setTransfer': {
+    payload: { transactionId: string; isTransfer: boolean };
+    response: { ok: true };
+  };
   'banks:learn': { payload: LearnBankInput; response: LearnBankResponse };
   'recurring:list': { payload: Record<string, never>; response: RecurringReport };
 }
