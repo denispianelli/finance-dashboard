@@ -3,13 +3,16 @@ import type { Account } from '@renderer/components/dashboard/AccountTabs';
 import type { TxRow } from '@renderer/components/dashboard/TxTable';
 import type { MoneyKind } from '@renderer/components/ui/money';
 import { isTransferTx } from './filterTransactions';
+import { formatAmount } from './euro';
 
 /** Neutral dot color for uncategorized transactions. */
 const NEUTRAL_CAT_COLOR = '#6E6E78';
 
-/** Amount with French grouping and 2 decimals, no currency symbol (the UI adds €). */
+/** Amount with French grouping and 2 decimals, no currency symbol (the UI adds €).
+ *  Thin alias over the shared {@link formatAmount} so amounts format identically
+ *  everywhere; prefer `formatEuro`/`formatSignedEuro` when you need the symbol. */
 export function formatBalance(amount: number): string {
-  return amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return formatAmount(amount);
 }
 
 /** Parse a French-formatted amount ("-90,5" / "-90.5") to a number, or null. */

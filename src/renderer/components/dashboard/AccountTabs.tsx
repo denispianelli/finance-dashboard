@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
 import { cn } from '@renderer/lib/utils';
+import { NBSP } from '@renderer/lib/euro';
 
 export interface Account {
   id: string;
@@ -56,7 +57,7 @@ export function AccountTabs({
                 {a.name}
               </span>
               <span className="truncate font-mono text-base font-medium tabular-nums text-paper">
-                {a.balance === '—' ? '—' : `${a.balance} €`}
+                {a.balance === '—' ? '—' : `${a.balance}${NBSP}€`}
               </span>
               <span className="truncate font-sans text-[9px] tracking-[0.06em] text-paper-dim">
                 {a.bank}

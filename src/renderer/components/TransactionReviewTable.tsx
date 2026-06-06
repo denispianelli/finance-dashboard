@@ -1,5 +1,6 @@
 import type { ReviewTransaction } from '@shared/types/import';
 import { Checkbox } from './ui/checkbox';
+import { formatAmount, MINUS } from '../lib/euro';
 
 interface TransactionReviewTableProps {
   transactions: ReviewTransaction[];
@@ -61,10 +62,7 @@ export function TransactionReviewTable({
                 className="px-3 py-2 text-right tabular-nums"
                 style={{ color: tx.amount < 0 ? 'hsl(var(--coral))' : 'hsl(var(--sage))' }}
               >
-                {tx.amount.toLocaleString('fr-FR', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
+                {`${tx.amount < 0 ? MINUS : ''}${formatAmount(Math.abs(tx.amount))}`}
               </td>
               <td className="px-3 py-2 text-center">
                 {tx.isDuplicate ? (

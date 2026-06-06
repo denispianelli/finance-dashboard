@@ -140,6 +140,7 @@ describe('TransactionReviewTable', () => {
         onToggleAll={vi.fn()}
       />,
     );
-    expect(screen.getByText(/-42[,.]50/)).toBeInTheDocument();
+    // True minus U+2212 (never a hyphen), with French decimals.
+    expect(screen.getByText((t) => t.includes('−') && /42[,.]50/.test(t))).toBeInTheDocument();
   });
 });

@@ -1,6 +1,6 @@
 import type { PeriodVerdict } from '../../lib/reports';
 import { Label } from '../ui/overline';
-import { formatBalance } from '../../lib/dashboardMap';
+import { formatEuro, formatSignedEuro } from '../../lib/euro';
 import { cn } from '../../lib/utils';
 
 export type VerdictKind = 'income' | 'expense' | 'result';
@@ -54,7 +54,6 @@ function Pastille({
 
 /** The hero: three pastilles — money in, money out, and the signed result (the verdict). */
 export function VerdictRow({ verdict, periodLabel, onSelect }: VerdictRowProps) {
-  const sign = verdict.net >= 0 ? '+ ' : '− ';
   const resultColor = verdict.positive ? 'var(--sage)' : 'var(--coral)';
   const bits = [verdict.positive ? 'positif' : 'négatif'];
   if (verdict.deltaPct !== null) {
@@ -68,7 +67,7 @@ export function VerdictRow({ verdict, periodLabel, onSelect }: VerdictRowProps) 
     <div className="flex flex-col gap-3 sm:flex-row">
       <Pastille
         label="Entrées"
-        value={`${formatBalance(verdict.income)} €`}
+        value={formatEuro(verdict.income)}
         color="var(--sage)"
         sub={periodLabel}
         onClick={
@@ -81,7 +80,7 @@ export function VerdictRow({ verdict, periodLabel, onSelect }: VerdictRowProps) 
       />
       <Pastille
         label="Sorties"
-        value={`${formatBalance(Math.abs(verdict.expense))} €`}
+        value={formatEuro(Math.abs(verdict.expense))}
         color="var(--coral)"
         sub={periodLabel}
         onClick={
@@ -94,7 +93,7 @@ export function VerdictRow({ verdict, periodLabel, onSelect }: VerdictRowProps) 
       />
       <Pastille
         label="Résultat"
-        value={`${sign}${formatBalance(Math.abs(verdict.net))} €`}
+        value={formatSignedEuro(verdict.net)}
         color={resultColor}
         sub={bits.join(' · ')}
         onClick={

@@ -2,7 +2,7 @@ import { Cell, Pie, PieChart } from 'recharts';
 import type { DonutSlice } from '../../lib/reports';
 import { ChartContainer, type ChartConfig } from '../ui/chart';
 import { Overline } from '../ui/overline';
-import { formatBalance } from '../../lib/dashboardMap';
+import { formatEuro } from '../../lib/euro';
 
 const config = {} satisfies ChartConfig;
 
@@ -58,7 +58,7 @@ export function CategoryDonut({
               className="font-serif text-[22px] italic leading-none tracking-[-0.02em]"
               style={{ color: totalColor }}
             >
-              {formatBalance(total)} €
+              {formatEuro(total)}
             </div>
             <ul className="mt-3 flex flex-col gap-1.5">
               {slices.map((s) => (
@@ -66,7 +66,7 @@ export function CategoryDonut({
                   <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: s.color }} />
                   <span className="truncate text-paper-soft">{s.name}</span>
                   <span className="ml-auto tabular-nums text-paper-mute">
-                    {formatBalance(s.value)} €
+                    {formatEuro(s.value)}
                   </span>
                 </li>
               ))}
