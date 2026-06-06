@@ -26,6 +26,7 @@ import {
   handleTransactionsSetCategory,
 } from './handlers/categories';
 import { handleBanksLearn } from './handlers/learnBank';
+import { handleRecurringList } from './handlers/recurringList';
 import { handleImportResolveAccount } from './handlers/importResolveAccount';
 import {
   handleTransactionsUpdate,
@@ -80,5 +81,6 @@ export function registerAllHandlers(): void {
   register(CHANNELS.transactionsDelete, handleTransactionsDelete);
   register(CHANNELS.transactionsRestore, handleTransactionsRestore);
   register(CHANNELS.banksLearn, handleBanksLearn);
+  register(CHANNELS.recurringList, () => handleRecurringList());
   register(CHANNELS.importResolveAccount, handleImportResolveAccount);
 }
