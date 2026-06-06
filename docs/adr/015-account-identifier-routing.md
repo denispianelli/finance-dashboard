@@ -1,4 +1,4 @@
-# ADR-013 — Learned account routing for multi-file import
+# ADR-015 — Learned account routing for multi-file import
 
 - **Status** : Accepted
 - **Date** : 2026-06-03
