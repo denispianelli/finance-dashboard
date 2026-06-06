@@ -11,6 +11,7 @@ import { handleDashboardGetAccounts } from './handlers/dashboardGetAccounts';
 import { handleDashboardGetTransactions } from './handlers/dashboardGetTransactions';
 import { handleDashboardAggregate } from './handlers/dashboardAggregate';
 import { handleDashboardMetrics } from './handlers/dashboardMetrics';
+import { handleDashboardCashflow, handleDashboardNetWorth } from './handlers/dashboardConsolidated';
 import {
   handleAccountsCreate,
   handleAccountsUpdate,
@@ -63,6 +64,8 @@ export function registerAllHandlers(): void {
   register(CHANNELS.dashboardGetTransactions, handleDashboardGetTransactions);
   register(CHANNELS.dashboardAggregate, handleDashboardAggregate);
   register(CHANNELS.dashboardMetrics, handleDashboardMetrics);
+  register(CHANNELS.dashboardCashflow, handleDashboardCashflow);
+  register(CHANNELS.dashboardNetWorth, () => handleDashboardNetWorth());
   register(CHANNELS.accountsCreate, handleAccountsCreate);
   register(CHANNELS.accountsUpdate, handleAccountsUpdate);
   register(CHANNELS.accountsDelete, handleAccountsDelete);

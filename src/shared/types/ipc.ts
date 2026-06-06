@@ -7,6 +7,9 @@ import type {
   GetTransactionsQuery,
   AggregateQuery,
   DashboardMetrics,
+  CashflowGranularity,
+  CashflowPoint,
+  NetWorth,
 } from './dashboard';
 import type { AggregationBucket } from './taxonomy';
 import type {
@@ -110,6 +113,11 @@ export interface IpcContract {
   };
   'dashboard:aggregate': { payload: AggregateQuery; response: { buckets: AggregationBucket[] } };
   'dashboard:metrics': { payload: { accountId: string }; response: DashboardMetrics };
+  'dashboard:cashflow': {
+    payload: { granularity: CashflowGranularity };
+    response: { series: CashflowPoint[] };
+  };
+  'dashboard:netWorth': { payload: Record<string, never>; response: NetWorth };
   'accounts:create': { payload: CreateAccountInput; response: { account: AccountSummary } };
   'accounts:update': { payload: UpdateAccountInput; response: { account: AccountSummary } };
   'accounts:delete': { payload: { id: string }; response: { deletedTransactions: number } };

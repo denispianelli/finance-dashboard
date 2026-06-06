@@ -1,15 +1,8 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { DashboardMetrics, MonthPoint } from '@shared/types/dashboard';
+import { NOT_TRANSFER } from './transferFilter';
 
 const MAX_SERIES_MONTHS = 12;
-
-/** The internal-transfers category (seeded). Used to keep transfers out of the
- *  income/expense figures — they move your own money, they aren't earning/spending. */
-const TRANSFER_CATEGORY = 'cat-transferts';
-
-/** A transaction that is NOT an internal transfer. Written explicitly (rather
- *  than NOT(...)) to avoid SQLite three-valued logic when category_id is NULL. */
-const NOT_TRANSFER = `is_internal_transfer = 0 AND (category_id IS NULL OR category_id != '${TRANSFER_CATEGORY}')`;
 
 interface MonthRow {
   month: string;
