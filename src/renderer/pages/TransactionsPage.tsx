@@ -78,6 +78,7 @@ export function TransactionsPage() {
     createCategory,
     updateTransaction,
     deleteTransaction,
+    setTransfer,
   } = useDashboard(refreshToken, { transactionLimit: FULL_HISTORY_LIMIT });
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -241,6 +242,9 @@ export function TransactionsPage() {
                       }}
                       onDelete={(id) => {
                         void deleteTransaction(id);
+                      }}
+                      onSetTransfer={(id, next) => {
+                        void setTransfer(id, next);
                       }}
                     />
                   </div>

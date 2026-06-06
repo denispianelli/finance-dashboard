@@ -62,6 +62,7 @@ export function toTxRow(tx: DashboardTransaction): TxRow {
     catName: tx.categoryName ?? 'Non catégorisé',
     amount: tx.amount,
     amountKind: txKind(tx),
+    isTransfer: tx.isInternalTransfer,
     edited: tx.editedAt !== null,
     originalHint: originalHint(tx),
     editDate: tx.date,

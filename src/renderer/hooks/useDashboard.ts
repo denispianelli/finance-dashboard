@@ -30,6 +30,8 @@ export interface UseDashboard {
   updateTransaction: (input: UpdateTransactionInput) => Promise<void>;
   /** Delete a transaction; offers an undo toast that restores it. */
   deleteTransaction: (transactionId: string) => Promise<void>;
+  /** Mark / un-mark a transaction as an internal transfer (excludes it from income/expense). */
+  setTransfer: (transactionId: string, isTransfer: boolean) => Promise<void>;
 }
 
 export interface UseDashboardOptions {
@@ -175,6 +177,16 @@ export function useDashboard(
     }
   }, []);
 
+  const setTransfer = useCallback(async (transactionId: string, isTransfer: boolean) => {
+    try {
+      await ipc.invoke('transactions:setTransfer', { transactionId, isTransfer });
+      setTick((t) => t + 1);
+      toast.success(isTransfer ? 'Marqué comme transfert' : 'Transfert retiré');
+    } catch (e) {
+      toast.error(`Action impossible : ${errMessage(e)}`);
+    }
+  }, []);
+
   return {
     accounts,
     transactions,
@@ -186,5 +198,6 @@ export function useDashboard(
     createCategory,
     updateTransaction,
     deleteTransaction,
+    setTransfer,
   };
 }

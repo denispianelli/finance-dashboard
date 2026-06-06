@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pencil, Trash2, Check, X } from 'lucide-react';
+import { Pencil, Trash2, Check, X, ArrowLeftRight } from 'lucide-react';
 import type { CategoryDTO, CreateCategoryInput } from '@shared/types/category';
 import { cn } from '@renderer/lib/utils';
 import { CategoryIcon } from '@renderer/lib/categoryIcon';
@@ -17,6 +17,8 @@ export interface TxRow {
   catName: string;
   amount: number;
   amountKind: MoneyKind;
+  /** True when the row is currently flagged an internal transfer. */
+  isTransfer: boolean;
   /** True when the row was edited by hand (shows the "modifié" marker). */
   edited: boolean;
   /** Tooltip text with the original extracted figures, or null. */
@@ -35,6 +37,8 @@ export interface TxTableProps {
   onCreateCategory?: (input: CreateCategoryInput) => Promise<CategoryDTO>;
   onStartEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
+  /** Mark / un-mark a row as an internal transfer (excludes it from income/expense). */
+  onSetTransfer?: (id: string, next: boolean) => void;
 }
 
 const HEAD =
@@ -46,8 +50,8 @@ const CELL = 'py-[11px]';
  *  Transactions page virtualize rows as positionable boxes. */
 export const TX_GRID =
   'grid items-center gap-x-3 xl:gap-x-3.5 ' +
-  'grid-cols-[72px_24px_1fr_140px_96px_52px] ' +
-  'xl:grid-cols-[84px_28px_1fr_180px_110px_56px]';
+  'grid-cols-[72px_24px_1fr_140px_96px_76px] ' +
+  'xl:grid-cols-[84px_28px_1fr_180px_110px_84px]';
 
 export function TxTableHeader() {
   return (
@@ -75,6 +79,7 @@ export interface TxTableRowProps {
   ) => void;
   onCancelEdit?: () => void;
   onDelete?: (transactionId: string) => void;
+  onSetTransfer?: (id: string, next: boolean) => void;
 }
 
 const INPUT =
@@ -91,6 +96,7 @@ export function TxTableRow({
   onSaveEdit,
   onCancelEdit,
   onDelete,
+  onSetTransfer,
 }: TxTableRowProps) {
   if (editing) {
     return <TxTableRowEdit row={t} onSaveEdit={onSaveEdit} onCancelEdit={onCancelEdit} />;
@@ -148,6 +154,19 @@ export function TxTableRow({
       </span>
       {onStartEdit && onDelete ? (
         <span className={cn(CELL, 'flex justify-end gap-0.5 opacity-0 group-hover:opacity-100')}>
+          {onSetTransfer && (
+            <button
+              type="button"
+              aria-label={t.isTransfer ? 'Ne plus marquer transfert' : 'Marquer comme transfert'}
+              title={t.isTransfer ? 'Ne plus marquer transfert' : 'Marquer comme transfert'}
+              className={cn(ICON_BTN, t.isTransfer && 'text-brass')}
+              onClick={() => {
+                onSetTransfer(t.id, !t.isTransfer);
+              }}
+            >
+              <ArrowLeftRight size={13} strokeWidth={1.8} />
+            </button>
+          )}
           <button
             type="button"
             aria-label="Modifier"
@@ -268,6 +287,7 @@ export function TxTable({
   onCreateCategory,
   onStartEdit,
   onDelete,
+  onSetTransfer,
 }: TxTableProps) {
   return (
     <div>
@@ -281,6 +301,7 @@ export function TxTable({
           onCreateCategory={onCreateCategory}
           onStartEdit={onStartEdit}
           onDelete={onDelete}
+          onSetTransfer={onSetTransfer}
         />
       ))}
     </div>
