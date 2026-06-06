@@ -12,6 +12,8 @@ export const CHANNELS = {
   dashboardGetTransactions: 'dashboard:getTransactions',
   dashboardAggregate: 'dashboard:aggregate',
   dashboardMetrics: 'dashboard:metrics',
+  dashboardCashflow: 'dashboard:cashflow',
+  dashboardNetWorth: 'dashboard:netWorth',
   accountsCreate: 'accounts:create',
   accountsUpdate: 'accounts:update',
   accountsDelete: 'accounts:delete',
