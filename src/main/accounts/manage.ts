@@ -4,6 +4,7 @@ import type {
   AccountSummary,
   CreateAccountInput,
   UpdateAccountInput,
+  SetDeclaredBalanceInput,
 } from '@shared/types/dashboard';
 import { getAccountSummaries } from '../dashboard/queries';
 
@@ -43,6 +44,27 @@ export function updateAccount(db: DatabaseSync, input: UpdateAccountInput): Acco
 
   const updated = getAccountSummaries(db).find((a) => a.id === input.id);
   if (!updated) throw new Error('updateAccount: account vanished after update');
+  return updated;
+}
+
+/**
+ * Set or clear (`balance: null`) an account's user-declared balance. Stamps the
+ * date when a value is set. Returns the refreshed summary. No network — the
+ * figure is user-entered, never fetched (ADR-002).
+ */
+export function setDeclaredBalance(
+  db: DatabaseSync,
+  input: SetDeclaredBalanceInput,
+): AccountSummary {
+  const date = input.balance === null ? null : new Date().toISOString().slice(0, 10);
+  const res = db
+    .prepare('UPDATE accounts SET declared_balance = ?, declared_balance_date = ? WHERE id = ?')
+    .run(input.balance, date, input.id);
+  if (Number(res.changes) === 0) {
+    throw new Error(`setDeclaredBalance: account ${input.id} not found`);
+  }
+  const updated = getAccountSummaries(db).find((a) => a.id === input.id);
+  if (!updated) throw new Error('setDeclaredBalance: account vanished after update');
   return updated;
 }
 

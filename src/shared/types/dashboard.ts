@@ -14,6 +14,12 @@ export interface UpdateAccountInput {
   readonly bankId: string | null;
 }
 
+/** Set (or clear, with `balance: null`) an account's user-declared balance. */
+export interface SetDeclaredBalanceInput {
+  readonly id: string;
+  readonly balance: number | null;
+}
+
 /** Where an account's balance comes from. `null` when no balance is known. */
 export type BalanceSource = 'statement' | 'declared' | null;
 
