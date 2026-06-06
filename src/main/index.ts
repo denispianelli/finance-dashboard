@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registerAllHandlers } from './ipc/register';
 import { getDb, closeDb } from './db';
+import { detectTransfers } from './transfers/detect';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -37,6 +38,13 @@ function createWindow(): void {
 
 void app.whenReady().then(() => {
   getDb();
+  // Re-pair internal transfers on startup (ADR-016) so already-imported data is
+  // corrected without needing a fresh import. Idempotent; respects user locks.
+  try {
+    detectTransfers(getDb());
+  } catch {
+    // best-effort — never block startup on this
+  }
   registerAllHandlers();
   createWindow();
   app.on('activate', () => {

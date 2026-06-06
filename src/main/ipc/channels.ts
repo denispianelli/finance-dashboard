@@ -27,5 +27,6 @@ export const CHANNELS = {
   transactionsUpdate: 'transactions:update',
   transactionsDelete: 'transactions:delete',
   transactionsRestore: 'transactions:restore',
+  transactionsSetTransfer: 'transactions:setTransfer',
   banksLearn: 'banks:learn',
 } as const satisfies Record<string, IpcChannel>;

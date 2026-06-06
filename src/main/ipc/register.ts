@@ -33,6 +33,7 @@ import {
   handleTransactionsDelete,
   handleTransactionsRestore,
 } from './handlers/transactions';
+import { handleTransactionsSetTransfer } from './handlers/transactionsSetTransfer';
 
 type Handler<C extends IpcChannel> = (
   payload: IpcPayload<C>,
@@ -80,6 +81,7 @@ export function registerAllHandlers(): void {
   register(CHANNELS.transactionsUpdate, handleTransactionsUpdate);
   register(CHANNELS.transactionsDelete, handleTransactionsDelete);
   register(CHANNELS.transactionsRestore, handleTransactionsRestore);
+  register(CHANNELS.transactionsSetTransfer, handleTransactionsSetTransfer);
   register(CHANNELS.banksLearn, handleBanksLearn);
   register(CHANNELS.recurringList, () => handleRecurringList());
   register(CHANNELS.importResolveAccount, handleImportResolveAccount);
