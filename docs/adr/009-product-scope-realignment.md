@@ -73,3 +73,28 @@ That is viable for infrequent background batch work and rules out anything inter
 - ADRs live in `docs/adr/` (this repo), not Notion as older spec text stated; corrected.
 - Any future feature is tested against the north star sentence. If it does not serve it, it is
   cut, not parked.
+
+## Amendment (2026-06-06) — single-user first, "patrimoine cashflow" clarified
+
+Implementation had drifted toward making the app generic / multi-user, which scattered effort.
+We re-anchor on a sharper execution target without changing the north star.
+
+1. **Single-user first is explicit.** The MVP serves the maintainer as the one real user.
+   **Multi-user is a non-goal for now** — not cut forever, but deferred to a decision taken
+   only once the single-user core is solid. (ADR-009 was already single-user in spirit; this
+   removes the ambiguity that let multi-user generalization creep into the code.)
+
+2. **"Patrimoine cashflow" is in scope; market valuation stays out.** §3 cut patrimoine
+   tracking _because valuation needs price feeds = network = breaks the 100%-local moat_. That
+   reasoning is about **valuation**, not about the accounts existing. Therefore: **all accounts
+   — current, joint, livret, PEA, AV — are in, tracked by cash flows plus a user-declared,
+   non-valued balance** (extends ADR-014). Still **out**, unchanged: market valuation, price
+   feeds, position/performance tracking. Net worth = sum of balances (no network, ever).
+
+3. **Current execution target.** The pillars (#71/#72/#73) are narrowed to the maintainer-MVP
+   user stories US1–US4 and a seven-analysis Reports page, built data-first (consolidation +
+   transfer exclusion → declared balance → monthly/yearly gain-loss → recurring detection →
+   Reports page). Budgets are deferred (recurring _detection_ kept, budgeting not). See
+   `docs/superpowers/specs/2026-06-06-mvp-personal-finance-design.md`.
+
+The north star sentence and the privacy invariant (ADR-002) are unchanged and still govern.
