@@ -11,6 +11,8 @@ import {
   periodTotals,
   dailyCumulativeNet,
   previousPeriod,
+  periodVerdict,
+  accountComposition,
 } from '@renderer/lib/reports';
 
 function tx(p: Partial<DashboardTransaction>): DashboardTransaction {
@@ -176,5 +178,42 @@ describe('previousPeriod', () => {
       granularity: 'month',
       value: '2023-06',
     });
+  });
+});
+
+describe('periodVerdict', () => {
+  it('reports income/spend/net, positive flag, savings rate and delta vs previous', () => {
+    const scoped = [tx({ amount: 2000 }), tx({ amount: -1500 })];
+    const prev = [tx({ amount: 1000 }), tx({ amount: -900 })]; // prev net 100
+    const v = periodVerdict(scoped, prev);
+    expect(v).toMatchObject({ income: 2000, expense: -1500, net: 500, positive: true });
+    expect(v.savingsRate).toBeCloseTo(25, 5); // 500/2000
+    expect(v.deltaPct).toBeCloseTo(400, 5); // (500-100)/100
+  });
+
+  it('flags a negative period and nulls savings/delta when there is no base', () => {
+    const v = periodVerdict([tx({ amount: 100 }), tx({ amount: -400 })], []);
+    expect(v.positive).toBe(false);
+    expect(v.net).toBe(-300);
+    expect(v.deltaPct).toBeNull(); // no previous income/net
+  });
+});
+
+describe('accountComposition', () => {
+  it('keeps positive balances as slices, dropping null/zero', () => {
+    const nw = {
+      total: 9200,
+      accounts: [
+        { accountId: 'a', name: 'Perso', balance: 1200 },
+        { accountId: 'b', name: 'Livret', balance: 8000 },
+        { accountId: 'c', name: 'Vide', balance: null },
+        { accountId: 'd', name: 'Zero', balance: 0 },
+      ],
+    };
+    expect(accountComposition(nw)).toEqual([
+      { name: 'Perso', value: 1200 },
+      { name: 'Livret', value: 8000 },
+    ]);
+    expect(accountComposition(null)).toEqual([]);
   });
 });

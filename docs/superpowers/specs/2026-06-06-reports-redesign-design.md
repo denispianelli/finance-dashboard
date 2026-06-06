@@ -16,10 +16,11 @@ layout was the chosen direction).
 
 1. **Header** — "Rapports" title on the left; the period control on the right (an **Année / Mois**
    toggle + a value `<select>` of the years/months present in the data). No lonely full-width row.
-2. **Verdict pastille** (hero, full width) — a colored circle (↑ sage if net ≥ 0, ↓ coral if < 0),
-   the big **signed net** of the period, and a line: "année/mois **positive/négative** · `+X %` vs
-   N-1 · entrées ≷ sorties". Right side: `Entrées` / `Sorties` / `épargne X %`. Folds in the old
-   savings-rate and year-vs-N-1 cards.
+2. **Verdict row** (hero, full width) — **three KPI pastilles** side by side:
+   **Entrées** (total income, sage accent), **Sorties** (total spend, coral accent), and
+   **Résultat** (net = income − spend, **colored by sign** — sage if ≥ 0, coral if < 0 — with the
+   word **positif/négatif**; sub-text `+X % vs N-1 · épargne X %`). The Résultat tile is the
+   verdict. Folds in the old savings-rate and year-vs-N-1 cards.
 3. **Mois par mois** (full width) — a **bar chart** (shadcn/Recharts), one bar per sub-period,
    **green when that sub-period's net ≥ 0, coral when < 0**. Year → 12 months; month → per-day net.
    (Replaces the area chart — bars read the per-period sign better.)
@@ -33,7 +34,7 @@ Everything except Patrimoine recomputes for the selected period; Patrimoine stay
 ## Components (renderer)
 
 - `ReportsHeader` — title + `PeriodPicker` (existing) on the right.
-- `VerdictPastille` — props from a `PeriodVerdict` value (below).
+- `VerdictRow` — three KPI pastilles (Entrées / Sorties / Résultat) from a `PeriodVerdict` value.
 - `CashflowBarChart` — Recharts `BarChart`; each bar colored by its own net sign. Replaces
   `CashflowAreaChart`.
 - `NetWorthDonut` — Recharts `PieChart` (donut) over account balances + centered/side total.

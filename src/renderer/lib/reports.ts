@@ -1,4 +1,4 @@
-import type { CashflowPoint, DashboardTransaction } from '@shared/types/dashboard';
+import type { CashflowPoint, DashboardTransaction, NetWorth } from '@shared/types/dashboard';
 
 export interface CategoryShare {
   name: string;
@@ -99,6 +99,46 @@ export function dailyCumulativeNet(txns: DashboardTransaction[], month: string):
       running += delta;
       return { label: day, net: running };
     });
+}
+
+/** The period verdict: income, spend, net (with sign), savings rate, and the
+ *  net change vs the comparable previous period. Feeds the three hero pastilles. */
+export interface PeriodVerdict {
+  income: number;
+  expense: number;
+  net: number;
+  positive: boolean;
+  savingsRate: number | null;
+  deltaPct: number | null;
+}
+
+export function periodVerdict(
+  scoped: DashboardTransaction[],
+  prev: DashboardTransaction[],
+): PeriodVerdict {
+  const t = periodTotals(scoped);
+  const prevNet = periodTotals(prev).net;
+  return {
+    income: t.income,
+    expense: t.expense,
+    net: t.net,
+    positive: t.net >= 0,
+    savingsRate: t.income > 0 ? (t.net / t.income) * 100 : null,
+    deltaPct: prevNet > 0 ? ((t.net - prevNet) / Math.abs(prevNet)) * 100 : null,
+  };
+}
+
+/** Account balances as donut slices (drops null/non-positive balances). */
+export interface CompositionSlice {
+  name: string;
+  value: number;
+}
+
+export function accountComposition(netWorth: NetWorth | null): CompositionSlice[] {
+  if (netWorth === null) return [];
+  return netWorth.accounts
+    .filter((a): a is typeof a & { balance: number } => a.balance !== null && a.balance > 0)
+    .map((a) => ({ name: a.name, value: a.balance }));
 }
 
 /** The comparable previous period: previous year, or the same month one year earlier. */
