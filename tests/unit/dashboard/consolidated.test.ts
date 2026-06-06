@@ -1,12 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { runMigrations } from '../../../src/main/db/migrate';
-import { getConsolidatedCashflow } from '../../../src/main/dashboard/consolidated';
+import { getConsolidatedCashflow, getNetWorth } from '../../../src/main/dashboard/consolidated';
 
 function freshDb(): DatabaseSync {
   const db = new DatabaseSync(':memory:');
   runMigrations(db);
   db.exec('PRAGMA foreign_keys = ON');
+  // Migrations seed a default LCL account; drop it so these tests start from a
+  // known two-account world (perso + livret).
+  db.exec('DELETE FROM accounts');
   db.prepare("INSERT INTO accounts (id, name, type) VALUES ('perso', 'Perso', 'checking')").run();
   db.prepare(
     "INSERT INTO accounts (id, name, type) VALUES ('livret', 'Livret A', 'savings')",
@@ -74,6 +77,79 @@ describe('getConsolidatedCashflow', () => {
       { period: '2025', income: 1000, expense: -400, net: 600 },
       { period: '2026', income: 2000, expense: -1500, net: 500 },
     ]);
+    db.close();
+  });
+});
+
+function seedValidatedImport(
+  db: DatabaseSync,
+  account: string,
+  closingBalance: number,
+  closingDate: string,
+): void {
+  txSeq += 1;
+  const id = `imp${String(txSeq)}`;
+  db.prepare(
+    `INSERT INTO imports
+       (id, account_id, file_hash, source_type, date_range_start, date_range_end,
+        status, closing_balance, closing_balance_date)
+     VALUES (?, ?, ?, 'ofx', ?, ?, 'validated', ?, ?)`,
+  ).run(id, account, id, closingDate, closingDate, closingBalance, closingDate);
+}
+
+describe('getNetWorth', () => {
+  it('totals 0 and lists every account as null when none is anchored', () => {
+    const db = freshDb(); // seeds perso + livret, no imports → both unanchored
+    const result = getNetWorth(db);
+    expect(result.total).toBe(0);
+    expect(result.accounts).toEqual(
+      expect.arrayContaining([
+        { accountId: 'perso', name: 'Perso', balance: null },
+        { accountId: 'livret', name: 'Livret A', balance: null },
+      ]),
+    );
+    expect(result.accounts).toHaveLength(2);
+    db.close();
+  });
+
+  it('sums anchored balances and lists each account', () => {
+    const db = freshDb();
+    seedValidatedImport(db, 'perso', 1200, '2026-04-30');
+    seedValidatedImport(db, 'livret', 8000, '2026-04-30');
+
+    const result = getNetWorth(db);
+    expect(result.total).toBe(9200);
+    expect(result.accounts).toEqual(
+      expect.arrayContaining([
+        { accountId: 'perso', name: 'Perso', balance: 1200 },
+        { accountId: 'livret', name: 'Livret A', balance: 8000 },
+      ]),
+    );
+    db.close();
+  });
+
+  it('treats an unanchored account as null balance contributing 0 to the total', () => {
+    const db = freshDb();
+    seedValidatedImport(db, 'perso', 1200, '2026-04-30');
+    // 'livret' has no validated import with a closing balance → null balance.
+
+    const result = getNetWorth(db);
+    expect(result.total).toBe(1200);
+    expect(result.accounts).toContainEqual({
+      accountId: 'livret',
+      name: 'Livret A',
+      balance: null,
+    });
+    db.close();
+  });
+});
+
+describe('getNetWorth — empty', () => {
+  it('returns total 0 and no accounts when the DB has no accounts at all', () => {
+    const db = new DatabaseSync(':memory:');
+    runMigrations(db);
+    db.exec('DELETE FROM accounts'); // drop the seeded default account
+    expect(getNetWorth(db)).toEqual({ total: 0, accounts: [] });
     db.close();
   });
 });

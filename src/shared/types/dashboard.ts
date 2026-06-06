@@ -101,3 +101,17 @@ export interface CashflowPoint {
   /** `income + expense` — the period's net gain/loss. */
   readonly net: number;
 }
+
+/** One account's contribution to net worth. `balance` is null when unanchored. */
+export interface NetWorthAccount {
+  readonly accountId: string;
+  readonly name: string;
+  readonly balance: number | null;
+}
+
+/** Consolidated net worth: total of all account balances plus the per-account breakdown. */
+export interface NetWorth {
+  /** Sum of non-null account balances. */
+  readonly total: number;
+  readonly accounts: NetWorthAccount[];
+}
