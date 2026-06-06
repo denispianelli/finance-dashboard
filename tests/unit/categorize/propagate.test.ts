@@ -72,6 +72,19 @@ describe('setTransactionCategory — propagation', () => {
     db.close();
   });
 
+  it('reclassifies the clicked row even when it was manually filed elsewhere', () => {
+    const db = freshDb();
+    const a = seed(db, 'VIREMENT M DENIS PIANELLI 03/03/25', {
+      categoryId: 'cat-abonnements',
+      locked: true,
+    });
+
+    setTransactionCategory(db, { transactionId: a, categoryId: 'cat-transferts' });
+
+    expect(categoryOf(db, a)).toBe('cat-transferts'); // the explicit click always wins
+    db.close();
+  });
+
   it('a normal category assignment touches only the one transaction', () => {
     const db = freshDb();
     const a = seed(db, 'CB MONOPRIX 10/03/25');

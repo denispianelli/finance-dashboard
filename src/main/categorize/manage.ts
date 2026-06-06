@@ -106,29 +106,37 @@ export function setTransactionCategory(db: DatabaseSync, input: SetTransactionCa
     throw new Error(`setTransactionCategory: transaction ${input.transactionId} not found`);
   }
 
-  if (PROPAGATING_CATEGORIES.has(input.categoryId)) {
-    propagateCategory(db, row.label_clean, input.categoryId);
-    return;
-  }
-
+  // The explicitly clicked row is always set — even if it was already filed
+  // under another category by hand.
   db.prepare('UPDATE transactions SET category_id = ?, user_modified = 1 WHERE id = ?').run(
     input.categoryId,
     input.transactionId,
   );
+
+  if (PROPAGATING_CATEGORIES.has(input.categoryId)) {
+    propagateCategory(db, input.transactionId, row.label_clean, input.categoryId);
+  }
 }
 
-/** Apply `categoryId` to every transaction whose label contains the stable key of
- *  `sampleLabel` (skipping rows manually filed under a *different* category), and
- *  upsert a `contains` rule so future imports inherit it. */
-function propagateCategory(db: DatabaseSync, sampleLabel: string, categoryId: string): void {
+/** Apply `categoryId` to every *other* transaction whose label contains the stable
+ *  key of `sampleLabel` (skipping rows manually filed under a different category),
+ *  and upsert a `contains` rule so future imports inherit it. The originating row
+ *  (`sourceId`) is set by the caller, unconditionally. */
+function propagateCategory(
+  db: DatabaseSync,
+  sourceId: string,
+  sampleLabel: string,
+  categoryId: string,
+): void {
   const key = stableLabelKey(sampleLabel);
 
   db.prepare(
     `UPDATE transactions
         SET category_id = ?, user_modified = 1
       WHERE INSTR(UPPER(label_clean), ?) > 0
+        AND id != ?
         AND NOT (user_modified = 1 AND category_id IS NOT NULL AND category_id != ?)`,
-  ).run(categoryId, key, categoryId);
+  ).run(categoryId, key, sourceId, categoryId);
 
   const exists = db
     .prepare(
