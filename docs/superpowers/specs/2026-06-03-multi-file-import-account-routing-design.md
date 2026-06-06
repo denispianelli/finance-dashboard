@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-03
 **Status:** Draft, pending implementation
-**Related ADR:** [ADR-013 — Learned account routing for multi-file import](../../adr/013-account-identifier-routing.md) (Proposed)
+**Related ADR:** [ADR-015 — Learned account routing for multi-file import](../../adr/015-account-identifier-routing.md) (Proposed)
 **References:** ADR-002 (privacy-first local), ADR-004 (LLM batch classifier only), ADR-006 (multi-level dedup), ADR-007 (Electron security / typed IPC), ADR-008 (OFX primary / PDF backfill, frozen identity contract), ADR-009 (north star, LLM scope), ADR-011 (two-role import), import pipeline spec (`2026-05-17-import-pipeline-backend-design.md`), import review UI spec (`2026-05-18-import-review-ui-design.md`)
 
 ---
@@ -33,7 +33,7 @@ learn-once-then-silent shape the app already uses for bank layouts.
 **Out of scope:**
 
 - Any LLM involvement in routing (ADR-009 — deterministic only).
-- IBAN ↔ OFX `ACCTID` reconciliation (ADR-013 — per-source keys).
+- IBAN ↔ OFX `ACCTID` reconciliation (ADR-015 — per-source keys).
 - A CSV importer (none exists; `unsupported_format` unchanged).
 - Editing/visualising learned routes in Settings (future; cascade-on-delete is
   enough for now).
@@ -290,7 +290,7 @@ null`); normalization idempotence (spaces/case).
 5. `useImport` queue refactor (+ tests).
 6. `ImportModal`: drop zone, ChooseAccountView, ReviewView tweaks, SummaryView
    (+ component tests).
-7. Integration test with LCL fixtures; manual smoke; ADR-013 → Accepted.
+7. Integration test with LCL fixtures; manual smoke; ADR-015 → Accepted.
 
 ## 14. Definition of Done
 
@@ -302,4 +302,4 @@ null`); normalization idempotence (spaces/case).
   outcomes.
 - Single-file import still works (N = 1).
 - Lint clean, `tsc --noEmit` clean, unit tests green, `npm run build` succeeds
-  (CLAUDE.md DoD). ADR-013 promoted to Accepted.
+  (CLAUDE.md DoD). ADR-015 promoted to Accepted.
