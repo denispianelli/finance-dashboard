@@ -86,3 +86,18 @@ export interface DashboardMetrics {
   /** Up to the last 12 months that have activity, chronological. Empty when no transactions. */
   readonly series: MonthPoint[];
 }
+
+/** Month (`yyyy-mm`) or calendar-year (`yyyy`) bucketing for consolidated cash flow. */
+export type CashflowGranularity = 'month' | 'year';
+
+/** One period of consolidated cash flow across all accounts (transfers excluded). */
+export interface CashflowPoint {
+  /** `yyyy-mm` for month granularity, `yyyy` for year. */
+  readonly period: string;
+  /** Sum of positive amounts (income) in the period. */
+  readonly income: number;
+  /** Sum of negative amounts (expenses) in the period — negative or zero. */
+  readonly expense: number;
+  /** `income + expense` — the period's net gain/loss. */
+  readonly net: number;
+}
