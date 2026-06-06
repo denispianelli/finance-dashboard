@@ -49,15 +49,15 @@ export function ChartCard({ line, area, caption }: ChartCardProps) {
         >
           <defs>
             <linearGradient id="dashFill" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#D4B062" stopOpacity="0.22" />
-              <stop offset="100%" stopColor="#D4B062" stopOpacity="0" />
+              <stop offset="0%" stopColor="var(--brass)" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="var(--brass)" stopOpacity="0" />
             </linearGradient>
           </defs>
           {[0, 22, 44, 88, 132, 176].map((y) => (
             <line key={y} x1="0" x2="600" y1={y} y2={y} stroke="var(--line-1)" strokeWidth="1" />
           ))}
           <path d={area} fill="url(#dashFill)" />
-          <polyline points={line} fill="none" stroke="#D4B062" strokeWidth="1.5" />
+          <polyline points={line} fill="none" stroke="var(--brass)" strokeWidth="1.5" />
         </svg>
       ) : (
         <div className="flex aspect-[600/220] min-h-[160px] w-full items-center justify-center text-sm text-paper-mute xl:h-[220px]">

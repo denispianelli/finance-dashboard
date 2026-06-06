@@ -29,7 +29,7 @@ export function AccountManager() {
   const [adding, setAdding] = useState(false);
 
   return (
-    <Card>
+    <Card className="max-w-[760px]">
       <CardHeader>
         <div className="flex items-center gap-3.5">
           <Overline>— Réglages</Overline>

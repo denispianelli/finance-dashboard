@@ -4,6 +4,7 @@ import {
   Plus,
   Sparkles,
   Upload,
+  X,
   XCircle,
   SkipForward,
 } from 'lucide-react';
@@ -593,7 +594,7 @@ function ReviewView({
               onClick={onDismissOverlap}
               aria-label="Fermer"
             >
-              ✕
+              <X size={14} strokeWidth={1.8} />
             </button>
           </div>
         </div>
