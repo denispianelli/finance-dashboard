@@ -1,8 +1,23 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach, beforeAll } from 'vitest';
 import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import * as ipcMod from '@renderer/ipc/client';
 import { ReportsPage } from '@renderer/pages/ReportsPage';
+
+// The area chart uses Recharts' ResponsiveContainer, which needs ResizeObserver.
+beforeAll(() => {
+  globalThis.ResizeObserver = class {
+    observe(): void {
+      return undefined;
+    }
+    unobserve(): void {
+      return undefined;
+    }
+    disconnect(): void {
+      return undefined;
+    }
+  };
+});
 
 afterEach(() => {
   cleanup();
