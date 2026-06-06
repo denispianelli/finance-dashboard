@@ -252,3 +252,46 @@ describe('getTransactions', () => {
     expect(tx?.editedAt).toBe('2026-06-03 10:00:00');
   });
 });
+
+describe('getAccountSummaries — declared balance', () => {
+  it("uses the declared balance and marks the source 'declared' when no statement anchors", () => {
+    const db = new DatabaseSync(':memory:');
+    runMigrations(db);
+    db.exec('DELETE FROM accounts');
+    db.prepare("INSERT INTO accounts (id, name, type) VALUES ('av', 'AV', 'life_insurance')").run();
+    db.prepare(
+      "UPDATE accounts SET declared_balance = 15000, declared_balance_date = '2026-06-01' WHERE id = 'av'",
+    ).run();
+
+    const [acc] = getAccountSummaries(db);
+    expect(acc).toMatchObject({ id: 'av', balance: 15000, balanceSource: 'declared' });
+    db.close();
+  });
+
+  it("prefers a statement anchor over a declared balance (source 'statement')", () => {
+    const db = new DatabaseSync(':memory:');
+    runMigrations(db);
+    db.exec('DELETE FROM accounts');
+    db.prepare("INSERT INTO accounts (id, name, type) VALUES ('perso', 'Perso', 'checking')").run();
+    db.prepare("UPDATE accounts SET declared_balance = 99 WHERE id = 'perso'").run();
+    db.prepare(
+      `INSERT INTO imports (id, account_id, file_hash, source_type, date_range_start, date_range_end, status, closing_balance, closing_balance_date)
+       VALUES ('i1','perso','h1','ofx','2026-04-01','2026-04-30','validated', 1200, '2026-04-30')`,
+    ).run();
+
+    const [acc] = getAccountSummaries(db);
+    expect(acc).toMatchObject({ id: 'perso', balance: 1200, balanceSource: 'statement' });
+    db.close();
+  });
+
+  it('is null with source null when neither anchor nor declared balance exists', () => {
+    const db = new DatabaseSync(':memory:');
+    runMigrations(db);
+    db.exec('DELETE FROM accounts');
+    db.prepare("INSERT INTO accounts (id, name, type) VALUES ('x', 'X', 'checking')").run();
+
+    const [acc] = getAccountSummaries(db);
+    expect(acc).toMatchObject({ id: 'x', balance: null, balanceSource: null });
+    db.close();
+  });
+});

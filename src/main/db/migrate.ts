@@ -10,6 +10,7 @@ import sql008 from './migrations/008_drop_confidence.sql?raw';
 import sql009 from './migrations/009_editable_transactions.sql?raw';
 import sql010 from './migrations/010_account_identifiers.sql?raw';
 import sql011 from './migrations/011_account_closing_balance.sql?raw';
+import sql012 from './migrations/012_account_declared_balance.sql?raw';
 
 interface Migration {
   version: number;
@@ -28,6 +29,7 @@ const MIGRATIONS: Migration[] = [
   { version: 9, sql: sql009 },
   { version: 10, sql: sql010 },
   { version: 11, sql: sql011 },
+  { version: 12, sql: sql012 },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

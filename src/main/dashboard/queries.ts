@@ -16,6 +16,7 @@ interface AccountRow {
   anchor_balance: number | null;
   later_sum: number;
   has_anchor: number;
+  declared_balance: number | null;
   tx_count: number;
 }
 
@@ -46,7 +47,7 @@ export function getAccountSummaries(db: DatabaseSync): AccountSummary[] {
          SELECT account_id, closing_balance, closing_balance_date
          FROM ranked WHERE rn = 1
        )
-       SELECT a.id, a.name, a.type, a.bank_id, a.currency,
+       SELECT a.id, a.name, a.type, a.bank_id, a.currency, a.declared_balance,
               (SELECT COUNT(*) FROM transactions t WHERE t.account_id = a.id) AS tx_count,
               an.closing_balance AS anchor_balance,
               (SELECT COALESCE(SUM(t.amount), 0) FROM transactions t
@@ -58,15 +59,27 @@ export function getAccountSummaries(db: DatabaseSync): AccountSummary[] {
     )
     .all() as unknown as AccountRow[];
 
-  return rows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    type: r.type,
-    bankId: r.bank_id,
-    currency: r.currency,
-    balance: r.has_anchor === 1 ? (r.anchor_balance ?? 0) + r.later_sum : null,
-    txCount: r.tx_count,
-  }));
+  return rows.map((r) => {
+    const base = {
+      id: r.id,
+      name: r.name,
+      type: r.type,
+      bankId: r.bank_id,
+      currency: r.currency,
+      txCount: r.tx_count,
+    };
+    if (r.has_anchor === 1) {
+      return {
+        ...base,
+        balance: (r.anchor_balance ?? 0) + r.later_sum,
+        balanceSource: 'statement',
+      };
+    }
+    if (r.declared_balance !== null) {
+      return { ...base, balance: r.declared_balance, balanceSource: 'declared' };
+    }
+    return { ...base, balance: null, balanceSource: null };
+  });
 }
 
 interface TransactionRow {

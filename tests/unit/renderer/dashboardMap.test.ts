@@ -70,6 +70,7 @@ describe('toAccount', () => {
       bankId: 'lcl',
       currency: 'EUR',
       balance: 70,
+      balanceSource: 'statement',
       txCount: 2,
     };
     expect(toAccount(summary)).toEqual({
@@ -87,6 +88,7 @@ describe('toAccount', () => {
       bankId: 'lcl',
       currency: 'EUR',
       balance: null,
+      balanceSource: null,
       txCount: 0,
     };
     expect(toAccount(summary).balance).toBe('—');
@@ -99,6 +101,7 @@ describe('toAccount', () => {
       bankId: null,
       currency: 'EUR',
       balance: 0,
+      balanceSource: 'statement',
       txCount: 0,
     };
     expect(toAccount(summary).bank).toBe('—');

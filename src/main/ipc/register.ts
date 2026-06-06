@@ -17,6 +17,7 @@ import {
   handleAccountsUpdate,
   handleAccountsDelete,
 } from './handlers/accounts';
+import { handleAccountsSetDeclaredBalance } from './handlers/accountsDeclaredBalance';
 import {
   handleCategoriesList,
   handleCategoriesRename,
@@ -69,6 +70,7 @@ export function registerAllHandlers(): void {
   register(CHANNELS.accountsCreate, handleAccountsCreate);
   register(CHANNELS.accountsUpdate, handleAccountsUpdate);
   register(CHANNELS.accountsDelete, handleAccountsDelete);
+  register(CHANNELS.accountsSetDeclaredBalance, handleAccountsSetDeclaredBalance);
   register(CHANNELS.categoriesList, () => handleCategoriesList());
   register(CHANNELS.categoriesRename, handleCategoriesRename);
   register(CHANNELS.categoriesCreate, handleCategoriesCreate);

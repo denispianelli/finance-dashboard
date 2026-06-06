@@ -3,6 +3,7 @@ import type {
   AccountSummary,
   CreateAccountInput,
   UpdateAccountInput,
+  SetDeclaredBalanceInput,
   DashboardTransaction,
   GetTransactionsQuery,
   AggregateQuery,
@@ -121,6 +122,10 @@ export interface IpcContract {
   'accounts:create': { payload: CreateAccountInput; response: { account: AccountSummary } };
   'accounts:update': { payload: UpdateAccountInput; response: { account: AccountSummary } };
   'accounts:delete': { payload: { id: string }; response: { deletedTransactions: number } };
+  'accounts:setDeclaredBalance': {
+    payload: SetDeclaredBalanceInput;
+    response: { account: AccountSummary };
+  };
   'categories:list': { payload: Record<string, never>; response: { categories: CategoryDTO[] } };
   'categories:rename': { payload: RenameCategoryInput; response: { categories: CategoryDTO[] } };
   'categories:create': { payload: CreateCategoryInput; response: { category: CategoryDTO } };
