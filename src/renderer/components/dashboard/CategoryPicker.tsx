@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Plus } from 'lucide-react';
+import { Check, ChevronDown, Plus } from 'lucide-react';
 import type { CategoryDTO, CreateCategoryInput } from '@shared/types/category';
 import { CategoryForm } from '../categories/CategoryForm';
 import { cn } from '../../lib/utils';
@@ -113,7 +113,7 @@ export function CategoryPicker({ categories, current, onSelect, onCreate }: Cate
                 width: MENU_WIDTH,
                 ...(pos.flip ? { bottom: pos.y } : { top: pos.y }),
               }}
-              className="z-[101] rounded-lg border border-line-2 bg-ink-3 p-1.5 shadow-xl"
+              className="z-[101] rounded-lg border border-line-2 bg-ink-3 p-1.5 shadow-2"
             >
               {creating ? (
                 <div className="p-1.5">
@@ -143,7 +143,10 @@ export function CategoryPicker({ categories, current, onSelect, onCreate }: Cate
                           className="h-1.5 w-1.5 shrink-0 rounded-full"
                           style={{ background: c.color ?? '#6E6E78' }}
                         />
-                        <span className="truncate">{c.name}</span>
+                        <span className="flex-1 truncate">{c.name}</span>
+                        {c.name === current.name && (
+                          <Check size={12} strokeWidth={2} className="shrink-0 text-brass" />
+                        )}
                       </button>
                     ))}
                   </div>

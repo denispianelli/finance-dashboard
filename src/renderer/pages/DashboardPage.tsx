@@ -10,7 +10,7 @@ import { Insight, Quote, QuoteNum } from '../components/dashboard/Insight';
 import { TxTable } from '../components/dashboard/TxTable';
 import { useDashboard } from '../hooks/useDashboard';
 import { toAccount, toTxRow } from '../lib/dashboardMap';
-import { formatEuro } from '../lib/euro';
+import { formatEuro, MINUS, NBSP } from '../lib/euro';
 import {
   chartGeometry,
   kpiDelta,
@@ -48,7 +48,10 @@ export function DashboardPage() {
   const soldeNet = splitEuro(balance);
   const depenses = splitEuro(last ? Math.abs(last.expense) : 0);
   const revenus = splitEuro(last ? last.income : 0);
-  const netMois = splitEuro(last ? last.net : 0);
+  const netValue = last ? last.net : 0;
+  const netMois = splitEuro(Math.abs(netValue));
+  // The net tile is the only signed KPI: explicit spaced sign, true minus.
+  const netSign = `${netValue < 0 ? MINUS : '+'}${NBSP}`;
 
   const balanceDelta = last && prev ? kpiDelta(last.balance, prev.balance, true) : undefined;
   const expenseDelta =
@@ -108,7 +111,7 @@ export function DashboardPage() {
         />
         <Kpi
           label={`Net · ${monthName}`}
-          value={netMois.value}
+          value={`${netSign}${netMois.value}`}
           sub={netMois.sub}
           ctx="revenus − dépenses"
           spark={sparkPoints(series.map((s) => s.net))}
