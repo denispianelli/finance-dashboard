@@ -14,6 +14,7 @@ export const CHANNELS = {
   dashboardMetrics: 'dashboard:metrics',
   dashboardCashflow: 'dashboard:cashflow',
   dashboardNetWorth: 'dashboard:netWorth',
+  recurringList: 'recurring:list',
   accountsCreate: 'accounts:create',
   accountsUpdate: 'accounts:update',
   accountsDelete: 'accounts:delete',

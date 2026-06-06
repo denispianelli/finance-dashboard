@@ -20,6 +20,7 @@ import type {
   SetTransactionCategoryInput,
 } from './category';
 import type { LearnBankInput, LearnBankResponse } from './bank';
+import type { RecurringReport } from './recurring';
 import type { UpdateTransactionInput, DeletedTransactionSnapshot } from './transaction';
 
 export interface PingPayload {
@@ -141,6 +142,7 @@ export interface IpcContract {
     response: { ok: true };
   };
   'banks:learn': { payload: LearnBankInput; response: LearnBankResponse };
+  'recurring:list': { payload: Record<string, never>; response: RecurringReport };
 }
 
 export type IpcChannel = keyof IpcContract;
