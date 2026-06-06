@@ -33,7 +33,7 @@ const MONTHS_SHORT = [
 ];
 
 function isSpend(t: DashboardTransaction): boolean {
-  return !t.isInternalTransfer && t.categoryId !== 'cat-transferts';
+  return !t.isInternalTransfer && !t.isRefund && t.categoryId !== 'cat-transferts';
 }
 
 /** Distinct years and months present in a month-granularity cash-flow series, newest first. */
@@ -156,7 +156,7 @@ export function topCategories(txns: DashboardTransaction[], limit = 5): Category
   const totals = new Map<string, number>();
   for (const tx of txns) {
     if (tx.amount >= 0) continue;
-    if (tx.isInternalTransfer || tx.categoryId === 'cat-transferts') continue;
+    if (tx.isInternalTransfer || tx.isRefund || tx.categoryId === 'cat-transferts') continue;
     if (tx.categoryName === null) continue;
     totals.set(tx.categoryName, (totals.get(tx.categoryName) ?? 0) + Math.abs(tx.amount));
   }
@@ -194,7 +194,7 @@ export function yearOverYear(yearSeries: CashflowPoint[]): YearComparison | null
 /** Largest movements by magnitude (non-transfer), most extreme first. */
 export function biggestMovements(txns: DashboardTransaction[], limit = 5): DashboardTransaction[] {
   return [...txns]
-    .filter((t) => !t.isInternalTransfer && t.categoryId !== 'cat-transferts')
+    .filter((t) => !t.isInternalTransfer && !t.isRefund && t.categoryId !== 'cat-transferts')
     .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
     .slice(0, limit);
 }
