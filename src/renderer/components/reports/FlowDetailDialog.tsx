@@ -34,9 +34,9 @@ export function FlowDetailDialog({
                   <td className="py-1.5 pr-3 font-mono text-[11px] tabular-nums text-paper-dim">
                     {t.date}
                   </td>
-                  <td className="max-w-0 truncate py-1.5 pr-3 text-paper-soft">{t.labelClean}</td>
+                  <td className="w-full py-1.5 pr-3 text-paper-soft break-words">{t.labelClean}</td>
                   <td
-                    className="py-1.5 text-right tabular-nums"
+                    className="whitespace-nowrap py-1.5 pl-2 text-right tabular-nums"
                     style={{ color: t.amount >= 0 ? 'var(--sage)' : 'var(--coral)' }}
                   >
                     {t.amount >= 0 ? '+ ' : '− '}
