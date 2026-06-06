@@ -32,28 +32,44 @@ describe('findRefundPairs', () => {
 
   it('does not pair across different accounts (that would be a transfer)', () => {
     const ids = findRefundPairs([
-      row('a', 'perso', '2025-03-01', -50, 'X'),
-      row('b', 'livret', '2025-03-02', 50, 'X'),
+      row('a', 'perso', '2025-03-01', -50, 'ZARA'),
+      row('b', 'livret', '2025-03-02', 50, 'ZARA'),
     ]);
     expect(ids.size).toBe(0);
   });
 
   it('does not pair beyond the window', () => {
     const ids = findRefundPairs([
-      row('a', 'perso', '2025-01-01', -50, 'X'),
-      row('b', 'perso', '2025-12-31', 50, 'X'),
+      row('a', 'perso', '2025-01-01', -50, 'ZARA'),
+      row('b', 'perso', '2025-12-31', 50, 'ZARA'),
     ]);
     expect(ids.size).toBe(0);
   });
 
   it('pairs one-to-one when there are two charges and one refund', () => {
     const ids = findRefundPairs([
-      row('c1', 'perso', '2025-03-01', -50, 'X'),
-      row('c2', 'perso', '2025-03-10', -50, 'X'),
-      row('r1', 'perso', '2025-03-12', 50, 'X'),
+      row('c1', 'perso', '2025-03-01', -50, 'ZARA OPEN SKY'),
+      row('c2', 'perso', '2025-03-10', -50, 'ZARA OPEN SKY'),
+      row('r1', 'perso', '2025-03-12', 50, 'ZARA OPEN SKY'),
     ]);
     expect(ids.size).toBe(2); // exactly one pair
     expect(ids.has('r1')).toBe(true);
+  });
+
+  it('pairs washes via a shared merchant token despite different labels', () => {
+    const ids = findRefundPairs([
+      row('out', 'perso', '2025-01-14', -749, 'PRLV SEPA PAYPAL EUROPE S.A'),
+      row('in', 'perso', '2025-01-13', 749, 'VIREMENT PAYPAL EUROPE S.A'),
+    ]);
+    expect(ids).toEqual(new Set(['out', 'in']));
+  });
+
+  it('does NOT pair an unrelated gift and purchase (no shared merchant)', () => {
+    const ids = findRefundPairs([
+      row('gift', 'perso', '2025-02-01', 50, 'VIR INST MME PIANELLI CATH'),
+      row('apple', 'perso', '2025-02-27', -50, 'CB APPLE STORE'),
+    ]);
+    expect(ids.size).toBe(0);
   });
 });
 
