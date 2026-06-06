@@ -17,8 +17,8 @@ const CATEGORIES: LlmCategory[] = [
   { id: 'cat-leisure', name: 'Loisirs' },
 ];
 
-const ITEM_FOOD: CategorizeItem = { tx_hash: 'h1', label: 'CARREFOUR MARKET' };
-const ITEM_SALARY: CategorizeItem = { tx_hash: 'h2', label: 'VIR RECU SALAIRE' };
+const ITEM_FOOD: CategorizeItem = { id: 'h1', label: 'CARREFOUR MARKET' };
+const ITEM_SALARY: CategorizeItem = { id: 'h2', label: 'VIR RECU SALAIRE' };
 const ITEMS: CategorizeItem[] = [ITEM_FOOD, ITEM_SALARY];
 
 describe('buildCategorizationPrompt', () => {
@@ -51,7 +51,7 @@ describe('buildCategorizationPrompt', () => {
 
   it('truncates long labels to 120 chars', () => {
     const longLabel = 'X'.repeat(300);
-    const prompt = buildCategorizationPrompt(CATEGORIES, [{ tx_hash: 'h', label: longLabel }]);
+    const prompt = buildCategorizationPrompt(CATEGORIES, [{ id: 'h', label: longLabel }]);
     expect(prompt).toContain('X'.repeat(120));
     expect(prompt).not.toContain('X'.repeat(121));
   });
@@ -61,35 +61,35 @@ describe('parseCategorization', () => {
   it('maps named categories and AUCUNE to id / null', () => {
     const res = parseCategorization('{"1":"Alimentation","2":"AUCUNE"}', CATEGORIES, ITEMS);
     expect(res).toEqual([
-      { tx_hash: 'h1', categoryId: 'cat-food' },
-      { tx_hash: 'h2', categoryId: null },
+      { id: 'h1', categoryId: 'cat-food' },
+      { id: 'h2', categoryId: null },
     ]);
   });
 
   it('matches names accent- and case-insensitively', () => {
     const lower = parseCategorization('{"1":"alimentation"}', CATEGORIES, [ITEM_FOOD]);
     const upper = parseCategorization('{"1":"ALIMENTATION"}', CATEGORIES, [ITEM_FOOD]);
-    expect(lower).toEqual([{ tx_hash: 'h1', categoryId: 'cat-food' }]);
-    expect(upper).toEqual([{ tx_hash: 'h1', categoryId: 'cat-food' }]);
+    expect(lower).toEqual([{ id: 'h1', categoryId: 'cat-food' }]);
+    expect(upper).toEqual([{ id: 'h1', categoryId: 'cat-food' }]);
   });
 
   it('strips diacritics when matching', () => {
     const cats: LlmCategory[] = [{ id: 'cat-x', name: 'Énergie' }];
-    const items: CategorizeItem[] = [{ tx_hash: 'h', label: 'EDF' }];
+    const items: CategorizeItem[] = [{ id: 'h', label: 'EDF' }];
     const res = parseCategorization('{"1":"energie"}', cats, items);
-    expect(res).toEqual([{ tx_hash: 'h', categoryId: 'cat-x' }]);
+    expect(res).toEqual([{ id: 'h', categoryId: 'cat-x' }]);
   });
 
   it('returns null for an unknown category name', () => {
     const res = parseCategorization('{"1":"Voyages"}', CATEGORIES, [ITEM_FOOD]);
-    expect(res).toEqual([{ tx_hash: 'h1', categoryId: null }]);
+    expect(res).toEqual([{ id: 'h1', categoryId: null }]);
   });
 
   it('returns all null on malformed JSON', () => {
     const res = parseCategorization('not json at all', CATEGORIES, ITEMS);
     expect(res).toEqual([
-      { tx_hash: 'h1', categoryId: null },
-      { tx_hash: 'h2', categoryId: null },
+      { id: 'h1', categoryId: null },
+      { id: 'h2', categoryId: null },
     ]);
   });
 
@@ -105,30 +105,30 @@ describe('parseCategorization', () => {
       ITEMS,
     );
     expect(res).toEqual([
-      { tx_hash: 'h1', categoryId: 'cat-transport' },
-      { tx_hash: 'h2', categoryId: 'cat-food' },
+      { id: 'h1', categoryId: 'cat-transport' },
+      { id: 'h2', categoryId: 'cat-food' },
     ]);
   });
 
   it('leaves missing keys as null when fewer keys than items', () => {
     const res = parseCategorization('{"1":"Alimentation"}', CATEGORIES, ITEMS);
     expect(res).toEqual([
-      { tx_hash: 'h1', categoryId: 'cat-food' },
-      { tx_hash: 'h2', categoryId: null },
+      { id: 'h1', categoryId: 'cat-food' },
+      { id: 'h2', categoryId: null },
     ]);
   });
 
   it('returns exactly one result per item, in input order, preserving tx_hash', () => {
     const items: CategorizeItem[] = [
-      { tx_hash: 'a', label: 'one' },
-      { tx_hash: 'b', label: 'two' },
-      { tx_hash: 'c', label: 'three' },
+      { id: 'a', label: 'one' },
+      { id: 'b', label: 'two' },
+      { id: 'c', label: 'three' },
     ];
     const res = parseCategorization('{"1":"Transport","3":"Loisirs"}', CATEGORIES, items);
     expect(res).toEqual([
-      { tx_hash: 'a', categoryId: 'cat-transport' },
-      { tx_hash: 'b', categoryId: null },
-      { tx_hash: 'c', categoryId: 'cat-leisure' },
+      { id: 'a', categoryId: 'cat-transport' },
+      { id: 'b', categoryId: null },
+      { id: 'c', categoryId: 'cat-leisure' },
     ]);
   });
 
@@ -140,8 +140,8 @@ describe('parseCategorization', () => {
     }
     // "cat-food" is an id, not a name → not matched → null.
     expect(res).toEqual([
-      { tx_hash: 'h1', categoryId: null },
-      { tx_hash: 'h2', categoryId: null },
+      { id: 'h1', categoryId: null },
+      { id: 'h2', categoryId: null },
     ]);
   });
 
@@ -164,8 +164,8 @@ describe('categorizeBatch', () => {
     const res = await categorizeBatch(fakeModel, CATEGORIES, ITEMS);
     expect(runPromptMock).toHaveBeenCalledOnce();
     expect(res).toEqual([
-      { tx_hash: 'h1', categoryId: 'cat-food' },
-      { tx_hash: 'h2', categoryId: null },
+      { id: 'h1', categoryId: 'cat-food' },
+      { id: 'h2', categoryId: null },
     ]);
   });
 

@@ -5,7 +5,6 @@ import { normalizeLabel } from './txHash';
 import { ImportError } from './importError';
 import { loadRules, matchRule } from '../categorize/rules';
 import { findHistoryCategory } from '../categorize/history';
-import type { ConfirmCategory } from '@shared/types/ipc';
 
 export interface InsertResult {
   importId: string;
@@ -17,11 +16,7 @@ export async function insertStatement(
   db: DatabaseSync,
   accountId: string,
   content: Buffer,
-  opts: {
-    acknowledgedCannotVerify?: boolean;
-    selectedHashes?: string[];
-    categories?: ConfirmCategory[];
-  } = {},
+  opts: { acknowledgedCannotVerify?: boolean; selectedHashes?: string[] } = {},
 ): Promise<InsertResult> {
   const extraction = await extractStatement(db, accountId, content);
 
@@ -56,12 +51,8 @@ export async function insertStatement(
          (id, account_id, import_id, tx_hash, date, amount,
           label_raw, label_clean, category_id,
           is_internal_transfer, user_modified, fitid)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?)`,
     );
-    // Categories validated in the Review screen overlay the deterministic
-    // cascade: the user/LLM-suggested category replaces detCat, and a user
-    // correction sets user_modified = 1 so it wins future history lookups.
-    const categoryMap = new Map((opts.categories ?? []).map((c) => [c.tx_hash, c] as const));
     // Deterministic categorization cascade (design §7): history (a previously
     // seen / user-corrected label) wins, then the under-the-hood seed rules.
     // An LLM categorization tier will land later; uncertainty is surfaced only
@@ -75,19 +66,14 @@ export async function insertStatement(
       if (tx.isDuplicate) continue;
       if (selectedSet !== undefined && !selectedSet.has(tx.tx_hash)) continue;
       const labelClean = normalizeLabel(tx.label);
-      // Keep the deterministic cascade (history → rules) as fallback and to
-      // attribute rule hits, even when the row is overridden below.
-      let detCat = findHistoryCategory(db, labelClean);
-      if (detCat === null) {
+      let categoryId = findHistoryCategory(db, labelClean);
+      if (categoryId === null) {
         const rule = matchRule(rules, labelClean);
         if (rule !== null) {
-          detCat = rule.categoryId;
+          categoryId = rule.categoryId;
           hits.set(rule.id, (hits.get(rule.id) ?? 0) + 1);
         }
       }
-      const override = categoryMap.get(tx.tx_hash);
-      const categoryId = override !== undefined ? override.categoryId : detCat;
-      const userModified = override?.userModified === true ? 1 : 0;
       insertTx.run(
         randomUUID(),
         accountId,
@@ -98,7 +84,6 @@ export async function insertStatement(
         tx.label,
         labelClean,
         categoryId,
-        userModified,
         tx.fitid,
       );
       insertedCount++;

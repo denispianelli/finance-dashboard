@@ -1,4 +1,4 @@
-import type { StatementExtraction, CategorizeItem, CategorizeResult } from './import';
+import type { StatementExtraction, CategorizeItem } from './import';
 import type {
   AccountSummary,
   CreateAccountInput,
@@ -58,18 +58,11 @@ export type ResolveAccountResponse =
     }
   | { ok: false; error: 'unsupported_format' };
 
-export interface ConfirmCategory {
-  tx_hash: string;
-  categoryId: string | null;
-  userModified: boolean;
-}
-
 export interface ConfirmPayload {
   path: string;
   accountId: string;
   selectedHashes?: string[];
   acknowledgedCannotVerify?: boolean;
-  categories?: ConfirmCategory[];
 }
 
 export type ConfirmResponse =
@@ -87,12 +80,16 @@ export type ConfirmResponse =
         | 'malformed_ofx';
     };
 
-export interface CategorizePayload {
+export interface CategorizePendingResponse {
   items: CategorizeItem[];
 }
 
-export type CategorizeResponse =
-  | { ok: true; results: CategorizeResult[] }
+export interface CategorizeBatchPayload {
+  items: CategorizeItem[];
+}
+
+export type CategorizeBatchResponse =
+  | { ok: true; applied: number }
   | { ok: false; error: 'model_unavailable' | 'inference_failed' };
 
 export interface IpcContract {
@@ -101,7 +98,8 @@ export interface IpcContract {
   'import:extract': { payload: ExtractPayload; response: ExtractResponse };
   'import:resolveAccount': { payload: ResolveAccountPayload; response: ResolveAccountResponse };
   'import:confirm': { payload: ConfirmPayload; response: ConfirmResponse };
-  'import:categorize': { payload: CategorizePayload; response: CategorizeResponse };
+  'categorize:pending': { payload: Record<string, never>; response: CategorizePendingResponse };
+  'categorize:batch': { payload: CategorizeBatchPayload; response: CategorizeBatchResponse };
   'dashboard:getAccounts': {
     payload: Record<string, never>;
     response: { accounts: AccountSummary[] };

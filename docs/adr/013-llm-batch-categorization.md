@@ -1,6 +1,7 @@
 # ADR-013 — LLM batch categorization
 
-- **Status**: Accepted
+- **Status**: Accepted — **amended 2026-06-05** (categorization moved from the
+  import Review to an async background pass; see the Amendment at the end)
 - **Date**: 2026-06-05
 - **Category**: LLM, Product, UX
 - **Related**: ADR-003 (deterministic extraction), ADR-004 (model selection),
@@ -69,3 +70,42 @@ Add the LLM as **cascade tier-3**, run **at import-review time, progressively**.
   adds a column for a signal that is only useful ephemerally, in the Review.
 - **Letting the LLM create new categories**: rejected per ADR-009 — it is a
   classifier into the existing taxonomy, not a generative tool.
+
+## Amendment (2026-06-05) — categorization moves out of the Review to async background
+
+The in-Review approach above was built (PR #143) and tested hands-on. It was
+**reversed** the same day on the maintainer's feedback:
+
+- At import time the category column is **noise** — the user wants to confirm the
+  transactions and click Import, not think about categories.
+- Worse, the in-flight LLM fill **gated the Import button** (you couldn't import 47
+  transactions while the model was still suggesting) — a real defect, not just a
+  preference.
+
+**New decision.** The import Review goes back to date / label / amount / status, and
+**Import is instant and never blocked**. The deterministic cascade (rule → history)
+still runs at **insert** (most rows are categorized immediately). The LLM tier then
+classifies the residual (`category_id IS NULL`, non-transfer) rows in batches in the
+background; results appear in the **Transactions view and dashboard** as they land.
+
+**The heavy LLM pass is user-triggered, not automatic** (refined 2026-06-05 on the
+maintainer's feedback — "garder la main"): the Topbar shows a discreet
+**button** "Catégoriser (N)" whenever there is a residual, and the pass runs only on
+click (while running it becomes a non-interactive "Catégorisation IA… (N)"
+indicator). The count `N` is a cheap `COUNT` that never loads the model; only the
+click spins up the 1.9 GB GGUF. This keeps the user in control of when the model
+runs, while the app still **signals** that there is uncategorized work. The user
+reviews/corrects categories where they already live — the Transactions table's inline
+picker — not in the import flow.
+
+What stays from the original decision: the LLM is a constrained classifier into
+existing categories (never invents one, no persisted score), it feeds the history
+tier implicitly (`user_modified = 0`), and it degrades gracefully with no model
+(the background pass stops on `model_unavailable`, rows stay manually categorizable).
+
+What changes: categorization is **no longer part of the import-validation gate**
+(ADR-005 still governs validating the _transactions/figures_ at import; categories
+are a separate, after-the-fact, correctable concern). `ReviewTransaction` carries no
+category; `import:confirm` carries no categories; the new channels are
+`categorize:pending` + `categorize:batch` (keyed by transaction id). See
+`specs/2026-06-05-llm-batch-categorization-design.md` §11.
