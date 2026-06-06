@@ -20,6 +20,7 @@ const ACCOUNTS: AccountSummary[] = [
     bankId: 'lcl',
     currency: 'EUR',
     balance: 1000,
+    balanceSource: 'statement',
     txCount: 3,
   },
 ];

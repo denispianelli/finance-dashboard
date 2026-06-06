@@ -14,6 +14,9 @@ export interface UpdateAccountInput {
   readonly bankId: string | null;
 }
 
+/** Where an account's balance comes from. `null` when no balance is known. */
+export type BalanceSource = 'statement' | 'declared' | null;
+
 /** One account row plus derived totals for the account picker / KPI surfaces. */
 export interface AccountSummary {
   readonly id: string;
@@ -28,6 +31,9 @@ export interface AccountSummary {
    * movements.
    */
   readonly balance: number | null;
+  /** Whether `balance` came from a statement anchor (ADR-014), a user-declared
+   *  value (F2), or is unknown (`null`). */
+  readonly balanceSource: BalanceSource;
   readonly txCount: number;
 }
 
