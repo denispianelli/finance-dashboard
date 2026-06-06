@@ -57,6 +57,13 @@ function shareMerchant(a: Set<string>, b: Set<string>): boolean {
   return false;
 }
 
+/** A card payment ("CB MERCHANT …"). A genuine purchase refund involves a card
+ *  leg; this rules out person-to-person transfers ("VIREMENT NAME") that merely
+ *  share a name token and happen to offset. */
+function isCardPayment(label: string): boolean {
+  return /\bCB\b/.test(label.toUpperCase());
+}
+
 /**
  * Pure pairing: ids of transactions that are part of a refund — a charge cancelled
  * by a credit on the SAME account, exact opposite amount, within +/-120 days, and
@@ -95,6 +102,7 @@ export function findRefundPairs(rows: RefundRow[]): Set<string> {
         if (cents(inf.amount) !== -cents(out.amount)) continue;
         const gap = dayGap(out.date, inf.date);
         if (gap > MAX_DAY_GAP) continue;
+        if (!isCardPayment(out.label) && !isCardPayment(inf.label)) continue;
         if (!shareMerchant(tok(out), tok(inf))) continue;
         const key = [gap, inf.date, inf.id] as const;
         if (
