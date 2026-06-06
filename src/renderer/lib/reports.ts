@@ -198,3 +198,19 @@ export function biggestMovements(txns: DashboardTransaction[], limit = 5): Dashb
     .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
     .slice(0, limit);
 }
+
+/** The countable flows behind a verdict figure (real income/expense — transfers
+ *  and refunds excluded), largest first. `sign` filters to inflows / outflows. */
+export function countableTransactions(
+  txns: DashboardTransaction[],
+  sign?: 'in' | 'out',
+): DashboardTransaction[] {
+  return txns
+    .filter((t) => {
+      if (!isSpend(t)) return false;
+      if (sign === 'in') return t.amount > 0;
+      if (sign === 'out') return t.amount < 0;
+      return true;
+    })
+    .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+}

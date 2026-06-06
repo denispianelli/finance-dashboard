@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { PeriodPicker } from '../components/reports/PeriodPicker';
-import { VerdictRow } from '../components/reports/VerdictRow';
+import { VerdictRow, type VerdictKind } from '../components/reports/VerdictRow';
 import { CashflowBarChart } from '../components/reports/CashflowBarChart';
 import { NetWorthDonut } from '../components/reports/NetWorthDonut';
+import { FlowDetailDialog } from '../components/reports/FlowDetailDialog';
 import {
   TopCategoriesCard,
   RecurringCard,
@@ -19,6 +20,7 @@ import {
   txInPeriod,
   previousPeriod,
   periodVerdict,
+  countableTransactions,
   type ReportPeriod,
 } from '../lib/reports';
 import { monthLabelFr } from '../lib/dashboardCharts';
@@ -40,6 +42,7 @@ export function ReportsPage() {
 
   const available = useMemo(() => availablePeriods(series), [series]);
   const [picked, setPicked] = useState<ReportPeriod | null>(null);
+  const [detail, setDetail] = useState<VerdictKind | null>(null);
   const firstYear = available.years[0];
   const period: ReportPeriod | null =
     picked ?? (firstYear !== undefined ? { granularity: 'year', value: firstYear } : null);
@@ -58,6 +61,15 @@ export function ReportsPage() {
       : dailyCumulativeNet(transactions, period.value);
   const chartTitle = period.granularity === 'year' ? 'Mois par mois' : 'Jour par jour';
 
+  const detailSign = detail === 'income' ? 'in' : detail === 'expense' ? 'out' : undefined;
+  const detailTxns = detail !== null ? countableTransactions(scoped, detailSign) : [];
+  const detailTitle =
+    detail === 'income'
+      ? `Entrées · ${periodLabel(period)}`
+      : detail === 'expense'
+        ? `Sorties · ${periodLabel(period)}`
+        : `Flux réels · ${periodLabel(period)}`;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -69,7 +81,16 @@ export function ReportsPage() {
         </div>
       </div>
 
-      <VerdictRow verdict={verdict} periodLabel={periodLabel(period)} />
+      <VerdictRow verdict={verdict} periodLabel={periodLabel(period)} onSelect={setDetail} />
+
+      <FlowDetailDialog
+        open={detail !== null}
+        onOpenChange={(o) => {
+          if (!o) setDetail(null);
+        }}
+        title={detailTitle}
+        transactions={detailTxns}
+      />
 
       <CashflowBarChart data={chartData} title={chartTitle} />
 
