@@ -30,7 +30,7 @@ const GROUPS: { key: string; label: string; items: NavItem[] }[] = [
       { path: '/transactions', label: 'Transactions', Icon: ArrowLeftRight, enabled: true },
       { path: '/accounts', label: 'Comptes', Icon: Landmark, enabled: true },
       { path: '/categories', label: 'Catégories', Icon: Tags, enabled: true },
-      { path: '/reports', label: 'Rapports', Icon: LineChart, enabled: false },
+      { path: '/reports', label: 'Rapports', Icon: LineChart, enabled: true },
     ],
   },
   {
