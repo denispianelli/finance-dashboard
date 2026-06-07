@@ -159,7 +159,7 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
         onClose={skipFile}
       />
       <Dialog
-        open={open}
+        open={open && sub?.step !== 'modelRequired'}
         onOpenChange={(o) => {
           if (!o) handleClose();
         }}

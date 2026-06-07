@@ -27,3 +27,10 @@ it('renders no dialog content when closed', () => {
   render(<PdfModelRequiredDialog open={false} onInstall={vi.fn()} onClose={vi.fn()} />);
   expect(screen.queryByText(/nécessite le modèle/i)).not.toBeInTheDocument();
 });
+
+it('fires onClose on Escape', () => {
+  const onClose = vi.fn();
+  render(<PdfModelRequiredDialog open onInstall={vi.fn()} onClose={onClose} />);
+  fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape', code: 'Escape' });
+  expect(onClose).toHaveBeenCalled();
+});
