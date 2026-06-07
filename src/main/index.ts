@@ -31,9 +31,10 @@ function createWindow(): void {
   });
 
   // Push every model-status change to the renderer (progress bar, banner, settings).
-  modelController.subscribe((status) => {
+  const unsubscribeModelStatus = modelController.subscribe((status) => {
     if (!win.isDestroyed()) win.webContents.send('model:progress', status);
   });
+  win.once('closed', unsubscribeModelStatus);
 
   if (process.env.ELECTRON_RENDERER_URL) {
     void win.loadURL(process.env.ELECTRON_RENDERER_URL);
