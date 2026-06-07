@@ -72,7 +72,7 @@ machines without an NVIDIA GPU**.
 The `linux-x64-cuda` prebuilt is already installed. Provide the three runtime
 libs without apt / toolkit:
 
-- `scripts/setup-cuda-libs.mjs`: downloads the manylinux x86_64 wheels for
+- `scripts/setup-cuda-libs.py`: downloads the manylinux x86_64 wheels for
   `nvidia-cuda-runtime-cu12` + `nvidia-cublas-cu12` from PyPI (stdlib-only fetch,
   no pip required), extracts the `.so` files into a **gitignored** dir
   (`.cuda-libs/`). Idempotent: skips if already present.
