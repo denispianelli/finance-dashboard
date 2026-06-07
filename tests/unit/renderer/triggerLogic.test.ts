@@ -27,3 +27,6 @@ it('hides when model is ready or downloading', () => {
   expect(shouldShowCategorizationPrompt({ ...base, state: 'ready' })).toBe(false);
   expect(shouldShowCategorizationPrompt({ ...base, state: 'downloading' })).toBe(false);
 });
+it('hides when model errored', () => {
+  expect(shouldShowCategorizationPrompt({ ...base, state: 'error' })).toBe(false);
+});

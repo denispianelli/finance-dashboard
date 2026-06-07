@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import type { AppOutletContext } from '@renderer/lib/outletContext';
 import { useBackgroundCategorization } from '@renderer/hooks/useBackgroundCategorization';
@@ -16,11 +16,10 @@ export function AppShell() {
   const [importOpen, setImportOpen] = useState(false);
   const [createAccountOpen, setCreateAccountOpen] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
-  const bg = useBackgroundCategorization({
-    onApplied: () => {
-      setRefreshToken((t) => t + 1);
-    },
-  });
+  const onApplied = useCallback(() => {
+    setRefreshToken((t) => t + 1);
+  }, []);
+  const bg = useBackgroundCategorization({ onApplied });
 
   const modelStatus = useModelStatus();
   const startModelDownload = () => {
