@@ -62,5 +62,5 @@ export default tseslint.config(
   // --- Prettier last: disable rules that conflict with formatting ---
   prettier,
 
-  { ignores: ['dist/', 'out/', 'node_modules/', '.vite/'] },
+  { ignores: ['dist/', 'out/', 'node_modules/', '.vite/', 'scripts/'] },
 );
