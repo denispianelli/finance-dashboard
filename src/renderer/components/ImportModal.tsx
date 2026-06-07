@@ -12,6 +12,8 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ipc } from '@renderer/ipc/client';
 import { useImport, type FileResult, type SubState } from '../hooks/useImport';
+import { useModelStatus } from '@renderer/hooks/useModelStatus';
+import { PdfModelRequiredDialog } from '@renderer/components/model/PdfModelRequiredDialog';
 import { TransactionReviewTable } from './TransactionReviewTable';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
@@ -62,6 +64,8 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [dragOver, setDragOver] = useState(false);
 
+  const modelStatus = useModelStatus();
+
   // Reopening always starts fresh: closing mid-queue must not resume on stale
   // sub-state (or show a summary for work the user abandoned).
   useEffect(() => {
@@ -107,6 +111,21 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
     }
   }, [state, reset]);
 
+  // Auto-resume: when the model becomes ready while paused at modelRequired,
+  // replay the learn call so the import continues without user interaction.
+  const prevModelStateRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = prevModelStateRef.current;
+    const cur = modelStatus.state;
+    prevModelStateRef.current = cur;
+    // Only act on a transition TO ready (not the initial seed that lands on ready).
+    if (prev !== null && prev !== 'ready' && cur === 'ready') {
+      if (state.step === 'queue' && state.sub.step === 'modelRequired') {
+        void learnBank(state.sub.bankName);
+      }
+    }
+  }, [modelStatus.state, state, learnBank]);
+
   function handleClose() {
     reset();
     setOverlapDismissed(false);
@@ -131,122 +150,131 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
     state.step === 'queue' ? ` (${String(state.index + 1)}/${String(state.files.length)})` : '';
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) handleClose();
-      }}
-    >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Importer des relevés{progress}</DialogTitle>
-          <DialogDescription className="sr-only">
-            Sélectionnez ou déposez des fichiers OFX ou PDF, vérifiez les transactions, confirmez.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <PdfModelRequiredDialog
+        open={sub?.step === 'modelRequired'}
+        onInstall={() => {
+          void ipc.invoke('model:download:start', {});
+        }}
+        onClose={skipFile}
+      />
+      <Dialog
+        open={open}
+        onOpenChange={(o) => {
+          if (!o) handleClose();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Importer des relevés{progress}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Sélectionnez ou déposez des fichiers OFX ou PDF, vérifiez les transactions, confirmez.
+            </DialogDescription>
+          </DialogHeader>
 
-        {state.step === 'idle' && (
-          <DropPickView
-            dragOver={dragOver}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOver(true);
-            }}
-            onDragLeave={() => {
-              setDragOver(false);
-            }}
-            onDrop={onDrop}
-            onPick={() => {
-              void pickFiles();
-            }}
-          />
-        )}
+          {state.step === 'idle' && (
+            <DropPickView
+              dragOver={dragOver}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver(true);
+              }}
+              onDragLeave={() => {
+                setDragOver(false);
+              }}
+              onDrop={onDrop}
+              onPick={() => {
+                void pickFiles();
+              }}
+            />
+          )}
 
-        {(sub?.step === 'resolving' || sub?.step === 'extracting') && (
-          <div className="flex items-center justify-center py-8">
-            <p className="text-sm text-muted-foreground">
-              {sub.step === 'resolving' ? 'Analyse du compte…' : 'Extraction du relevé…'}
-            </p>
-          </div>
-        )}
+          {(sub?.step === 'resolving' || sub?.step === 'extracting') && (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-sm text-muted-foreground">
+                {sub.step === 'resolving' ? 'Analyse du compte…' : 'Extraction du relevé…'}
+              </p>
+            </div>
+          )}
 
-        {sub?.step === 'chooseAccount' && (
-          <ChooseAccountView
-            fileName={state.step === 'queue' ? (state.files[state.index]?.fileName ?? '') : ''}
-            detectedBank={sub.detectedBank}
-            accounts={accounts}
-            onChoose={(id) => {
-              void chooseAccount(id);
-            }}
-            onCreateAccount={createAccountInline}
-            onSkip={skipFile}
-          />
-        )}
+          {sub?.step === 'chooseAccount' && (
+            <ChooseAccountView
+              fileName={state.step === 'queue' ? (state.files[state.index]?.fileName ?? '') : ''}
+              detectedBank={sub.detectedBank}
+              accounts={accounts}
+              onChoose={(id) => {
+                void chooseAccount(id);
+              }}
+              onCreateAccount={createAccountInline}
+              onSkip={skipFile}
+            />
+          )}
 
-        {sub?.step === 'unknownBank' && (
-          <LearnBankView
-            onLearn={(name) => {
-              void learnBank(name);
-            }}
-            onCancel={skipFile}
-          />
-        )}
+          {sub?.step === 'unknownBank' && (
+            <LearnBankView
+              onLearn={(name) => {
+                void learnBank(name);
+              }}
+              onCancel={skipFile}
+            />
+          )}
 
-        {sub?.step === 'learning' && (
-          <div className="flex flex-col items-center gap-2 py-8">
-            <p className="text-sm text-paper">Analyse de la banque par l'IA…</p>
-            <p className="text-xs text-paper-mute">
-              Environ une minute, une seule fois par banque.
-            </p>
-          </div>
-        )}
+          {sub?.step === 'learning' && (
+            <div className="flex flex-col items-center gap-2 py-8">
+              <p className="text-sm text-paper">Analyse de la banque par l'IA…</p>
+              <p className="text-xs text-paper-mute">
+                Environ une minute, une seule fois par banque.
+              </p>
+            </div>
+          )}
 
-        {sub?.step === 'review' && (
-          <ReviewView
-            extraction={sub.extraction}
-            fileName={state.step === 'queue' ? (state.files[state.index]?.fileName ?? '') : ''}
-            accountLabel={accountName(sub.accountId)}
-            autoRouted={sub.autoRouted}
-            selected={sub.selected}
-            acknowledgedCannotVerify={sub.acknowledgedCannotVerify}
-            overlapDismissed={overlapDismissed}
-            onDismissOverlap={() => {
-              setOverlapDismissed(true);
-            }}
-            onToggleTx={toggleTx}
-            onToggleAll={toggleAll}
-            onAcknowledge={setAcknowledgedCannotVerify}
-            onSkip={skipFile}
-            onConfirm={() => {
-              void confirm();
-            }}
-            confirmDisabled={!canConfirm(sub)}
-          />
-        )}
+          {sub?.step === 'review' && (
+            <ReviewView
+              extraction={sub.extraction}
+              fileName={state.step === 'queue' ? (state.files[state.index]?.fileName ?? '') : ''}
+              accountLabel={accountName(sub.accountId)}
+              autoRouted={sub.autoRouted}
+              selected={sub.selected}
+              acknowledgedCannotVerify={sub.acknowledgedCannotVerify}
+              overlapDismissed={overlapDismissed}
+              onDismissOverlap={() => {
+                setOverlapDismissed(true);
+              }}
+              onToggleTx={toggleTx}
+              onToggleAll={toggleAll}
+              onAcknowledge={setAcknowledgedCannotVerify}
+              onSkip={skipFile}
+              onConfirm={() => {
+                void confirm();
+              }}
+              confirmDisabled={!canConfirm(sub)}
+            />
+          )}
 
-        {sub?.step === 'confirming' && (
-          <div className="flex items-center justify-center py-8">
-            <p className="text-sm text-muted-foreground">Import en cours…</p>
-          </div>
-        )}
+          {sub?.step === 'confirming' && (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-sm text-muted-foreground">Import en cours…</p>
+            </div>
+          )}
 
-        {sub?.step === 'fileError' && (
-          <div className="flex flex-col gap-4 py-4">
-            <p className="text-sm text-destructive">{sub.message}</p>
-            <DialogFooter>
-              <Button variant="outline" onClick={skipFile}>
-                <SkipForward size={14} strokeWidth={1.8} />
-                Ignorer ce fichier
-              </Button>
-            </DialogFooter>
-          </div>
-        )}
+          {sub?.step === 'fileError' && (
+            <div className="flex flex-col gap-4 py-4">
+              <p className="text-sm text-destructive">{sub.message}</p>
+              <DialogFooter>
+                <Button variant="outline" onClick={skipFile}>
+                  <SkipForward size={14} strokeWidth={1.8} />
+                  Ignorer ce fichier
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
 
-        {state.step === 'summary' && (
-          <SummaryView results={state.results} accountName={accountName} onClose={handleClose} />
-        )}
-      </DialogContent>
-    </Dialog>
+          {state.step === 'summary' && (
+            <SummaryView results={state.results} accountName={accountName} onClose={handleClose} />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

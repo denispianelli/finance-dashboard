@@ -31,6 +31,7 @@ export type SubState =
   | { step: 'extracting' }
   | { step: 'unknownBank'; accountId: string }
   | { step: 'learning'; accountId: string }
+  | { step: 'modelRequired'; accountId: string; bankName: string }
   | {
       step: 'review';
       extraction: StatementExtraction;
@@ -251,7 +252,11 @@ export function useImport(): UseImport {
 
   async function learnBank(bankName: string): Promise<void> {
     const cur = stateRef.current;
-    if (cur.step !== 'queue' || cur.sub.step !== 'unknownBank') return;
+    if (
+      cur.step !== 'queue' ||
+      (cur.sub.step !== 'unknownBank' && cur.sub.step !== 'modelRequired')
+    )
+      return;
     const { accountId } = cur.sub;
     const file = cur.files[cur.index];
     if (file === undefined) return;
@@ -259,13 +264,20 @@ export function useImport(): UseImport {
     const res = await safeInvoke(ipc.invoke('banks:learn', { path: file.path, bankName }));
     if (res?.ok) {
       await runExtract(cur.files, cur.index, cur.results, accountId, false);
+    } else if (res === null) {
+      await advance(cur.files, cur.index, [
+        ...cur.results,
+        { fileName: file.fileName, status: 'failed', error: UNEXPECTED_ERROR },
+      ]);
+    } else if (res.error === 'model_unavailable') {
+      setS({ ...cur, sub: { step: 'modelRequired', accountId, bankName } });
     } else {
       await advance(cur.files, cur.index, [
         ...cur.results,
         {
           fileName: file.fileName,
           status: 'failed',
-          error: res === null ? UNEXPECTED_ERROR : (ERROR_MESSAGES[res.error] ?? res.error),
+          error: ERROR_MESSAGES[res.error] ?? res.error,
         },
       ]);
     }
