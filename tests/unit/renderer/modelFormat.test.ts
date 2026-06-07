@@ -13,10 +13,11 @@ describe('modelPercent', () => {
 });
 
 describe('formatModelSize', () => {
+  // Uses a non-breaking space (U+00A0) between the number and its unit (FR typography).
   it('formats under 1 Go in Mo', () => {
-    expect(formatModelSize(890_000_000)).toBe('890 Mo');
+    expect(formatModelSize(890_000_000)).toBe('890 Mo');
   });
   it('formats 1 Go and above in Go with one decimal', () => {
-    expect(formatModelSize(1_900_000_000)).toBe('1,9 Go');
+    expect(formatModelSize(1_900_000_000)).toBe('1,9 Go');
   });
 });
