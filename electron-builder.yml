@@ -1,0 +1,35 @@
+appId: com.denispianelli.finance-dashboard
+productName: Finance Dashboard
+
+directories:
+  output: release
+  buildResources: build
+
+# electron-vite emits the bundled app into out/. Ship that plus package.json;
+# production node_modules are included by electron-builder's defaults.
+files:
+  - out/**
+  - package.json
+  # Safety: never bundle the ~1.9 GB GGUF model — it lives in userData/models
+  # and downloads on demand (PR #163).
+  - '!models'
+  - '!models/**'
+
+# node-llama-cpp ships per-platform native binaries that must run from disk,
+# not from inside the asar archive.
+# Globs sourced from the official node-llama-cpp electron scaffold template:
+# https://github.com/withcatai/node-llama-cpp/blob/master/templates/electron-typescript-react/electron-builder.ts
+asarUnpack:
+  - node_modules/node-llama-cpp/bins
+  - node_modules/node-llama-cpp/llama/localBuilds
+  - node_modules/@node-llama-cpp/*
+
+mac:
+  target: dmg
+  # No arch pinned: builds for the host arch (x64 on Intel, arm64 on Apple Silicon).
+  identity: null # unsigned — skip signing without aborting the build
+
+win:
+  target: nsis
+
+# No `publish:` block and no updater — rebuild is manual.

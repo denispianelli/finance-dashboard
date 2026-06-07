@@ -28,3 +28,6 @@ playwright-report/
 .claude/settings.local.json
 # Worktrees created by the EnterWorktree tool
 .claude/worktrees/
+
+# Packaged app installers (electron-builder)
+release/
