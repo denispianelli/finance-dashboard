@@ -11,7 +11,7 @@ import { MODEL_FILE } from './llm';
  * Never set it in production.
  */
 export function modelsDir(): string {
-  if (process.env.FD_MODELS_DIR !== undefined) return process.env.FD_MODELS_DIR;
+  if (process.env.FD_MODELS_DIR) return process.env.FD_MODELS_DIR;
   const devDir = join(process.cwd(), 'models');
   if (existsSync(join(devDir, MODEL_FILE))) return devDir;
   return join(app.getPath('userData'), 'models');
