@@ -2,9 +2,15 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 
-import { SettingsPage } from '@renderer/pages/SettingsPage';
-
 vi.mock('sonner', () => ({ toast: { info: vi.fn() } }));
+vi.mock('@renderer/ipc/client', () => ({
+  ipc: {
+    invoke: vi.fn(() => Promise.resolve({ state: 'absent' })),
+    onModelProgress: vi.fn(() => () => undefined),
+  },
+}));
+
+import { SettingsPage } from '@renderer/pages/SettingsPage';
 
 afterEach(() => {
   cleanup();
