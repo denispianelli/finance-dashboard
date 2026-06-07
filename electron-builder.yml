@@ -14,6 +14,13 @@ files:
   # and downloads on demand (PR #163).
   - '!models'
   - '!models/**'
+  # CPU-only: drop the heavy GPU backends (CUDA ~600 MB, Vulkan ~76 MB) — the LLM
+  # is a background batch classifier, CPU is plenty. node-llama-cpp falls back to
+  # CPU at runtime. Metal (mac) is kept: it's neither *-cuda nor *-vulkan.
+  - '!**/node_modules/@node-llama-cpp/*-cuda*'
+  - '!**/node_modules/@node-llama-cpp/*-cuda*/**'
+  - '!**/node_modules/@node-llama-cpp/*-vulkan*'
+  - '!**/node_modules/@node-llama-cpp/*-vulkan*/**'
 
 # node-llama-cpp ships per-platform native binaries that must run from disk,
 # not from inside the asar archive.
