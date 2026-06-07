@@ -37,7 +37,9 @@ export function FlowDetailDialog({
                   <td className="w-full py-1.5 pr-3 text-paper-soft break-words">{t.labelClean}</td>
                   <td
                     className="whitespace-nowrap py-1.5 pl-2 text-right tabular-nums"
-                    style={{ color: t.amount >= 0 ? 'var(--sage)' : 'var(--coral)' }}
+                    style={{
+                      color: t.amount >= 0 ? 'var(--color-income)' : 'var(--color-expense)',
+                    }}
                   >
                     {formatSignedEuro(t.amount)}
                   </td>

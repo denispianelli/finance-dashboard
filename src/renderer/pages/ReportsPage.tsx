@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Overline } from '../components/ui/overline';
 import { PeriodPicker } from '../components/reports/PeriodPicker';
 import { VerdictRow, type VerdictKind } from '../components/reports/VerdictRow';
-import { CashflowBarChart } from '../components/reports/CashflowBarChart';
+import { MonthlyFlowChart } from '../components/reports/MonthlyFlowChart';
 import { NetWorthDonut } from '../components/reports/NetWorthDonut';
 import { CategoryDonut } from '../components/reports/CategoryDonut';
 import { FlowDetailDialog } from '../components/reports/FlowDetailDialog';
@@ -13,8 +13,8 @@ import {
   biggestMovements,
   categoryBreakdown,
   availablePeriods,
-  monthlyNetForYear,
-  dailyCumulativeNet,
+  monthlyFlowForYear,
+  dailyFlow,
   txInPeriod,
   previousPeriod,
   periodVerdict,
@@ -55,9 +55,12 @@ export function ReportsPage() {
 
   const chartData =
     period.granularity === 'year'
-      ? monthlyNetForYear(series, period.value)
-      : dailyCumulativeNet(transactions, period.value);
-  const chartTitle = period.granularity === 'year' ? 'Mois par mois' : 'Jour par jour';
+      ? monthlyFlowForYear(series, period.value)
+      : dailyFlow(transactions, period.value);
+  const chartTitle =
+    period.granularity === 'year'
+      ? 'Entrées et sorties · par mois'
+      : 'Entrées et sorties · par jour';
 
   const detailSign = detail === 'income' ? 'in' : detail === 'expense' ? 'out' : undefined;
   const detailTxns = detail !== null ? countableTransactions(scoped, detailSign) : [];
@@ -76,9 +79,9 @@ export function ReportsPage() {
       : `${monthLabelFr(period.value).replace(/^./, (c) => c.toUpperCase())} ${period.value.slice(0, 4)}`;
 
   return (
-    <div className="flex flex-col gap-4">
+    <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3.5">
+        <div className="flex items-baseline gap-3.5">
           <Overline>— Rapport</Overline>
           <span className="font-serif text-[20px] italic leading-none text-paper">
             {headerLabel}
@@ -87,7 +90,7 @@ export function ReportsPage() {
         <PeriodPicker period={period} available={available} onChange={setPicked} />
       </div>
 
-      <VerdictRow verdict={verdict} periodLabel={periodLabel(period)} onSelect={setDetail} />
+      <VerdictRow verdict={verdict} onSelect={setDetail} />
 
       <FlowDetailDialog
         open={detail !== null}
@@ -98,31 +101,31 @@ export function ReportsPage() {
         transactions={detailTxns}
       />
 
-      <CashflowBarChart data={chartData} title={chartTitle} />
+      <MonthlyFlowChart data={chartData} title={chartTitle} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3.5 lg:grid-cols-2">
         <CategoryDonut
           overline="— II"
           title="D'où vient l'argent"
           slices={categoryBreakdown(scoped, 'in')}
-          totalColor="var(--sage)"
+          centerTop="Entrées"
           emptyHint="Aucune entrée sur la période."
         />
         <CategoryDonut
           overline="— III"
           title="Où part l'argent"
           slices={categoryBreakdown(scoped, 'out')}
-          totalColor="var(--coral)"
+          centerTop="Sorties"
           emptyHint="Aucune dépense sur la période."
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3.5 lg:grid-cols-[1fr_1.25fr]">
         <NetWorthDonut netWorth={netWorth} />
         <RecurringCard recurring={recurring} />
       </div>
 
       <BiggestMovementsCard movements={biggestMovements(scoped)} />
-    </div>
+    </>
   );
 }

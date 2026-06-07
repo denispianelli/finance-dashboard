@@ -102,10 +102,13 @@ const config: Config = {
           3: 'var(--ink-3)',
           4: 'var(--ink-4)',
         },
+        // RGB-channel form so the `/NN` opacity modifier works (the kit uses
+        // line-2 at 0.7 for table-row hairlines). Plain `border-line-x` stays
+        // full-opacity; the hex `--line-x` vars remain for raw SVG strokes.
         line: {
-          1: 'var(--line-1)',
-          2: 'var(--line-2)',
-          3: 'var(--line-3)',
+          1: 'rgb(var(--line-1-rgb) / <alpha-value>)',
+          2: 'rgb(var(--line-2-rgb) / <alpha-value>)',
+          3: 'rgb(var(--line-3-rgb) / <alpha-value>)',
         },
         paper: {
           DEFAULT: 'var(--paper)',

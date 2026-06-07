@@ -209,12 +209,6 @@ function AccountRow({
 
       <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
         <DialogContent className="max-w-md">
-          <DialogClose
-            aria-label="Fermer"
-            className="absolute right-4 top-4 rounded-md text-paper-dim transition-colors hover:text-paper focus:outline-none focus:ring-1 focus:ring-brass"
-          >
-            <X size={16} strokeWidth={1.8} />
-          </DialogClose>
           <DialogHeader>
             <DialogTitle>Supprimer ce compte ?</DialogTitle>
             <DialogDescription>

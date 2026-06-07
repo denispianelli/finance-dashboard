@@ -13,7 +13,7 @@ function compact(t: string): string {
 }
 
 describe('VerdictRow', () => {
-  it('shows the three pastilles and a positive verdict with vs-N-1 and savings', () => {
+  it('shows the three pastilles with income, expense and the signed result', () => {
     const v: PeriodVerdict = {
       income: 2000,
       expense: -1500,
@@ -22,17 +22,16 @@ describe('VerdictRow', () => {
       savingsRate: 25,
       deltaPct: 400,
     };
-    render(<VerdictRow verdict={v} periodLabel="2023" />);
+    render(<VerdictRow verdict={v} />);
     expect(screen.getByText('Entrées')).toBeTruthy();
     expect(screen.getByText('Sorties')).toBeTruthy();
     expect(screen.getByText('Résultat')).toBeTruthy();
+    expect(screen.getByText((t) => compact(t).includes('2000,00'))).toBeTruthy();
+    expect(screen.getByText((t) => compact(t).includes('1500,00'))).toBeTruthy();
     expect(screen.getByText((t) => compact(t).includes('+500,00'))).toBeTruthy();
-    expect(screen.getByText(/positif/)).toBeTruthy();
-    expect(screen.getByText(/\+400\s?% vs N-1/)).toBeTruthy();
-    expect(screen.getByText(/épargne 25\s?%/)).toBeTruthy();
   });
 
-  it('labels a negative result as négatif', () => {
+  it('renders a negative result with the true minus sign', () => {
     const v: PeriodVerdict = {
       income: 100,
       expense: -400,
@@ -41,8 +40,7 @@ describe('VerdictRow', () => {
       savingsRate: null,
       deltaPct: null,
     };
-    render(<VerdictRow verdict={v} periodLabel="juin 2024" />);
-    expect(screen.getByText(/négatif/)).toBeTruthy();
+    render(<VerdictRow verdict={v} />);
     expect(screen.getByText((t) => compact(t).includes('−300,00'))).toBeTruthy();
   });
 });

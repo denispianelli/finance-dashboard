@@ -7,8 +7,6 @@ export type VerdictKind = 'income' | 'expense' | 'result';
 
 export interface VerdictRowProps {
   verdict: PeriodVerdict;
-  /** Human label of the period, e.g. "2023" or "juin 2024". */
-  periodLabel: string;
   /** Click a pastille to drill into the transactions behind it. */
   onSelect?: (kind: VerdictKind) => void;
 }
@@ -17,13 +15,11 @@ function Pastille({
   label,
   value,
   color,
-  sub,
   onClick,
 }: {
   label: string;
   value: string;
   color?: string;
-  sub?: string;
   onClick?: () => void;
 }) {
   const content = (
@@ -41,7 +37,6 @@ function Pastille({
       >
         {value}
       </span>
-      {sub !== undefined && <span className="font-sans text-[11px] text-paper-mute">{sub}</span>}
     </>
   );
   const base = 'flex flex-1 flex-col gap-3 rounded-lg border border-line-2 bg-ink-2 px-[22px] py-5';
@@ -59,23 +54,15 @@ function Pastille({
 }
 
 /** The hero: three pastilles — money in, money out, and the signed result (the verdict). */
-export function VerdictRow({ verdict, periodLabel, onSelect }: VerdictRowProps) {
-  const resultColor = verdict.positive ? 'var(--sage)' : 'var(--coral)';
-  const bits = [verdict.positive ? 'positif' : 'négatif'];
-  if (verdict.deltaPct !== null) {
-    bits.push(
-      `${verdict.deltaPct >= 0 ? '+' : '−'}${Math.abs(verdict.deltaPct).toFixed(0)} % vs N-1`,
-    );
-  }
-  if (verdict.savingsRate !== null) bits.push(`épargne ${verdict.savingsRate.toFixed(0)} %`);
+export function VerdictRow({ verdict, onSelect }: VerdictRowProps) {
+  const resultColor = verdict.positive ? 'var(--color-income)' : 'var(--color-expense)';
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row">
+    <div className="flex flex-col gap-3.5 sm:flex-row">
       <Pastille
         label="Entrées"
         value={formatEuro(verdict.income)}
-        color="var(--sage)"
-        sub={periodLabel}
+        color="var(--color-income)"
         onClick={
           onSelect
             ? () => {
@@ -87,8 +74,7 @@ export function VerdictRow({ verdict, periodLabel, onSelect }: VerdictRowProps) 
       <Pastille
         label="Sorties"
         value={formatEuro(Math.abs(verdict.expense))}
-        color="var(--coral)"
-        sub={periodLabel}
+        color="var(--color-expense)"
         onClick={
           onSelect
             ? () => {
@@ -101,7 +87,6 @@ export function VerdictRow({ verdict, periodLabel, onSelect }: VerdictRowProps) 
         label="Résultat"
         value={formatSignedEuro(verdict.net)}
         color={resultColor}
-        sub={bits.join(' · ')}
         onClick={
           onSelect
             ? () => {

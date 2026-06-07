@@ -19,10 +19,12 @@ export interface ReportPeriod {
   value: string;
 }
 
-/** One point on the gained/lost area chart. */
-export interface NetPoint {
+/** One bucket (month or day) of paired flows for the income-vs-expense bars.
+ *  `expense` is a magnitude (≥ 0), so both bars grow upward from the baseline. */
+export interface MonthlyFlow {
   label: string;
-  net: number;
+  income: number;
+  expense: number;
 }
 
 const MONTHS_SHORT = [
@@ -61,13 +63,25 @@ export function availablePeriods(monthSeries: CashflowPoint[]): {
   return { years: [...years].sort(desc), months: [...months].sort(desc) };
 }
 
-/** The 12 months of a year (Jan→Dec), net per month, zero-filled, from a month series. */
-export function monthlyNetForYear(monthSeries: CashflowPoint[], year: string): NetPoint[] {
-  const byMonth = new Map(monthSeries.map((p) => [p.period, p.net]));
-  return MONTHS_SHORT.map((label, i) => {
+/** The months of a year (Jan→Dec) with income & expense magnitude, trimmed to the
+ *  populated range so the bars fill the chart (leading/trailing empty months — e.g.
+ *  the future months of the current year — are dropped; empty months *between* data
+ *  are kept). Returns `[]` when the year has no activity. */
+export function monthlyFlowForYear(monthSeries: CashflowPoint[], year: string): MonthlyFlow[] {
+  const byMonth = new Map(monthSeries.map((p) => [p.period, p]));
+  const all = MONTHS_SHORT.map((label, i) => {
     const key = `${year}-${String(i + 1).padStart(2, '0')}`;
-    return { label, net: byMonth.get(key) ?? 0 };
+    const p = byMonth.get(key);
+    return { label, income: p?.income ?? 0, expense: Math.abs(p?.expense ?? 0) };
   });
+  const has = (m: MonthlyFlow): boolean => m.income > 0 || m.expense > 0;
+  const first = all.findIndex(has);
+  if (first === -1) return [];
+  let last = first;
+  all.forEach((m, i) => {
+    if (has(m)) last = i;
+  });
+  return all.slice(first, last + 1);
 }
 
 /** Transactions whose date falls in the period (date prefix match). */
@@ -99,21 +113,32 @@ export function periodTotals(txns: DashboardTransaction[]): {
   return { income, expense: net - income, net };
 }
 
-/** Cumulative net by day across the transactions of a month (`yyyy-mm`), transfers excluded. */
-export function dailyCumulativeNet(txns: DashboardTransaction[], month: string): NetPoint[] {
-  const byDay = new Map<string, number>();
+/** Per-day income & expense magnitude across every day of a month (`yyyy-mm`),
+ *  zero-filled and transfers excluded, so the bars are continuous like the kit.
+ *  Labels are sparse (day 1 and every 5th) to avoid crowding the axis. */
+export function dailyFlow(txns: DashboardTransaction[], month: string): MonthlyFlow[] {
+  const year = Number(month.slice(0, 4));
+  const monthNum = Number(month.slice(5, 7));
+  const daysInMonth = new Date(year, monthNum, 0).getDate();
+  const byDay = new Map<number, { income: number; expense: number }>();
   for (const t of txns) {
     if (!t.date.startsWith(month) || !counts(t)) continue;
-    const day = t.date.slice(8, 10);
-    byDay.set(day, (byDay.get(day) ?? 0) + t.amount);
+    const day = Number(t.date.slice(8, 10));
+    const e = byDay.get(day) ?? { income: 0, expense: 0 };
+    if (t.amount >= 0) e.income += t.amount;
+    else e.expense += -t.amount;
+    byDay.set(day, e);
   }
-  let running = 0;
-  return [...byDay.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([day, delta]) => {
-      running += delta;
-      return { label: day, net: running };
+  const out: MonthlyFlow[] = [];
+  for (let day = 1; day <= daysInMonth; day++) {
+    const e = byDay.get(day) ?? { income: 0, expense: 0 };
+    out.push({
+      label: day === 1 || day % 5 === 0 ? String(day) : '',
+      income: e.income,
+      expense: e.expense,
     });
+  }
+  return out;
 }
 
 /** The period verdict: income, spend, net (with sign), savings rate, and the

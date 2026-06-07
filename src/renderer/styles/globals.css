@@ -59,6 +59,11 @@
     --line-1: #1C2029;
     --line-2: #2A2F3A;
     --line-3: #3A3F4A;
+    /* RGB channels of the line colours, so Tailwind's `/NN` opacity modifier
+       works (the hex vars above stay for raw SVG-stroke usage). */
+    --line-1-rgb: 28 32 41;
+    --line-2-rgb: 42 47 58;
+    --line-3-rgb: 58 63 74;
 
     /* Identity tokens — warm cream text */
     --paper:      #F2EFE6;
@@ -219,4 +224,21 @@
   ::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--line-3); }
   ::-webkit-scrollbar-track { background: transparent; }
+}
+
+/* Chart entrance: bars grow up from the baseline (recharts-style). The donut
+   sweep is driven in JS via a stroke-dasharray transition. */
+@keyframes bar-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-chart-bar] {
+    animation: none !important;
+  }
 }
