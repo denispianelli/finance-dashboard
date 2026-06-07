@@ -103,9 +103,42 @@ it('refuses up-front when disk space is insufficient', async () => {
   expect(res).toEqual({ ok: false, error: 'insufficient_disk' });
 });
 
-it('returns cancelled and keeps the .part on abort', async () => {
+it('returns cancelled when aborted before the download starts', async () => {
   const ac = new AbortController();
   ac.abort();
   const res = await downloadModel(dir, noop, ac.signal, deps());
   expect(res).toEqual({ ok: false, error: 'cancelled' });
+});
+
+it('returns cancelled mid-stream and keeps the .part', async () => {
+  writeFileSync(join(dir, `${MODEL_FILE}.part`), BODY.subarray(0, 5));
+  const ac = new AbortController();
+  const abortingFetch = ((_url: string, init?: RequestInit) => {
+    const signal: AbortSignal | undefined =
+      init?.signal instanceof AbortSignal ? init.signal : undefined;
+    return Promise.resolve({
+      ok: true,
+      status: 206,
+      body: new ReadableStream({
+        pull(controller) {
+          if (signal?.aborted) {
+            controller.error(new DOMException('aborted', 'AbortError'));
+            return;
+          }
+          controller.enqueue(new Uint8Array(BODY.subarray(5)));
+        },
+      }),
+    } as unknown as Response);
+  }) as unknown as typeof fetch;
+
+  const res = await downloadModel(
+    dir,
+    () => {
+      ac.abort();
+    }, // abort right after the first chunk's progress
+    ac.signal,
+    deps({ fetch: abortingFetch }),
+  );
+  expect(res).toEqual({ ok: false, error: 'cancelled' });
+  expect(existsSync(join(dir, `${MODEL_FILE}.part`))).toBe(true);
 });

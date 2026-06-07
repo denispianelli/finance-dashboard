@@ -72,6 +72,7 @@ export async function downloadModel(
       signal,
     });
     if (!res.ok || !res.body) return { ok: false, error: 'network' };
+    if (already > 0 && res.status !== 206) return { ok: false, error: 'network' };
 
     const body = res.body;
     await new Promise<void>((resolve, reject) => {
@@ -89,13 +90,17 @@ export async function downloadModel(
             onProgress({ receivedBytes: received, totalBytes: d.manifest.sizeBytes });
             out.write(value, (err) => {
               if (err) {
+                out.destroy();
                 reject(err);
               } else {
                 pump();
               }
             });
           })
-          .catch(reject);
+          .catch((e: unknown) => {
+            out.destroy();
+            reject(e instanceof Error ? e : new Error(String(e), { cause: e }));
+          });
       };
       pump();
     });
