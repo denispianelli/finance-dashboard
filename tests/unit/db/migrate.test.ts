@@ -17,6 +17,7 @@ describe('runMigrations', () => {
     expect(tables).toContain('imports');
     expect(tables).toContain('bank_column_mappings');
     expect(tables).toContain('categorization_rules');
+    expect(tables).toContain('app_settings');
     db.close();
   });
 
