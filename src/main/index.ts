@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { registerAllHandlers } from './ipc/register';
 import { getDb, closeDb } from './db';
 import { detectTransfers } from './transfers/detect';
+import { modelController } from './llm/modelController';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -27,6 +28,11 @@ function createWindow(): void {
   win.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url);
     return { action: 'deny' };
+  });
+
+  // Push every model-status change to the renderer (progress bar, banner, settings).
+  modelController.subscribe((status) => {
+    if (!win.isDestroyed()) win.webContents.send('model:progress', status);
   });
 
   if (process.env.ELECTRON_RENDERER_URL) {
