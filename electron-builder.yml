@@ -14,13 +14,17 @@ files:
   # and downloads on demand (PR #163).
   - '!models'
   - '!models/**'
-  # CPU-only: drop the heavy GPU backends (CUDA ~600 MB, Vulkan ~76 MB) — the LLM
-  # is a background batch classifier, CPU is plenty. node-llama-cpp falls back to
-  # CPU at runtime. Metal (mac) is kept: it's neither *-cuda nor *-vulkan.
-  - '!**/node_modules/@node-llama-cpp/*-cuda*'
-  - '!**/node_modules/@node-llama-cpp/*-cuda*/**'
+  # Keep the Windows CUDA backend (win-x64-cuda + its -ext cuBLAS DLLs) for GPU
+  # offload on NVIDIA machines — ~10x faster categorization (design:
+  # docs/superpowers/specs/2026-06-08-llm-gpu-acceleration). node-llama-cpp still
+  # falls back to CPU when no NVIDIA GPU is present. Drop Vulkan (broken/unused)
+  # and the non-Windows CUDA backends to limit artifact size.
   - '!**/node_modules/@node-llama-cpp/*-vulkan*'
   - '!**/node_modules/@node-llama-cpp/*-vulkan*/**'
+  - '!**/node_modules/@node-llama-cpp/linux-x64-cuda*'
+  - '!**/node_modules/@node-llama-cpp/linux-x64-cuda*/**'
+  - '!**/node_modules/@node-llama-cpp/mac-*-cuda*'
+  - '!**/node_modules/@node-llama-cpp/mac-*-cuda*/**'
 
 # node-llama-cpp ships per-platform native binaries that must run from disk,
 # not from inside the asar archive.
