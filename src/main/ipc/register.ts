@@ -34,6 +34,14 @@ import {
   handleTransactionsRestore,
 } from './handlers/transactions';
 import { handleTransactionsSetTransfer } from './handlers/transactionsSetTransfer';
+import {
+  handleModelStatus,
+  handleModelDownloadStart,
+  handleModelDownloadCancel,
+  handleModelRemove,
+  handleGetCategorizeOptOut,
+  handleSetCategorizeOptOut,
+} from './handlers/model';
 
 type Handler<C extends IpcChannel> = (
   payload: IpcPayload<C>,
@@ -85,4 +93,10 @@ export function registerAllHandlers(): void {
   register(CHANNELS.banksLearn, handleBanksLearn);
   register(CHANNELS.recurringList, () => handleRecurringList());
   register(CHANNELS.importResolveAccount, handleImportResolveAccount);
+  register(CHANNELS.modelStatus, () => handleModelStatus());
+  register(CHANNELS.modelDownloadStart, () => handleModelDownloadStart());
+  register(CHANNELS.modelDownloadCancel, () => handleModelDownloadCancel());
+  register(CHANNELS.modelRemove, () => handleModelRemove());
+  register(CHANNELS.settingsGetCategorizeOptOut, () => handleGetCategorizeOptOut());
+  register(CHANNELS.settingsSetCategorizeOptOut, handleSetCategorizeOptOut);
 }

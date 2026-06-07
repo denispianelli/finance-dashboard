@@ -243,4 +243,48 @@ describe('useImport — queue', () => {
       results: [{ fileName: 'notes.txt', status: 'failed' }],
     });
   });
+
+  it('transitions to modelRequired (not failure) when banks:learn returns model_unavailable', async () => {
+    mockInvoke
+      .mockResolvedValueOnce({
+        ok: true,
+        identifier: 'pdf:abc',
+        matchedAccountId: null,
+        sourceType: 'pdf',
+        detectedBank: null,
+      }) // resolve → no match
+      .mockResolvedValueOnce({ ok: false, error: 'unknown_bank' }) // extract → unknown_bank
+      .mockResolvedValueOnce({ ok: false, error: 'model_unavailable' }); // banks:learn → model unavailable
+
+    const { result } = renderHook(() => useImport());
+
+    // resolve → chooseAccount
+    await act(async () => {
+      await result.current.startFromPaths(['/x/releve.pdf']);
+    });
+    expect(result.current.state).toMatchObject({
+      step: 'queue',
+      sub: { step: 'chooseAccount' },
+    });
+
+    // chooseAccount → extract → unknownBank
+    await act(async () => {
+      await result.current.chooseAccount('acc-a');
+    });
+    expect(result.current.state).toMatchObject({
+      step: 'queue',
+      sub: { step: 'unknownBank', accountId: 'acc-a' },
+    });
+
+    // learnBank with model_unavailable → must land on modelRequired, NOT failure
+    await act(async () => {
+      await result.current.learnBank('Crédit Agricole');
+    });
+    expect(result.current.state).toMatchObject({
+      step: 'queue',
+      sub: { step: 'modelRequired', accountId: 'acc-a', bankName: 'Crédit Agricole' },
+    });
+    // State must still be 'queue' (no summary / file failure)
+    expect(result.current.state.step).toBe('queue');
+  });
 });

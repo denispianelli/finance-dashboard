@@ -6,6 +6,9 @@ import { Button } from '../components/ui/button';
 import { Chip } from '../components/ui/chip';
 import { Overline } from '../components/ui/overline';
 import { cn } from '../lib/utils';
+import { useModelStatus } from '../hooks/useModelStatus';
+import { ModelSettingsSection } from '../components/model/ModelSettingsSection';
+import { ipc } from '../ipc/client';
 
 // First draft per docs/superpowers/specs/2026-06-03-settings-view-content-design.md.
 // Content/structure only — nothing is wired to IPC yet. Values shown as static placeholders
@@ -24,6 +27,7 @@ export function SettingsPage() {
 }
 
 function ModelSection() {
+  const status = useModelStatus();
   return (
     <Section icon={Cpu} overline="— Local" title="Modèle LLM">
       <p className="pb-1 font-sans text-[12px] leading-relaxed text-paper-mute">
@@ -36,8 +40,11 @@ function ModelSection() {
           <span className="font-mono text-[12px] text-paper-soft">
             Llama 3.2 3B Instruct · Q4_K_M
           </span>
-          {/* TODO: wire status to isModelAvailable() over IPC. */}
-          <StatusPill>Présent · ~1,9 Go</StatusPill>
+          <ModelSettingsSection
+            status={status}
+            onDownload={() => void ipc.invoke('model:download:start', {})}
+            onRemove={() => void ipc.invoke('model:remove', {})}
+          />
         </div>
       </Row>
 
@@ -174,15 +181,6 @@ function Row({
       </div>
       <div className="shrink-0">{children}</div>
     </div>
-  );
-}
-
-function StatusPill({ children }: { children: ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-sm border border-line-2 bg-ink-3 px-2 py-0.5 font-mono text-[10px] text-paper-mute">
-      <span className="h-1.5 w-1.5 rounded-full bg-sage" />
-      {children}
-    </span>
   );
 }
 

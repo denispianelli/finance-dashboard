@@ -18,6 +18,7 @@ vi.mock('@renderer/ipc/client', () => ({
         },
       ],
     }),
+    onModelProgress: vi.fn().mockReturnValue(vi.fn()),
   },
 }));
 vi.mock('sonner', () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }));

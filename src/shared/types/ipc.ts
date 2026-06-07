@@ -1,3 +1,9 @@
+import type { ModelStatus } from './model';
+export type { ModelState } from './model';
+
+/** Alias kept for the IPC response naming convention. */
+export type ModelStatusResponse = ModelStatus;
+
 import type { StatementExtraction, CategorizeItem } from './import';
 import type {
   AccountSummary,
@@ -147,6 +153,12 @@ export interface IpcContract {
   };
   'banks:learn': { payload: LearnBankInput; response: LearnBankResponse };
   'recurring:list': { payload: Record<string, never>; response: RecurringReport };
+  'model:status': { payload: Record<string, never>; response: ModelStatusResponse };
+  'model:download:start': { payload: Record<string, never>; response: { ok: true } };
+  'model:download:cancel': { payload: Record<string, never>; response: { ok: true } };
+  'model:remove': { payload: Record<string, never>; response: { ok: true } };
+  'settings:getCategorizeOptOut': { payload: Record<string, never>; response: { value: boolean } };
+  'settings:setCategorizeOptOut': { payload: { value: boolean }; response: { ok: true } };
 }
 
 export type IpcChannel = keyof IpcContract;
@@ -156,4 +168,5 @@ export type IpcResponse<C extends IpcChannel> = IpcContract[C]['response'];
 export interface ElectronAPI {
   invoke: <C extends IpcChannel>(channel: C, payload: IpcPayload<C>) => Promise<IpcResponse<C>>;
   getDroppedPaths: (files: File[]) => string[];
+  onModelProgress: (cb: (status: ModelStatusResponse) => void) => () => void;
 }
