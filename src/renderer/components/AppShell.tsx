@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import type { AppOutletContext } from '@renderer/lib/outletContext';
 import { useBackgroundCategorization } from '@renderer/hooks/useBackgroundCategorization';
+import { useModelStatus } from '@renderer/hooks/useModelStatus';
+import { ipc } from '@renderer/ipc/client';
 import { ImportModal } from './ImportModal';
 import { CreateAccountModal } from './accounts/CreateAccountModal';
+import { ModelDownloadIndicator } from './model/ModelDownloadIndicator';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 
@@ -16,6 +19,11 @@ export function AppShell() {
       setRefreshToken((t) => t + 1);
     },
   });
+
+  const modelStatus = useModelStatus();
+  const startModelDownload = () => {
+    void ipc.invoke('model:download:start', {});
+  };
 
   // Keep the pending count current (on mount, and after each import / edit) so the
   // Topbar can offer the "Catégoriser (N)" trigger. This is a cheap COUNT — it never
@@ -40,6 +48,7 @@ export function AppShell() {
             void bg.run();
           }}
         />
+        <ModelDownloadIndicator status={modelStatus} onResume={startModelDownload} />
         {/* min-h-0 lets this flex child shrink to the viewport and scroll;
             [&>*]:shrink-0 stops page sections from being vertically
             compressed (which collapsed AccountTabs when the window
