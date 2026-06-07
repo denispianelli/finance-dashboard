@@ -58,6 +58,23 @@ it('remove deletes the model file and returns to absent', async () => {
   expect(ctl.getStatus().state).toBe('absent');
 });
 
+it('goes to paused when a download is cancelled mid-flight', async () => {
+  vi.mocked(downloadModel).mockImplementation(
+    (_dir, _onProgress, signal) =>
+      new Promise((resolve) => {
+        signal.addEventListener('abort', () => {
+          writeFileSync(join(dir, `${MODEL_FILE}.part`), 'partial');
+          resolve({ ok: false, error: 'cancelled' });
+        });
+      }),
+  );
+  const ctl = createDownloadController(() => dir);
+  const p = ctl.start();
+  ctl.cancel();
+  await p;
+  expect(ctl.getStatus().state).toBe('paused');
+});
+
 it('start is idempotent while a download is in flight', () => {
   let release: () => void = () => undefined;
   vi.mocked(downloadModel).mockImplementation(

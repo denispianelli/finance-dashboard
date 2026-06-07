@@ -15,6 +15,7 @@ export interface DownloadController {
 export function createDownloadController(modelsDir: () => string): DownloadController {
   const listeners = new Set<(s: ModelStatus) => void>();
   let active: AbortController | null = null;
+  let runPromise: Promise<void> | null = null;
   let override: ModelStatus | null = null;
 
   function fsState(): ModelStatus {
@@ -40,21 +41,30 @@ export function createDownloadController(modelsDir: () => string): DownloadContr
 
   async function start(): Promise<void> {
     if (active) return;
-    active = new AbortController();
+    const ac = new AbortController();
+    active = ac;
     set({ state: 'downloading', receivedBytes: 0, totalBytes: undefined });
-    const res = await downloadModel(
-      modelsDir(),
-      (p: DownloadProgress) => {
-        set({ state: 'downloading', receivedBytes: p.receivedBytes, totalBytes: p.totalBytes });
-      },
-      active.signal,
-    );
-    active = null;
-    if (res.ok)
-      set(null); // fall back to fsState() → 'ready'
-    else if (res.error === 'cancelled')
-      set(null); // → 'paused' (the .part remains)
-    else set({ state: 'error', error: res.error });
+    runPromise = (async () => {
+      try {
+        const res = await downloadModel(
+          modelsDir(),
+          (p: DownloadProgress) => {
+            set({ state: 'downloading', receivedBytes: p.receivedBytes, totalBytes: p.totalBytes });
+          },
+          ac.signal,
+        );
+        if (res.ok)
+          set(null); // → fsState() 'ready'
+        else if (res.error === 'cancelled')
+          set(null); // → fsState() 'paused' (.part remains)
+        else set({ state: 'error', error: res.error });
+      } catch (e) {
+        set({ state: 'error', error: e instanceof Error ? e.message : 'download_failed' });
+      } finally {
+        active = null;
+      }
+    })();
+    await runPromise;
   }
 
   function cancel(): void {
@@ -63,6 +73,13 @@ export function createDownloadController(modelsDir: () => string): DownloadContr
 
   async function remove(): Promise<void> {
     cancel();
+    if (runPromise) {
+      try {
+        await runPromise;
+      } catch {
+        /* already handled in start */
+      }
+    }
     const base = resolveModelPath(modelsDir());
     await rm(base, { force: true });
     await rm(`${base}.part`, { force: true });
