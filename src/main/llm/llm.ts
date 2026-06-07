@@ -37,6 +37,10 @@ async function loadModel(modelsDir: string): Promise<LlamaModel> {
   }
   const { getLlama } = await import('node-llama-cpp');
   const llama = await getLlama();
+  // Diagnostic: which compute backend was auto-selected (cuda / metal / vulkan
+  // / false=CPU). We never force a backend — auto-detection keeps CPU fallback
+  // working on machines without a supported GPU. See the GPU acceleration spec.
+  console.log(`[llm] inference backend: ${JSON.stringify(llama.gpu)}`);
   return llama.loadModel({ modelPath: path });
 }
 
