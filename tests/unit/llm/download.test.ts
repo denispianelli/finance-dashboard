@@ -61,6 +61,23 @@ it('downloads, verifies and atomically renames to the final file', async () => {
   expect(readFileSync(join(dir, MODEL_FILE))).toEqual(BODY);
 });
 
+it('creates the models dir on a fresh install (no statfs/write ENOENT)', async () => {
+  // Fresh machine: userData/models does not exist yet. Use the DEFAULT
+  // freeDiskBytes (real statfs) — the exact path that threw ENOENT on Windows.
+  const fresh = join(dir, 'fresh', 'models');
+  const res = await downloadModel(fresh, noop, new AbortController().signal, {
+    fetch: fakeFetch(BODY),
+    manifest: {
+      url: 'https://x/model.gguf',
+      sha256: SHA,
+      sizeBytes: BODY.length,
+      fileName: MODEL_FILE,
+    },
+  });
+  expect(res).toEqual({ ok: true });
+  expect(existsSync(join(fresh, MODEL_FILE))).toBe(true);
+});
+
 it('reports progress up to the total', async () => {
   const seen: number[] = [];
   await downloadModel(dir, (p) => seen.push(p.receivedBytes), new AbortController().signal, deps());
