@@ -29,4 +29,10 @@ export const CHANNELS = {
   transactionsRestore: 'transactions:restore',
   transactionsSetTransfer: 'transactions:setTransfer',
   banksLearn: 'banks:learn',
+  modelStatus: 'model:status',
+  modelDownloadStart: 'model:download:start',
+  modelDownloadCancel: 'model:download:cancel',
+  modelRemove: 'model:remove',
+  settingsGetCategorizeOptOut: 'settings:getCategorizeOptOut',
+  settingsSetCategorizeOptOut: 'settings:setCategorizeOptOut',
 } as const satisfies Record<string, IpcChannel>;
