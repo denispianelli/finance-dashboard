@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { createWriteStream, createReadStream } from 'node:fs';
-import { stat, rename, rm, statfs } from 'node:fs/promises';
+import { stat, rename, rm, statfs, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { MODEL_MANIFEST } from './modelManifest';
 
@@ -59,6 +59,10 @@ export async function downloadModel(
   const partPath = `${finalPath}.part`;
 
   if (signal.aborted) return { ok: false, error: 'cancelled' };
+
+  // Fresh install: userData/models doesn't exist yet. Create it before the disk
+  // check (statfs) and the write stream, both of which ENOENT on a missing dir.
+  await mkdir(modelsDir, { recursive: true });
 
   const already = await sizeOrZero(partPath);
   const remaining = d.manifest.sizeBytes - already;
