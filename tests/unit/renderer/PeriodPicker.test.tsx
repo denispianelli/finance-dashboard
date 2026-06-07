@@ -11,7 +11,7 @@ afterEach(() => {
 const available = { years: ['2026', '2025'], months: ['2026-05', '2024-06'] };
 
 describe('PeriodPicker', () => {
-  it('lists the available year values in the select', () => {
+  it('lists the available years in the year select', () => {
     render(
       <PeriodPicker
         period={{ granularity: 'year', value: '2026' }}
@@ -19,11 +19,14 @@ describe('PeriodPicker', () => {
         onChange={() => undefined}
       />,
     );
-    const select = screen.getByLabelText<HTMLSelectElement>('Période');
-    expect([...select.options].map((o) => o.value)).toEqual(['2026', '2025']);
+    const year = screen.getByLabelText<HTMLSelectElement>('Année');
+    expect([...year.options].map((o) => o.value)).toEqual(['2026', '2025']);
+    // The month select defaults to "Toute l'année" in the year view.
+    const monthSel = screen.getByLabelText<HTMLSelectElement>('Mois');
+    expect(monthSel.value).toBe('all');
   });
 
-  it('switches to the latest month when the Mois toggle is clicked', () => {
+  it('emits a month period when a month is chosen', () => {
     const onChange = vi.fn<(p: ReportPeriod) => void>();
     render(
       <PeriodPicker
@@ -32,20 +35,33 @@ describe('PeriodPicker', () => {
         onChange={onChange}
       />,
     );
-    fireEvent.click(screen.getByText('Mois'));
+    fireEvent.change(screen.getByLabelText('Mois'), { target: { value: '05' } });
     expect(onChange).toHaveBeenCalledWith({ granularity: 'month', value: '2026-05' });
   });
 
-  it('emits the chosen value on select change', () => {
+  it('returns to the year view when "Toute l\'année" is chosen', () => {
     const onChange = vi.fn<(p: ReportPeriod) => void>();
     render(
       <PeriodPicker
-        period={{ granularity: 'year', value: '2026' }}
+        period={{ granularity: 'month', value: '2026-05' }}
         available={available}
         onChange={onChange}
       />,
     );
-    fireEvent.change(screen.getByLabelText('Période'), { target: { value: '2025' } });
-    expect(onChange).toHaveBeenCalledWith({ granularity: 'year', value: '2025' });
+    fireEvent.change(screen.getByLabelText('Mois'), { target: { value: 'all' } });
+    expect(onChange).toHaveBeenCalledWith({ granularity: 'year', value: '2026' });
+  });
+
+  it('keeps the selected month when the year changes', () => {
+    const onChange = vi.fn<(p: ReportPeriod) => void>();
+    render(
+      <PeriodPicker
+        period={{ granularity: 'month', value: '2026-05' }}
+        available={available}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('Année'), { target: { value: '2025' } });
+    expect(onChange).toHaveBeenCalledWith({ granularity: 'month', value: '2025-05' });
   });
 });

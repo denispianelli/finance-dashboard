@@ -24,3 +24,13 @@ export function formatSignedEuro(amount: number): string {
   const sign = amount >= 0 ? '+' : MINUS;
   return `${sign}${NBSP}${formatEuro(Math.abs(amount))}`;
 }
+
+/** Compact magnitude for tight spots like donut centres: "38k" for ≥ 1 000
+ *  (rounded to the nearest thousand), otherwise the rounded integer. No symbol. */
+export function formatCompact(amount: number): string {
+  const abs = Math.abs(amount);
+  const sign = amount < 0 ? MINUS : '';
+  return abs >= 1000
+    ? `${sign}${String(Math.round(abs / 1000))}k`
+    : `${sign}${String(Math.round(abs))}`;
+}

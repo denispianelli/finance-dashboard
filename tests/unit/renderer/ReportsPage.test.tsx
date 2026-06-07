@@ -83,9 +83,9 @@ describe('ReportsPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Résultat')).toBeTruthy();
     });
-    expect(screen.getByText('Entrées')).toBeTruthy();
-    expect(screen.getByText('Sorties')).toBeTruthy();
-    expect(screen.getByText('Mois par mois')).toBeTruthy();
+    expect(screen.getAllByText('Entrées').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Sorties').length).toBeGreaterThan(0);
+    expect(screen.getByText('Entrées et sorties · par mois')).toBeTruthy();
   });
 
   it('renders the net worth donut, top categories, recurring and biggest movements', async () => {

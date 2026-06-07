@@ -6,10 +6,10 @@ import {
   yearOverYear,
   biggestMovements,
   availablePeriods,
-  monthlyNetForYear,
+  monthlyFlowForYear,
   txInPeriod,
   periodTotals,
-  dailyCumulativeNet,
+  dailyFlow,
   previousPeriod,
   periodVerdict,
   accountComposition,
@@ -116,13 +116,19 @@ describe('availablePeriods', () => {
   });
 });
 
-describe('monthlyNetForYear', () => {
-  it('returns 12 zero-filled months for the year', () => {
-    const pts = monthlyNetForYear(series2y, '2026');
-    expect(pts).toHaveLength(12);
-    expect(pts[2]).toEqual({ label: 'mars', net: 150 }); // March
-    expect(pts[4]).toEqual({ label: 'mai', net: 200 }); // May
-    expect(pts[0]).toEqual({ label: 'janv', net: 0 }); // January, no data
+describe('monthlyFlowForYear', () => {
+  it('trims to the populated range, keeping empty months in between', () => {
+    // 2026 has data in mars and mai → range is mars..mai (avr kept, empty).
+    const pts = monthlyFlowForYear(series2y, '2026');
+    expect(pts).toEqual([
+      { label: 'mars', income: 200, expense: 50 },
+      { label: 'avr', income: 0, expense: 0 },
+      { label: 'mai', income: 300, expense: 100 },
+    ]);
+  });
+
+  it('returns an empty array for a year with no activity', () => {
+    expect(monthlyFlowForYear(series2y, '2099')).toEqual([]);
   });
 });
 
@@ -195,18 +201,21 @@ describe('categoryBreakdown', () => {
   });
 });
 
-describe('dailyCumulativeNet', () => {
-  it('accumulates net by day within the month, excluding transfers', () => {
+describe('dailyFlow', () => {
+  it('zero-fills every day of the month with sparse labels, excluding transfers', () => {
     const txns = [
       tx({ date: '2024-06-02', amount: 1000 }),
       tx({ date: '2024-06-05', amount: -300 }),
       tx({ date: '2024-06-05', amount: -200, isInternalTransfer: true }),
       tx({ date: '2024-07-01', amount: -999 }),
     ];
-    expect(dailyCumulativeNet(txns, '2024-06')).toEqual([
-      { label: '02', net: 1000 },
-      { label: '05', net: 700 },
-    ]);
+    const s = dailyFlow(txns, '2024-06');
+    expect(s).toHaveLength(30); // June
+    expect(s[1]).toEqual({ label: '', income: 1000, expense: 0 }); // day 2 (unlabelled)
+    expect(s[4]).toEqual({ label: '5', income: 0, expense: 300 }); // day 5 (labelled)
+    expect(s[0]?.label).toBe('1'); // day 1 always labelled
+    expect(s[9]?.label).toBe('10'); // every 5th labelled
+    expect(s[2]).toEqual({ label: '', income: 0, expense: 0 }); // day 3, empty
   });
 });
 

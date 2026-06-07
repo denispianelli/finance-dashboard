@@ -87,7 +87,7 @@ export function DashboardPage() {
           deltaDir={balanceDelta?.deltaDir}
           ctx={ctxVsPrev}
           spark={sparkPoints(series.map((s) => s.balance))}
-          sparkColor="var(--sage)"
+          sparkColor="var(--color-income)"
         />
         <Kpi
           label={`Dépenses · ${monthName}`}
@@ -97,7 +97,7 @@ export function DashboardPage() {
           deltaDir={expenseDelta?.deltaDir}
           ctx={ctxVsPrev}
           spark={sparkPoints(series.map((s) => Math.abs(s.expense)))}
-          sparkColor="var(--coral)"
+          sparkColor="var(--color-expense)"
         />
         <Kpi
           label={`Revenus · ${monthName}`}
