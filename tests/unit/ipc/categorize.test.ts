@@ -41,49 +41,60 @@ afterEach(() => {
 });
 
 describe('handleCategorizePending', () => {
-  it('returns the uncategorized transactions', () => {
-    insertUncategorized('t1', 'ZZZ UNSEEN');
-    expect(handleCategorizePending()).toEqual({ items: [{ id: 't1', label: 'ZZZ UNSEEN' }] });
+  it('returns distinct pending groups', () => {
+    insertUncategorized('t1', 'VIR PAYPAL 12/03/25');
+    insertUncategorized('t2', 'VIR PAYPAL 14/05/25');
+    insertUncategorized('t3', 'CARREFOUR');
+    expect(handleCategorizePending()).toEqual({
+      groups: [
+        { key: 'VIR PAYPAL', label: 'VIR PAYPAL 12/03/25', count: 2 },
+        { key: 'CARREFOUR', label: 'CARREFOUR', count: 1 },
+      ],
+    });
   });
 });
 
 describe('handleCategorizeBatch', () => {
   it('returns model_unavailable without loading the model', async () => {
     vi.mocked(isModelAvailable).mockReturnValue(false);
-    const res = await handleCategorizeBatch({ items: [{ id: 't1', label: 'X' }] });
+    const res = await handleCategorizeBatch({ key: 'X', label: 'X' });
     expect(res).toEqual({ ok: false, error: 'model_unavailable' });
     expect(getModel).not.toHaveBeenCalled();
   });
 
-  it('persists suggestions and returns the applied count', async () => {
+  it('applies the suggestion to every row of the key and returns the count', async () => {
     vi.mocked(isModelAvailable).mockReturnValue(true);
-    insertUncategorized('t1', 'CARREFOUR');
-    insertUncategorized('t2', 'MYSTERY');
+    insertUncategorized('t1', 'VIR PAYPAL 12/03/25');
+    insertUncategorized('t2', 'VIR PAYPAL 14/05/25');
     vi.mocked(categorizeBatch).mockResolvedValue([
-      { id: 't1', categoryId: 'cat-alimentation' },
-      { id: 't2', categoryId: null }, // AUCUNE → stays uncategorized
+      { id: 'VIR PAYPAL', categoryId: 'cat-alimentation' },
     ]);
 
-    const res = await handleCategorizeBatch({
-      items: [
-        { id: 't1', label: 'CARREFOUR' },
-        { id: 't2', label: 'MYSTERY' },
-      ],
-    });
+    const res = await handleCategorizeBatch({ key: 'VIR PAYPAL', label: 'VIR PAYPAL 12/03/25' });
 
-    expect(res).toEqual({ ok: true, applied: 1 });
-    expect(
-      dbHolder.db?.prepare('SELECT category_id FROM transactions WHERE id = ?').get('t1'),
-    ).toMatchObject({ category_id: 'cat-alimentation' });
+    expect(res).toEqual({ ok: true, applied: 2 });
     expect(
       dbHolder.db?.prepare('SELECT category_id FROM transactions WHERE id = ?').get('t2'),
+    ).toMatchObject({ category_id: 'cat-alimentation' });
+  });
+
+  it('applies nothing when the model returns AUCUNE (null)', async () => {
+    vi.mocked(isModelAvailable).mockReturnValue(true);
+    insertUncategorized('t1', 'MYSTERY');
+    vi.mocked(categorizeBatch).mockResolvedValue([{ id: 'MYSTERY', categoryId: null }]);
+
+    const res = await handleCategorizeBatch({ key: 'MYSTERY', label: 'MYSTERY' });
+
+    expect(res).toEqual({ ok: true, applied: 0 });
+    expect(
+      dbHolder.db?.prepare('SELECT category_id FROM transactions WHERE id = ?').get('t1'),
     ).toMatchObject({ category_id: null });
   });
 
   it('returns inference_failed when the model throws', async () => {
     vi.mocked(isModelAvailable).mockReturnValue(true);
     vi.mocked(categorizeBatch).mockRejectedValue(new Error('boom'));
-    const res = await handleCategorizeBatch({ items: [{ id: 't1', label: 'X' }] });
+    const res = await handleCategorizeBatch({ key: 'X', label: 'X' });
     expect(res).toEqual({ ok: false, error: 'inference_failed' });
   });
 });

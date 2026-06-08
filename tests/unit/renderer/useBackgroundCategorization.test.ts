@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-// tests/unit/renderer/useBackgroundCategorization.test.ts
 import { renderHook, act, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
@@ -9,14 +8,15 @@ vi.mock('@renderer/ipc/client', () => ({
 
 import { ipc } from '@renderer/ipc/client';
 import { useBackgroundCategorization } from '@renderer/hooks/useBackgroundCategorization';
-import type { CategorizeItem } from '@shared/types/import';
+import type { PendingGroup } from '@shared/types/import';
 
 const mockInvoke = vi.mocked(ipc.invoke);
 
-function items(n: number): CategorizeItem[] {
+function groups(n: number): PendingGroup[] {
   return Array.from({ length: n }, (_, i) => ({
-    id: `t${String(i)}`,
+    key: `K${String(i)}`,
     label: `Label ${String(i)}`,
+    count: 1,
   }));
 }
 
@@ -33,12 +33,10 @@ afterEach(() => {
 });
 
 describe('useBackgroundCategorization', () => {
-  it('loops batches, calls onApplied after an applied batch, and ends idle', async () => {
+  it('makes one call per distinct label, calls onApplied per applied label, ends idle', async () => {
     mockInvoke.mockImplementation((channel) => {
-      if (channel === 'categorize:pending') {
-        return Promise.resolve({ items: items(3) });
-      }
-      return Promise.resolve({ ok: true as const, applied: 3 });
+      if (channel === 'categorize:pending') return Promise.resolve({ groups: groups(3) });
+      return Promise.resolve({ ok: true as const, applied: 2 });
     });
     const onApplied = vi.fn();
     const { result } = renderHook(() => useBackgroundCategorization({ onApplied }));
@@ -48,14 +46,14 @@ describe('useBackgroundCategorization', () => {
     });
 
     expect(mockInvoke).toHaveBeenCalledWith('categorize:pending', {});
-    expect(batchCalls()).toHaveLength(1); // 3 items, one batch
-    expect(onApplied).toHaveBeenCalledTimes(1);
+    expect(batchCalls()).toHaveLength(3); // one call per distinct label
+    expect(onApplied).toHaveBeenCalledTimes(3);
     expect(result.current.running).toBe(false);
     expect(result.current.remaining).toBe(0);
   });
 
-  it('does nothing when pending is empty', async () => {
-    mockInvoke.mockResolvedValue({ items: [] });
+  it('does nothing when there are no groups', async () => {
+    mockInvoke.mockResolvedValue({ groups: [] });
     const onApplied = vi.fn();
     const { result } = renderHook(() => useBackgroundCategorization({ onApplied }));
 
@@ -68,11 +66,9 @@ describe('useBackgroundCategorization', () => {
     expect(result.current.running).toBe(false);
   });
 
-  it('stops the whole loop on model_unavailable', async () => {
+  it('stops the whole pass on model_unavailable', async () => {
     mockInvoke.mockImplementation((channel) => {
-      if (channel === 'categorize:pending') {
-        return Promise.resolve({ items: items(20) }); // would be 2 batches
-      }
+      if (channel === 'categorize:pending') return Promise.resolve({ groups: groups(3) });
       return Promise.resolve({ ok: false as const, error: 'model_unavailable' as const });
     });
     const onApplied = vi.fn();
@@ -82,71 +78,17 @@ describe('useBackgroundCategorization', () => {
       await result.current.run();
     });
 
-    expect(batchCalls()).toHaveLength(1); // stopped after the first batch
+    expect(batchCalls()).toHaveLength(1); // stopped after the first label
     expect(onApplied).not.toHaveBeenCalled();
-    expect(result.current.running).toBe(false);
   });
 
-  it('continues past inference_failed without calling onApplied', async () => {
-    let batch = 0;
+  it('continues past inference_failed without calling onApplied for it', async () => {
+    let call = 0;
     mockInvoke.mockImplementation((channel) => {
-      if (channel === 'categorize:pending') {
-        return Promise.resolve({ items: items(24) }); // 2 batches
-      }
-      batch += 1;
-      if (batch === 1) {
+      if (channel === 'categorize:pending') return Promise.resolve({ groups: groups(2) });
+      call += 1;
+      if (call === 1)
         return Promise.resolve({ ok: false as const, error: 'inference_failed' as const });
-      }
-      return Promise.resolve({ ok: true as const, applied: 12 });
-    });
-    const onApplied = vi.fn();
-    const { result } = renderHook(() => useBackgroundCategorization({ onApplied }));
-
-    await act(async () => {
-      await result.current.run();
-    });
-
-    expect(batchCalls()).toHaveLength(2);
-    expect(onApplied).toHaveBeenCalledTimes(1); // only the second (applied) batch
-  });
-
-  it('is idempotent: a concurrent second run() is a no-op', async () => {
-    mockInvoke.mockImplementation((channel) => {
-      if (channel === 'categorize:pending') {
-        return Promise.resolve({ items: items(3) });
-      }
-      return Promise.resolve({ ok: true as const, applied: 3 });
-    });
-    const onApplied = vi.fn();
-    const { result } = renderHook(() => useBackgroundCategorization({ onApplied }));
-
-    await act(async () => {
-      // Kick off two passes before the first awaits resolve.
-      await Promise.all([result.current.run(), result.current.run()]);
-    });
-
-    // Only one pass ran its batches — the concurrent second run() was a no-op.
-    expect(batchCalls()).toHaveLength(1);
-  });
-
-  it('refresh() updates the pending count without running the model', async () => {
-    mockInvoke.mockResolvedValue({ items: items(5) });
-    const onApplied = vi.fn();
-    const { result } = renderHook(() => useBackgroundCategorization({ onApplied }));
-
-    await act(async () => {
-      await result.current.refresh();
-    });
-
-    expect(result.current.pending).toBe(5);
-    expect(batchCalls()).toHaveLength(0); // no model work — just the count
-  });
-
-  it('splits >12 items into two batches', async () => {
-    mockInvoke.mockImplementation((channel) => {
-      if (channel === 'categorize:pending') {
-        return Promise.resolve({ items: items(13) });
-      }
       return Promise.resolve({ ok: true as const, applied: 1 });
     });
     const onApplied = vi.fn();
@@ -157,5 +99,39 @@ describe('useBackgroundCategorization', () => {
     });
 
     expect(batchCalls()).toHaveLength(2);
+    expect(onApplied).toHaveBeenCalledTimes(1);
+  });
+
+  it('is idempotent: a concurrent second run() is a no-op', async () => {
+    mockInvoke.mockImplementation((channel) => {
+      if (channel === 'categorize:pending') return Promise.resolve({ groups: groups(3) });
+      return Promise.resolve({ ok: true as const, applied: 1 });
+    });
+    const onApplied = vi.fn();
+    const { result } = renderHook(() => useBackgroundCategorization({ onApplied }));
+
+    await act(async () => {
+      await Promise.all([result.current.run(), result.current.run()]);
+    });
+
+    expect(batchCalls()).toHaveLength(3); // one pass of 3 labels, not two
+  });
+
+  it('refresh() sets pending to the total transaction count (Σ group counts)', async () => {
+    mockInvoke.mockResolvedValue({
+      groups: [
+        { key: 'A', label: 'A', count: 3 },
+        { key: 'B', label: 'B', count: 2 },
+      ],
+    });
+    const onApplied = vi.fn();
+    const { result } = renderHook(() => useBackgroundCategorization({ onApplied }));
+
+    await act(async () => {
+      await result.current.refresh();
+    });
+
+    expect(result.current.pending).toBe(5);
+    expect(batchCalls()).toHaveLength(0);
   });
 });

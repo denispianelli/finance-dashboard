@@ -4,7 +4,7 @@ export type { ModelState } from './model';
 /** Alias kept for the IPC response naming convention. */
 export type ModelStatusResponse = ModelStatus;
 
-import type { StatementExtraction, CategorizeItem } from './import';
+import type { StatementExtraction, PendingGroup } from './import';
 import type {
   AccountSummary,
   CreateAccountInput,
@@ -92,11 +92,12 @@ export type ConfirmResponse =
     };
 
 export interface CategorizePendingResponse {
-  items: CategorizeItem[];
+  groups: PendingGroup[];
 }
 
 export interface CategorizeBatchPayload {
-  items: CategorizeItem[];
+  key: string;
+  label: string;
 }
 
 export type CategorizeBatchResponse =
