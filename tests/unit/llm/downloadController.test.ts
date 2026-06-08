@@ -160,4 +160,21 @@ describe('downloadController status enrichment', () => {
     expect(existsSync(join(dir, QWEN.fileName))).toBe(false);
     expect(existsSync(join(dir, LLAMA.fileName))).toBe(false);
   });
+
+  it('pruneToBestPresent keeps highest-tier model and deletes lower one', async () => {
+    // Pre-create the lower-tier LLAMA file on disk.
+    present(LLAMA);
+    // Hardware selection resolves to QWEN (7B — higher tier).
+    vi.mocked(getActiveSelection).mockResolvedValue(QWEN);
+    // downloadModel "succeeds" by writing the QWEN file and returning { ok: true }.
+    vi.mocked(downloadModel).mockImplementation(() => {
+      present(QWEN);
+      return Promise.resolve({ ok: true as const });
+    });
+    const c = createDownloadController(() => dir);
+    await c.start();
+    // QWEN must be kept; LLAMA must have been pruned.
+    expect(existsSync(join(dir, QWEN.fileName))).toBe(true);
+    expect(existsSync(join(dir, LLAMA.fileName))).toBe(false);
+  });
 });

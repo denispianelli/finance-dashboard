@@ -29,14 +29,16 @@ export function createDownloadController(modelsDir: () => string): DownloadContr
   let override: ModelStatus | null = null;
   let selected: ModelSpec | null = null;
 
-  function baseState(dir: string): ModelStatus {
-    if (findBestPresentModel(dir) !== null) return { state: 'ready' };
+  function baseState(dir: string, present: ModelSpec | null): ModelStatus {
+    if (present !== null) return { state: 'ready' };
     if (MODELS.some((m) => existsSync(join(dir, `${m.fileName}.part`)))) return { state: 'paused' };
     return { state: 'absent' };
   }
 
-  function info(dir: string): Pick<ModelStatus, 'active' | 'target' | 'upgrade'> {
-    const present = findBestPresentModel(dir);
+  function info(
+    dir: string,
+    present: ModelSpec | null,
+  ): Pick<ModelStatus, 'active' | 'target' | 'upgrade'> {
     const targetSpec = selected ?? fallbackModel();
     const activeInfo: ModelInfo | undefined = present === null ? undefined : specToInfo(present);
     const target: ModelInfo = specToInfo(targetSpec);
@@ -52,9 +54,9 @@ export function createDownloadController(modelsDir: () => string): DownloadContr
 
   function getStatus(): ModelStatus {
     const dir = modelsDir();
-    const enrich = info(dir);
-    const core = override ?? baseState(dir);
-    return { ...core, ...enrich };
+    const present = findBestPresentModel(dir);
+    const core = override ?? baseState(dir, present);
+    return { ...core, ...info(dir, present) };
   }
 
   function emit(): void {
