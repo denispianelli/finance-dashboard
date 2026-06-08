@@ -8,6 +8,22 @@ From v0.1.0 onward this file is generated automatically by
 [Conventional Commits](https://www.conventionalcommits.org/). Do not edit
 released sections by hand.
 
+## [0.3.0](https://github.com/denispianelli/finance-dashboard/compare/v0.2.0...v0.3.0) (2026-06-08)
+
+
+### Features
+
+* **categorize:** dedup + one-label-per-call + skeleton ([#170](https://github.com/denispianelli/finance-dashboard/issues/170)) ([04905cd](https://github.com/denispianelli/finance-dashboard/commit/04905cdb40db39dd11acbd75f1b7537fd0c0b563))
+* **categorize:** passthrough payees categorized by amount ([#173](https://github.com/denispianelli/finance-dashboard/issues/173)) ([54e5e4a](https://github.com/denispianelli/finance-dashboard/commit/54e5e4a1689c845d0b9857266be0bcca3cba3423))
+* **llm:** GPU (CUDA) acceleration for categorization ([#168](https://github.com/denispianelli/finance-dashboard/issues/168)) ([495a622](https://github.com/denispianelli/finance-dashboard/commit/495a6227723684fd3b011a5a513d82cd3b5baf6a))
+* **llm:** hardware-tiered model selection (adopt Qwen-7B) ([#174](https://github.com/denispianelli/finance-dashboard/issues/174)) ([c4da5da](https://github.com/denispianelli/finance-dashboard/commit/c4da5da4706ef381c132f7575558a659a5e8befb))
+* **model:** active-model transparency + opt-in upgrade banner (Phase B) ([#175](https://github.com/denispianelli/finance-dashboard/issues/175)) ([8541b21](https://github.com/denispianelli/finance-dashboard/commit/8541b21cc8c0e03bcb3843d6e19b809ff983f88b))
+
+
+### Bug Fixes
+
+* **llm:** model download on fresh install + CPU-only build ([#166](https://github.com/denispianelli/finance-dashboard/issues/166)) ([c51dbb7](https://github.com/denispianelli/finance-dashboard/commit/c51dbb76cd7e7af050c12757fdc5bdc709fcd68a))
+
 ## [0.2.0](https://github.com/denispianelli/finance-dashboard/compare/v0.1.0...v0.2.0) (2026-06-08)
 
 ### Features
