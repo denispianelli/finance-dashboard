@@ -158,6 +158,7 @@ export interface IpcContract {
   'model:download:start': { payload: Record<string, never>; response: { ok: true } };
   'model:download:cancel': { payload: Record<string, never>; response: { ok: true } };
   'model:remove': { payload: Record<string, never>; response: { ok: true } };
+  'model:selection:detect': { payload: Record<string, never>; response: { ok: true } };
   'settings:getCategorizeOptOut': { payload: Record<string, never>; response: { value: boolean } };
   'settings:setCategorizeOptOut': { payload: { value: boolean }; response: { ok: true } };
 }
