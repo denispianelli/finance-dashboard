@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { app } from 'electron';
-import { MODEL_FILE } from './llm';
+import { MODELS } from './modelRegistry';
 
 /**
  * Where the GGUF model lives: the repo's models/ in dev, else userData/models.
@@ -13,6 +13,6 @@ import { MODEL_FILE } from './llm';
 export function modelsDir(): string {
   if (process.env.FD_MODELS_DIR) return process.env.FD_MODELS_DIR;
   const devDir = join(process.cwd(), 'models');
-  if (existsSync(join(devDir, MODEL_FILE))) return devDir;
+  if (MODELS.some((m) => existsSync(join(devDir, m.fileName)))) return devDir;
   return join(app.getPath('userData'), 'models');
 }

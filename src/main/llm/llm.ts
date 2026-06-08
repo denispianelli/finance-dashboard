@@ -1,28 +1,54 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { LlamaModel } from 'node-llama-cpp';
+import { MODELS, selectModelSpec, fallbackModel, type ModelSpec } from './modelRegistry';
 
-/** The model selected in ADR-004 (Llama 3.2 3B Instruct, Q4_K_M GGUF). */
-export const MODEL_FILE = 'llama-3.2-3b-instruct-q4_k_m.gguf';
-
-export function resolveModelPath(modelsDir: string): string {
-  return join(modelsDir, MODEL_FILE);
+export function resolveModelPath(modelsDir: string, spec: ModelSpec): string {
+  return join(modelsDir, spec.fileName);
 }
 
-/** Whether the GGUF model file is present (it is downloaded once, ~1.9 GB). */
+/**
+ * The highest-tier registry model whose file is present (MODELS is best-first), or
+ * null. This is what we actually load — no VRAM detection needed to use what's on
+ * disk (a downloaded Qwen-7B is used even on a machine we'd never pick it for).
+ */
+export function findBestPresentModel(modelsDir: string): ModelSpec | null {
+  return MODELS.find((m) => existsSync(join(modelsDir, m.fileName))) ?? null;
+}
+
+/** Whether any model is downloaded (drives the categorize guard + status). */
 export function isModelAvailable(modelsDir: string): boolean {
-  return existsSync(resolveModelPath(modelsDir));
+  return findBestPresentModel(modelsDir) !== null;
+}
+
+let selectionPromise: Promise<ModelSpec> | null = null;
+
+/**
+ * The model the hardware can run (download target). Lazy: loads the node-llama-cpp
+ * backend once to read VRAM (never the multi-GB model), then caches. Any detection
+ * failure falls back to the 3B — never throws.
+ */
+export async function getActiveSelection(): Promise<ModelSpec> {
+  selectionPromise ??= detectSelection().catch(() => fallbackModel());
+  return selectionPromise;
+}
+
+async function detectSelection(): Promise<ModelSpec> {
+  const { getLlama } = await import('node-llama-cpp');
+  const llama = await getLlama();
+  const vram = await llama.getVramState();
+  const spec = selectModelSpec(llama.gpu, vram.total);
+  console.log(
+    `[llm] hardware: gpu=${JSON.stringify(llama.gpu)} vramTotal=${String(vram.total)} → ${spec.id}`,
+  );
+  return spec;
 }
 
 let modelPromise: Promise<LlamaModel> | null = null;
 
-/**
- * Load the model once and cache it. node-llama-cpp is imported dynamically so the
- * native addon is only loaded when the LLM is actually used (column mapping /
- * categorization run in the background, never on the hot path).
- */
+/** Load the best-present model once and cache it (node-llama-cpp imported dynamically
+ *  so the native addon stays off the launch path). Throws if no model is downloaded. */
 export async function getModel(modelsDir: string): Promise<LlamaModel> {
-  // ??= so a failed load (which resets modelPromise to null in the catch) can retry.
   modelPromise ??= loadModel(modelsDir).catch((e: unknown) => {
     modelPromise = null;
     throw e;
@@ -31,17 +57,14 @@ export async function getModel(modelsDir: string): Promise<LlamaModel> {
 }
 
 async function loadModel(modelsDir: string): Promise<LlamaModel> {
-  const path = resolveModelPath(modelsDir);
-  if (!existsSync(path)) {
-    throw new Error(`LLM model not found at ${path} — download it first`);
+  const spec = findBestPresentModel(modelsDir);
+  if (spec === null) {
+    throw new Error(`No LLM model present in ${modelsDir} — download one first`);
   }
   const { getLlama } = await import('node-llama-cpp');
   const llama = await getLlama();
-  // Diagnostic: which compute backend was auto-selected (cuda / metal / vulkan
-  // / false=CPU). We never force a backend — auto-detection keeps CPU fallback
-  // working on machines without a supported GPU. See the GPU acceleration spec.
-  console.log(`[llm] inference backend: ${JSON.stringify(llama.gpu)}`);
-  return llama.loadModel({ modelPath: path });
+  console.log(`[llm] loading ${spec.id}; inference backend: ${JSON.stringify(llama.gpu)}`);
+  return llama.loadModel({ modelPath: join(modelsDir, spec.fileName) });
 }
 
 /**

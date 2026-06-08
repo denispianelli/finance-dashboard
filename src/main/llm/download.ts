@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { createWriteStream, createReadStream } from 'node:fs';
 import { stat, rename, rm, statfs, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { MODEL_MANIFEST } from './modelManifest';
+import { fallbackModel } from './modelRegistry';
 
 export interface DownloadProgress {
   receivedBytes: number;
@@ -26,7 +26,7 @@ const defaultDeps: DownloadDeps = {
     const fs = await statfs(dir);
     return fs.bavail * fs.bsize;
   },
-  manifest: MODEL_MANIFEST,
+  manifest: fallbackModel(),
 };
 
 async function sizeOrZero(path: string): Promise<number> {

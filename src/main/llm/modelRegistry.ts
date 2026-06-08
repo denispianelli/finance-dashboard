@@ -38,6 +38,12 @@ const FALLBACK: ModelSpec = (() => {
   return last;
 })();
 
+/** The universal fallback spec (the lowest tier). Exported so other modules need
+ *  no non-null assertions to reference it. */
+export function fallbackModel(): ModelSpec {
+  return FALLBACK;
+}
+
 /**
  * Pick the model the hardware can run: CPU/no-GPU → fallback (3B); otherwise the
  * highest-tier spec whose minVramBytes fits the total VRAM (MODELS is best-first).

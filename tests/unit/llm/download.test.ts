@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { downloadModel, type DownloadDeps } from '../../../src/main/llm/download';
-import { MODEL_FILE } from '../../../src/main/llm/llm';
+import { MODELS } from '../../../src/main/llm/modelRegistry';
+const MODEL_FILE = MODELS.find((m) => m.id === 'llama-3.2-3b')?.fileName ?? '';
 
 const BODY = Buffer.from('hello-model-bytes');
 const SHA = createHash('sha256').update(BODY).digest('hex');
