@@ -19,14 +19,47 @@ export function isModelAvailable(modelsDir: string): boolean {
 
 let selectionPromise: Promise<ModelSpec> | null = null;
 
+/** Hardware detection loads the native backend; cap it so a slow/broken GPU driver
+ *  can never block the download — it falls back to the 3B instead. */
+const DETECT_TIMEOUT_MS = 8000;
+
 /**
- * The model the hardware can run (download target). Lazy: loads the node-llama-cpp
- * backend once to read VRAM (never the multi-GB model), then caches. Any detection
- * failure falls back to the 3B — never throws.
+ * The model the hardware can run (download target). Lazy + cached. Never blocks and
+ * never throws: forced-model mode (FD_MODEL_URL, E2E) skips detection entirely, and
+ * real detection is timeout-guarded — any hang/failure falls back to the 3B.
  */
 export async function getActiveSelection(): Promise<ModelSpec> {
-  selectionPromise ??= detectSelection().catch(() => fallbackModel());
+  selectionPromise ??= resolveSelection();
   return selectionPromise;
+}
+
+async function resolveSelection(): Promise<ModelSpec> {
+  // Forced-model / E2E: FD_MODEL_URL pins the download, so hardware detection (which
+  // would load the native backend) is moot — return the fallback immediately.
+  if (process.env.FD_MODEL_URL !== undefined) return fallbackModel();
+  try {
+    return await withTimeout(detectSelection(), DETECT_TIMEOUT_MS);
+  } catch {
+    return fallbackModel();
+  }
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error('hardware detection timed out'));
+    }, ms);
+    promise.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e: unknown) => {
+        clearTimeout(timer);
+        reject(e instanceof Error ? e : new Error(String(e)));
+      },
+    );
+  });
 }
 
 async function detectSelection(): Promise<ModelSpec> {
