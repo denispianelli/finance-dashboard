@@ -1,3 +1,5 @@
+import type { ModelInfo } from '@shared/types/model';
+
 /** A downloadable model + the VRAM it needs. MODELS is ordered best-first so
  *  "the best present / best the hardware can run" is a simple find(). */
 export interface ModelSpec {
@@ -67,4 +69,14 @@ export function withDownloadOverrides(spec: ModelSpec): ModelSpec {
     sizeBytes:
       process.env.FD_MODEL_SIZE !== undefined ? Number(process.env.FD_MODEL_SIZE) : spec.sizeBytes,
   };
+}
+
+/** Project a spec to the UI-facing subset. */
+export function specToInfo(spec: ModelSpec): ModelInfo {
+  return { id: spec.id, label: spec.label, sizeBytes: spec.sizeBytes };
+}
+
+/** True if `a` is a strictly better tier than `b` (earlier in MODELS, which is best-first). */
+export function isHigherTier(a: ModelSpec, b: ModelSpec): boolean {
+  return MODELS.indexOf(a) < MODELS.indexOf(b);
 }
