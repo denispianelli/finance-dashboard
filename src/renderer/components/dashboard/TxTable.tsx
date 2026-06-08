@@ -131,7 +131,7 @@ export function TxTableRow({
       </span>
       <span className={cn(CELL, 'min-w-0')}>
         {categorizing && t.uncategorized ? (
-          <Skeleton className="h-3.5 w-24 rounded-full" />
+          <Skeleton className="h-3.5 w-24 rounded-full bg-ink-4" />
         ) : categories && onReassign && onCreateCategory ? (
           <CategoryPicker
             categories={categories}
