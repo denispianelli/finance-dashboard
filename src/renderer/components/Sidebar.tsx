@@ -11,7 +11,6 @@ import type { ComponentType } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import pkg from '../../../package.json';
 import { cn } from '../lib/utils';
-import { useBreakpoint } from '../hooks/useBreakpoint';
 import { NetWorthAnchor } from './NetWorthAnchor';
 
 type IconComponent = ComponentType<{ size: number; strokeWidth: number }>;
@@ -180,13 +179,13 @@ export function Sidebar({
   onImport,
   netWorth,
   monthDelta,
+  collapsed,
 }: {
   onImport: () => void;
   netWorth: number;
   monthDelta: number;
+  collapsed: boolean;
 }) {
-  const expanded = useBreakpoint('xl');
-  const collapsed = !expanded;
   const groups = buildGroups(onImport);
   const navigate = useNavigate();
 

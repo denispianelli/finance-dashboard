@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react';
+import { PanelLeft, Sparkles } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
 
@@ -24,12 +24,16 @@ const PAGE_META: Record<string, PageMeta> = {
 
 export function Topbar({
   onImport,
+  onToggleSidebar,
+  sidebarCollapsed = false,
   categorizing = false,
   categorizeRemaining = 0,
   pendingCount = 0,
   onCategorize,
 }: {
   onImport: () => void;
+  onToggleSidebar?: () => void;
+  sidebarCollapsed?: boolean;
   categorizing?: boolean;
   categorizeRemaining?: number;
   pendingCount?: number;
@@ -37,12 +41,28 @@ export function Topbar({
 }) {
   const { pathname } = useLocation();
   const meta = PAGE_META[pathname] ?? { title: 'Finance Dashboard', breadcrumb: [] };
+  const toggleLabel = sidebarCollapsed ? 'Déplier la barre latérale' : 'Replier la barre latérale';
 
   return (
     <header
       aria-label="En-tête de l'application"
       className="flex min-h-[70px] items-center gap-3 border-b border-line-2 bg-ink-1 px-5 py-[18px] xl:gap-[18px] xl:px-7"
     >
+      {onToggleSidebar ? (
+        <>
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            aria-label={toggleLabel}
+            aria-expanded={!sidebarCollapsed}
+            title={toggleLabel}
+            className="hidden size-7 shrink-0 items-center justify-center rounded-md text-paper-mute transition-colors hover:bg-ink-3 hover:text-paper focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brass xl:inline-flex"
+          >
+            <PanelLeft size={16} strokeWidth={1.7} />
+          </button>
+          <span className="hidden h-5 w-px shrink-0 bg-line-2 xl:block" aria-hidden />
+        </>
+      ) : null}
       <div className="flex min-w-0 flex-col gap-1.5">
         {meta.breadcrumb.length > 0 ? (
           <span className="hidden font-sans text-[10px] font-medium uppercase tracking-[0.12em] text-paper-mute xl:block">

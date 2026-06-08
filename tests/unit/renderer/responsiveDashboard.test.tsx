@@ -43,12 +43,11 @@ beforeEach(() => {
   setViewport(1920);
 });
 
-describe('Sidebar responsive collapse', () => {
-  it('renders full labels at xl and above', () => {
-    setViewport(1280);
+describe('Sidebar collapsed rendering', () => {
+  it('renders full labels when expanded', () => {
     render(
       <MemoryRouter>
-        <Sidebar onImport={() => undefined} netWorth={0} monthDelta={0} />
+        <Sidebar onImport={() => undefined} netWorth={0} monthDelta={0} collapsed={false} />
       </MemoryRouter>,
     );
     expect(screen.getByText('Tableau de bord')).toBeInTheDocument();
@@ -57,11 +56,10 @@ describe('Sidebar responsive collapse', () => {
     expect(aside.dataset.collapsed).toBe('false');
   });
 
-  it('collapses to an icon-only rail below xl', () => {
-    setViewport(1024);
+  it('collapses to an icon-only rail', () => {
     render(
       <MemoryRouter>
-        <Sidebar onImport={() => undefined} netWorth={0} monthDelta={0} />
+        <Sidebar onImport={() => undefined} netWorth={0} monthDelta={0} collapsed />
       </MemoryRouter>,
     );
     expect(screen.queryByText('Tableau de bord')).not.toBeInTheDocument();

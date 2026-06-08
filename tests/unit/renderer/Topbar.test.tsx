@@ -101,3 +101,25 @@ describe('Topbar categorize trigger button', () => {
     expect(screen.queryByText(/Catégoriser \(/)).not.toBeInTheDocument();
   });
 });
+
+describe('Topbar sidebar toggle', () => {
+  it('renders the collapse trigger and calls onToggleSidebar on click', async () => {
+    const onToggleSidebar = vi.fn();
+    renderTopbar({ onToggleSidebar, sidebarCollapsed: false });
+    const trigger = screen.getByRole('button', { name: /replier la barre latérale/i });
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    await userEvent.click(trigger);
+    expect(onToggleSidebar).toHaveBeenCalledTimes(1);
+  });
+
+  it('labels the trigger "déplier" when the sidebar is collapsed', () => {
+    renderTopbar({ onToggleSidebar: () => undefined, sidebarCollapsed: true });
+    const trigger = screen.getByRole('button', { name: /déplier la barre latérale/i });
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('omits the trigger when no toggle handler is provided', () => {
+    renderTopbar();
+    expect(screen.queryByRole('button', { name: /barre latérale/i })).toBeNull();
+  });
+});
