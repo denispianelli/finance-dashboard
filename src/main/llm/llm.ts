@@ -3,10 +3,6 @@ import { join } from 'node:path';
 import type { LlamaModel } from 'node-llama-cpp';
 import { MODELS, selectModelSpec, fallbackModel, type ModelSpec } from './modelRegistry';
 
-export function resolveModelPath(modelsDir: string, spec: ModelSpec): string {
-  return join(modelsDir, spec.fileName);
-}
-
 /**
  * The highest-tier registry model whose file is present (MODELS is best-first), or
  * null. This is what we actually load — no VRAM detection needed to use what's on
