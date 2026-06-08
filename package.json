@@ -15,7 +15,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "node scripts/dev.mjs",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "dist": "electron-vite build && electron-builder",
@@ -28,6 +28,7 @@
     "test:all": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write src",
+    "setup:cuda": "python3 scripts/setup-cuda-libs.py",
     "test:e2e": "npm run build && playwright test",
     "prepare": "husky"
   },

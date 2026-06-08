@@ -31,3 +31,7 @@ playwright-report/
 
 # Packaged app installers (electron-builder)
 release/
+
+# CUDA runtime libs (vendored, ~800MB — never commit)
+.cuda-spike/
+.cuda-libs/
