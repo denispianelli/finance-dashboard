@@ -2,9 +2,19 @@ import { it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { MODEL_FILE } from '../../../src/main/llm/llm';
+import { MODELS } from '../../../src/main/llm/modelRegistry';
+const MODEL_FILE = MODELS.find((m) => m.id === 'llama-3.2-3b')?.fileName ?? '';
 
 vi.mock('../../../src/main/llm/download', () => ({ downloadModel: vi.fn() }));
+// Stub getActiveSelection so tests never hit real hardware detection.
+// findBestPresentModel still reads the real filesystem (the temp dir).
+vi.mock('../../../src/main/llm/llm', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../../../src/main/llm/llm')>();
+  return {
+    ...real,
+    getActiveSelection: vi.fn().mockResolvedValue(MODELS.find((m) => m.id === 'llama-3.2-3b')),
+  };
+});
 import { downloadModel } from '../../../src/main/llm/download';
 import { createDownloadController } from '../../../src/main/llm/downloadController';
 
@@ -59,23 +69,31 @@ it('remove deletes the model file and returns to absent', async () => {
 });
 
 it('goes to paused when a download is cancelled mid-flight', async () => {
+  let capturedSignal: AbortSignal | undefined;
+  let resolveDownload!: (r: { ok: false; error: 'cancelled' }) => void;
   vi.mocked(downloadModel).mockImplementation(
     (_dir, _onProgress, signal) =>
       new Promise((resolve) => {
-        signal.addEventListener('abort', () => {
-          writeFileSync(join(dir, `${MODEL_FILE}.part`), 'partial');
-          resolve({ ok: false, error: 'cancelled' });
-        });
+        capturedSignal = signal;
+        resolveDownload = resolve;
       }),
   );
   const ctl = createDownloadController(() => dir);
   const p = ctl.start();
+  // Flush microtasks so getActiveSelection resolves and downloadModel is entered.
+  await Promise.resolve();
+  await Promise.resolve();
+  // Now downloadModel is running — cancel and let the mock react.
   ctl.cancel();
+  writeFileSync(join(dir, `${MODEL_FILE}.part`), 'partial');
+  resolveDownload({ ok: false, error: 'cancelled' });
+  // Satisfy the unused variable lint check.
+  void capturedSignal;
   await p;
   expect(ctl.getStatus().state).toBe('paused');
 });
 
-it('start is idempotent while a download is in flight', () => {
+it('start is idempotent while a download is in flight', async () => {
   let release: () => void = () => undefined;
   vi.mocked(downloadModel).mockImplementation(
     () =>
@@ -86,8 +104,13 @@ it('start is idempotent while a download is in flight', () => {
       }),
   );
   const ctl = createDownloadController(() => dir);
-  void ctl.start();
-  void ctl.start();
+  // Start twice — the second call must be a no-op.
+  const p1 = ctl.start();
+  const p2 = ctl.start();
+  // Flush microtasks so getActiveSelection resolves and downloadModel is called.
+  await Promise.resolve();
+  await Promise.resolve();
   expect(vi.mocked(downloadModel)).toHaveBeenCalledTimes(1);
   release();
+  await Promise.all([p1, p2]);
 });

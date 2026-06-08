@@ -1,7 +1,9 @@
 import { existsSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
+import { join } from 'node:path';
 import type { ModelStatus } from '@shared/types/model';
-import { resolveModelPath, isModelAvailable } from './llm';
+import { MODELS, withDownloadOverrides } from './modelRegistry';
+import { getActiveSelection, findBestPresentModel } from './llm';
 import { downloadModel, type DownloadProgress } from './download';
 
 export interface DownloadController {
@@ -20,8 +22,8 @@ export function createDownloadController(modelsDir: () => string): DownloadContr
 
   function fsState(): ModelStatus {
     const dir = modelsDir();
-    if (isModelAvailable(dir)) return { state: 'ready' };
-    if (existsSync(`${resolveModelPath(dir)}.part`)) return { state: 'paused' };
+    if (findBestPresentModel(dir) !== null) return { state: 'ready' };
+    if (MODELS.some((m) => existsSync(join(dir, `${m.fileName}.part`)))) return { state: 'paused' };
     return { state: 'absent' };
   }
 
@@ -46,17 +48,17 @@ export function createDownloadController(modelsDir: () => string): DownloadContr
     set({ state: 'downloading', receivedBytes: 0, totalBytes: undefined });
     runPromise = (async () => {
       try {
+        const spec = withDownloadOverrides(await getActiveSelection());
         const res = await downloadModel(
           modelsDir(),
           (p: DownloadProgress) => {
             set({ state: 'downloading', receivedBytes: p.receivedBytes, totalBytes: p.totalBytes });
           },
           ac.signal,
+          { manifest: spec },
         );
-        if (res.ok)
-          set(null); // → fsState() 'ready'
-        else if (res.error === 'cancelled')
-          set(null); // → fsState() 'paused' (.part remains)
+        if (res.ok) set(null);
+        else if (res.error === 'cancelled') set(null);
         else set({ state: 'error', error: res.error });
       } catch (e) {
         set({ state: 'error', error: e instanceof Error ? e.message : 'download_failed' });
@@ -80,9 +82,11 @@ export function createDownloadController(modelsDir: () => string): DownloadContr
         /* already handled in start */
       }
     }
-    const base = resolveModelPath(modelsDir());
-    await rm(base, { force: true });
-    await rm(`${base}.part`, { force: true });
+    const dir = modelsDir();
+    for (const m of MODELS) {
+      await rm(join(dir, m.fileName), { force: true });
+      await rm(join(dir, `${m.fileName}.part`), { force: true });
+    }
     set(null); // → 'absent'
   }
 
