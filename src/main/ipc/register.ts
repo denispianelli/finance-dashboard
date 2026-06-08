@@ -39,6 +39,7 @@ import {
   handleModelDownloadStart,
   handleModelDownloadCancel,
   handleModelRemove,
+  handleModelDetectSelection,
   handleGetCategorizeOptOut,
   handleSetCategorizeOptOut,
 } from './handlers/model';
@@ -97,6 +98,7 @@ export function registerAllHandlers(): void {
   register(CHANNELS.modelDownloadStart, () => handleModelDownloadStart());
   register(CHANNELS.modelDownloadCancel, () => handleModelDownloadCancel());
   register(CHANNELS.modelRemove, () => handleModelRemove());
+  register(CHANNELS.modelDetectSelection, () => handleModelDetectSelection());
   register(CHANNELS.settingsGetCategorizeOptOut, () => handleGetCategorizeOptOut());
   register(CHANNELS.settingsSetCategorizeOptOut, handleSetCategorizeOptOut);
 }

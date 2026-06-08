@@ -21,6 +21,11 @@ export async function handleModelRemove(): Promise<{ ok: true }> {
   return { ok: true };
 }
 
+export async function handleModelDetectSelection(): Promise<{ ok: true }> {
+  await modelController.detectSelection();
+  return { ok: true };
+}
+
 export function handleGetCategorizeOptOut(): { value: boolean } {
   return { value: getCategorizeOptOut() };
 }

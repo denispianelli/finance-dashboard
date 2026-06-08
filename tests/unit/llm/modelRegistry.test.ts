@@ -3,6 +3,8 @@ import {
   MODELS,
   selectModelSpec,
   withDownloadOverrides,
+  specToInfo,
+  isHigherTier,
 } from '../../../src/main/llm/modelRegistry';
 
 const GB = 1024 ** 3;
@@ -39,5 +41,24 @@ describe('withDownloadOverrides', () => {
     const spec = MODELS[0];
     if (spec === undefined) throw new Error('MODELS is empty');
     expect(withDownloadOverrides(spec)).toEqual(spec);
+  });
+});
+
+describe('specToInfo', () => {
+  it('projects a spec to {id,label,sizeBytes}', () => {
+    const spec = MODELS[0];
+    if (spec === undefined) throw new Error('MODELS empty');
+    expect(specToInfo(spec)).toEqual({ id: spec.id, label: spec.label, sizeBytes: spec.sizeBytes });
+  });
+});
+
+describe('isHigherTier', () => {
+  it('a model earlier in MODELS (best-first) is higher tier', () => {
+    const best = MODELS[0];
+    const worst = MODELS[MODELS.length - 1];
+    if (best === undefined || worst === undefined) throw new Error('MODELS empty');
+    expect(isHigherTier(best, worst)).toBe(true);
+    expect(isHigherTier(worst, best)).toBe(false);
+    expect(isHigherTier(best, best)).toBe(false);
   });
 });

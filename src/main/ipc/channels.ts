@@ -33,6 +33,7 @@ export const CHANNELS = {
   modelDownloadStart: 'model:download:start',
   modelDownloadCancel: 'model:download:cancel',
   modelRemove: 'model:remove',
+  modelDetectSelection: 'model:selection:detect',
   settingsGetCategorizeOptOut: 'settings:getCategorizeOptOut',
   settingsSetCategorizeOptOut: 'settings:setCategorizeOptOut',
 } as const satisfies Record<string, IpcChannel>;
