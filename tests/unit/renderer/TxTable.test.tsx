@@ -22,6 +22,7 @@ const baseRow: TxRow = {
   editDate: '2026-05-14',
   editAmount: -84.3,
   editLabel: 'Carrefour',
+  uncategorized: false,
 };
 
 describe('TxTableRow', () => {

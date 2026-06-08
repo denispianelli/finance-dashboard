@@ -104,6 +104,7 @@ export function AppShell() {
             context={
               {
                 refreshToken,
+                categorizing: bg.running,
                 openImport: () => {
                   setImportOpen(true);
                 },
