@@ -15,6 +15,7 @@ export function ModelSettingsSection({
   if (status.state === 'ready') {
     const label = status.active?.label ?? 'Modèle';
     const size = status.active ? `~${formatModelSize(status.active.sizeBytes)}` : '';
+    const upgrade = status.upgrade;
     return (
       <div className="flex flex-col items-end gap-2.5">
         <div className="flex items-center gap-2.5">
@@ -27,14 +28,19 @@ export function ModelSettingsSection({
             Supprimer le modèle
           </Button>
         </div>
-        {status.upgrade ? (
+        {upgrade ? (
           <div className="flex items-center gap-2.5 rounded-sm border border-line-2 bg-brass-soft px-2.5 py-1.5">
             <Sparkles size={13} strokeWidth={1.7} className="shrink-0 text-brass" />
             <span className="font-sans text-[11px] leading-snug text-paper-soft">
-              Un meilleur modèle est disponible pour ta machine — {status.upgrade.label} (~
-              {formatModelSize(status.upgrade.sizeBytes)})
+              Un meilleur modèle est disponible pour ta machine — {upgrade.label} (~
+              {formatModelSize(upgrade.sizeBytes)})
             </span>
-            <Button variant="secondary" size="sm" onClick={onDownload}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onDownload}
+              aria-label={`Télécharger ${upgrade.label}`}
+            >
               <ArrowDownToLine size={13} strokeWidth={1.7} />
               Télécharger
             </Button>

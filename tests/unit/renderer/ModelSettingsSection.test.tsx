@@ -34,7 +34,7 @@ describe('ModelSettingsSection', () => {
       />,
     );
     expect(screen.getByText(/meilleur modèle/i)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Qwen2\.5 7B|Télécharger|Installer/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Télécharger Qwen2\.5 7B/i }));
     expect(onDownload).toHaveBeenCalledOnce();
   });
 
@@ -46,6 +46,6 @@ describe('ModelSettingsSection', () => {
         onRemove={vi.fn()}
       />,
     );
-    expect(screen.getByRole('button', { name: /Qwen2\.5 7B|4,4/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Qwen2\.5 7B/ })).toBeTruthy();
   });
 });
