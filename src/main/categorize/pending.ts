@@ -1,12 +1,14 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { PendingGroup } from '@shared/types/import';
 import { stableLabelKey } from './labelKey';
+import { buildPassthroughDetector } from './passthrough';
 
 /**
  * Pending transactions grouped by their stable label key (see stableLabelKey).
  * Each distinct label is one group, so the LLM classifies it once and the result
  * fans out to all rows sharing it — killing the per-row inconsistency we measured.
  * Oldest-first: the representative `label` is the oldest row's faithful label_raw.
+ * Passthrough payees (PayPal…) are excluded — they are categorized by amount, not label.
  */
 export function listPendingGroups(db: DatabaseSync): PendingGroup[] {
   const rows = db
@@ -25,7 +27,8 @@ export function listPendingGroups(db: DatabaseSync): PendingGroup[] {
     if (existing) existing.count += 1;
     else groups.set(key, { key, label: r.label_raw, count: 1 });
   }
-  return [...groups.values()];
+  const isPassthrough = buildPassthroughDetector(db);
+  return [...groups.values()].filter((g) => !isPassthrough(g.key));
 }
 
 /**

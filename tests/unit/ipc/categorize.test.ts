@@ -42,12 +42,12 @@ afterEach(() => {
 
 describe('handleCategorizePending', () => {
   it('returns distinct pending groups', () => {
-    insertUncategorized('t1', 'VIR PAYPAL 12/03/25');
-    insertUncategorized('t2', 'VIR PAYPAL 14/05/25');
+    insertUncategorized('t1', 'VIR LOYER 12/03/25');
+    insertUncategorized('t2', 'VIR LOYER 14/05/25');
     insertUncategorized('t3', 'CARREFOUR');
     expect(handleCategorizePending()).toEqual({
       groups: [
-        { key: 'VIR PAYPAL', label: 'VIR PAYPAL 12/03/25', count: 2 },
+        { key: 'VIR LOYER', label: 'VIR LOYER 12/03/25', count: 2 },
         { key: 'CARREFOUR', label: 'CARREFOUR', count: 1 },
       ],
     });
