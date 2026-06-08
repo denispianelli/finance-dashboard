@@ -3,8 +3,9 @@ import type { DatabaseSync } from 'node:sqlite';
 import { extractStatement } from './extractStatement';
 import { normalizeLabel } from './txHash';
 import { ImportError } from './importError';
-import { loadRules, matchRule } from '../categorize/rules';
-import { findHistoryCategory } from '../categorize/history';
+import { loadRules } from '../categorize/rules';
+import { buildPassthroughDetector } from '../categorize/passthrough';
+import { resolveImportCategory } from '../categorize/resolveImportCategory';
 
 export interface InsertResult {
   importId: string;
@@ -58,6 +59,7 @@ export async function insertStatement(
     // An LLM categorization tier will land later; uncertainty is surfaced only
     // in the import Review screen (cascade tier), not stored as a score.
     const rules = loadRules(db);
+    const isPassthrough = buildPassthroughDetector(db);
     const hits = new Map<string, number>();
     const selectedSet =
       opts.selectedHashes !== undefined ? new Set(opts.selectedHashes) : undefined;
@@ -66,14 +68,14 @@ export async function insertStatement(
       if (tx.isDuplicate) continue;
       if (selectedSet !== undefined && !selectedSet.has(tx.tx_hash)) continue;
       const labelClean = normalizeLabel(tx.label);
-      let categoryId = findHistoryCategory(db, labelClean);
-      if (categoryId === null) {
-        const rule = matchRule(rules, labelClean);
-        if (rule !== null) {
-          categoryId = rule.categoryId;
-          hits.set(rule.id, (hits.get(rule.id) ?? 0) + 1);
-        }
-      }
+      const { categoryId, ruleId } = resolveImportCategory(
+        db,
+        labelClean,
+        tx.amount,
+        rules,
+        isPassthrough,
+      );
+      if (ruleId !== null) hits.set(ruleId, (hits.get(ruleId) ?? 0) + 1);
       insertTx.run(
         randomUUID(),
         accountId,

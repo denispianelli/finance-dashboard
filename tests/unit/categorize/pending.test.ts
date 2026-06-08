@@ -36,14 +36,14 @@ afterEach(() => {
 
 describe('listPendingGroups', () => {
   it('collapses rows sharing a stable key into one group, oldest-first, with count and representative label', () => {
-    insertTx({ id: 't1', label: 'VIR PAYPAL 12/03/25' });
-    insertTx({ id: 't2', label: 'VIR PAYPAL 14/05/25' }); // same key as t1
+    insertTx({ id: 't1', label: 'VIR LOYER 12/03/25' });
+    insertTx({ id: 't2', label: 'VIR LOYER 14/05/25' }); // same key as t1
     insertTx({ id: 't3', label: 'CARREFOUR MARKET' });
 
     const groups = listPendingGroups(db);
 
     expect(groups).toEqual([
-      { key: 'VIR PAYPAL', label: 'VIR PAYPAL 12/03/25', count: 2 },
+      { key: 'VIR LOYER', label: 'VIR LOYER 12/03/25', count: 2 },
       { key: 'CARREFOUR MARKET', label: 'CARREFOUR MARKET', count: 1 },
     ]);
   });
@@ -54,6 +54,14 @@ describe('listPendingGroups', () => {
     insertTx({ id: 't3', label: 'ZZZ UNSEEN' });
 
     expect(listPendingGroups(db).map((g) => g.key)).toEqual(['ZZZ UNSEEN']);
+  });
+
+  it('excludes passthrough labels (they are categorized by amount, not the LLM)', () => {
+    insertTx({ id: 'p1', label: 'PRLV SEPA PAYPAL EUROPE' });
+    insertTx({ id: 'p2', label: 'PRLV SEPA PAYPAL EUROPE' });
+    insertTx({ id: 'c1', label: 'CARREFOUR MARKET' });
+
+    expect(listPendingGroups(db).map((g) => g.key)).toEqual(['CARREFOUR MARKET']);
   });
 });
 

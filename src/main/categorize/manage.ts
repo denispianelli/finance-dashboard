@@ -6,6 +6,7 @@ import type {
   SetTransactionCategoryInput,
 } from '@shared/types/category';
 import { stableLabelKey } from './labelKey';
+import { buildPassthroughDetector } from './passthrough';
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
@@ -100,8 +101,8 @@ export function setTransactionCategory(db: DatabaseSync, input: SetTransactionCa
   if (!cat) throw new Error(`setTransactionCategory: category ${input.categoryId} not found`);
 
   const row = db
-    .prepare('SELECT label_clean FROM transactions WHERE id = ?')
-    .get(input.transactionId) as { label_clean: string } | undefined;
+    .prepare('SELECT label_clean, amount FROM transactions WHERE id = ?')
+    .get(input.transactionId) as { label_clean: string; amount: number } | undefined;
   if (row === undefined) {
     throw new Error(`setTransactionCategory: transaction ${input.transactionId} not found`);
   }
@@ -113,7 +114,18 @@ export function setTransactionCategory(db: DatabaseSync, input: SetTransactionCa
     input.transactionId,
   );
 
-  if (PROPAGATING_CATEGORIES.has(input.categoryId)) {
+  const isPassthrough = buildPassthroughDetector(db);
+  if (isPassthrough(stableLabelKey(row.label_clean))) {
+    // A passthrough label maps to different categories per amount — fan out by
+    // (label + amount), never by label alone.
+    propagateCategoryByAmount(
+      db,
+      input.transactionId,
+      row.label_clean,
+      row.amount,
+      input.categoryId,
+    );
+  } else if (PROPAGATING_CATEGORIES.has(input.categoryId)) {
     propagateCategory(db, input.transactionId, row.label_clean, input.categoryId);
   }
 }
@@ -150,4 +162,26 @@ function propagateCategory(
        VALUES (?, 'contains', ?, ?)`,
     ).run(`cr-user-${randomUUID()}`, key, categoryId);
   }
+}
+
+/** Fan a manually-chosen category out to every still-uncategorized row with the
+ *  same label_clean AND the same amount (cent-exact) — the correct scope for a
+ *  passthrough payee, where one label legitimately spans many categories. No rule
+ *  is created: the categorized rows themselves are the learning store. */
+function propagateCategoryByAmount(
+  db: DatabaseSync,
+  sourceId: string,
+  labelClean: string,
+  amount: number,
+  categoryId: string,
+): void {
+  const cents = Math.round(amount * 100);
+  db.prepare(
+    `UPDATE transactions
+        SET category_id = ?, user_modified = 1
+      WHERE label_clean = ?
+        AND CAST(ROUND(amount * 100) AS INTEGER) = ?
+        AND id != ?
+        AND category_id IS NULL`,
+  ).run(categoryId, labelClean, cents, sourceId);
 }
