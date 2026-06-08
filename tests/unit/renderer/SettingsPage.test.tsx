@@ -11,6 +11,7 @@ vi.mock('@renderer/ipc/client', () => ({
 }));
 
 import { SettingsPage } from '@renderer/pages/SettingsPage';
+import { ipc } from '@renderer/ipc/client';
 
 afterEach(() => {
   cleanup();
@@ -24,9 +25,13 @@ describe('SettingsPage', () => {
     expect(screen.getByText('Apparence & divers')).toBeInTheDocument();
   });
 
-  it('shows the fixed model identity and role copy', () => {
+  it('shows the dynamic model name and role copy', async () => {
+    vi.mocked(ipc.invoke).mockResolvedValueOnce({
+      state: 'ready',
+      active: { id: 'qwen2.5-7b', label: 'Qwen2.5 7B', sizeBytes: 4683074240 },
+    });
     render(<SettingsPage />);
-    expect(screen.getByText(/Llama 3\.2 3B Instruct · Q4_K_M/)).toBeInTheDocument();
+    expect(await screen.findByText('Qwen2.5 7B')).toBeInTheDocument();
     expect(screen.getByText(/Ne dialogue jamais/)).toBeInTheDocument();
   });
 
