@@ -1,19 +1,12 @@
-import { Wallet } from 'lucide-react';
 import { cn } from '@renderer/lib/utils';
 import { NBSP, MINUS } from '@renderer/lib/euro';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@renderer/components/ui/tooltip';
 
 interface NetWorthAnchorProps {
   /** Net worth (sum of every account's balance), in euros. */
   netWorth: number;
   /** Current-month change in euros; its sign drives the sage/coral colour. */
   monthDelta: number;
-  /** Collapsed sidebar → compact pictogram rendering. */
+  /** Collapsed sidebar → the card slides up and fades out. */
   collapsed: boolean;
   /** Click handler; the Sidebar maps it to the dashboard route. */
   onNavigate: (view: string) => void;
@@ -28,7 +21,9 @@ function formatWhole(amount: number): string {
 /**
  * Sidebar summary anchor: the brand-signature net-worth figure (Instrument Serif
  * italic) plus the month's delta in sage/coral. Presentational only — every number
- * arrives via props. Collapses to a `Wallet` pictogram + a sage/coral status dot.
+ * arrives via props. On collapse the card's vertical space animates to 0 (grid-rows
+ * 1fr→0fr) and fades, so the rail's icons slide up smoothly instead of jumping; the
+ * button is disabled while hidden so it leaves the tab order.
  */
 export function NetWorthAnchor({
   netWorth,
@@ -40,53 +35,39 @@ export function NetWorthAnchor({
   // Explicit, spaced sign with the true minus (U+2212), never a hyphen.
   const deltaText = `${positive ? '+' : MINUS}${NBSP}${formatWhole(Math.abs(monthDelta))}${NBSP}€`;
 
-  if (collapsed) {
-    const summary = `Patrimoine net · ${formatWhole(netWorth)}${NBSP}€ · ${deltaText} ce mois`;
-    return (
-      <TooltipProvider delayDuration={200}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              aria-label={`Patrimoine net : ${formatWhole(netWorth)} euros`}
-              onClick={() => {
-                onNavigate('dashboard');
-              }}
-              className="mx-2 mb-2 mt-1 flex cursor-pointer flex-col items-center gap-1 rounded-md border border-line-2 bg-ink-1 py-2.5 transition-colors hover:border-line-3 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brass"
-            >
-              <Wallet size={14} strokeWidth={1.6} className="text-brass" />
-              <span className={cn('size-[5px] rounded-full', positive ? 'bg-sage' : 'bg-coral')} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">{summary}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-
   return (
-    <button
-      type="button"
-      onClick={() => {
-        onNavigate('dashboard');
-      }}
-      className="mx-3.5 mb-2.5 mt-1 flex flex-col gap-1.5 rounded-lg border border-line-2 bg-ink-1 px-3.5 py-3 text-left transition-colors hover:border-line-3 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brass"
+    <div
+      className={cn(
+        'grid px-2 transition-[grid-template-rows,opacity] duration-200 ease-in-out',
+        collapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100',
+      )}
     >
-      <span className="font-sans text-[9px] font-semibold uppercase tracking-[0.18em] text-paper-mute">
-        Patrimoine net
-      </span>
+      <div className="overflow-hidden">
+        <button
+          type="button"
+          disabled={collapsed}
+          onClick={() => {
+            onNavigate('dashboard');
+          }}
+          className="mb-2 mt-1 flex w-full flex-col gap-1.5 rounded-lg border border-line-2 bg-ink-1 px-3.5 py-3 text-left transition-colors hover:border-line-3 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brass"
+        >
+          <span className="font-sans text-[9px] font-semibold uppercase tracking-[0.18em] text-paper-mute">
+            Patrimoine net
+          </span>
 
-      <span className="whitespace-nowrap font-serif text-[26px] italic leading-none tracking-figure tabular-nums text-paper">
-        {formatWhole(netWorth)}
-        <span className="text-[16px] text-paper-mute">{NBSP}€</span>
-      </span>
+          <span className="whitespace-nowrap font-serif text-[26px] italic leading-none tracking-figure tabular-nums text-paper">
+            {formatWhole(netWorth)}
+            <span className="text-[16px] text-paper-mute">{NBSP}€</span>
+          </span>
 
-      <span className="inline-flex items-center gap-1.5 font-sans text-[11px] text-paper-mute">
-        <span className={cn('font-mono font-medium', positive ? 'text-sage' : 'text-coral')}>
-          {deltaText}
-        </span>
-        ce mois
-      </span>
-    </button>
+          <span className="inline-flex items-center gap-1.5 font-sans text-[11px] text-paper-mute">
+            <span className={cn('font-mono font-medium', positive ? 'text-sage' : 'text-coral')}>
+              {deltaText}
+            </span>
+            ce mois
+          </span>
+        </button>
+      </div>
+    </div>
   );
 }

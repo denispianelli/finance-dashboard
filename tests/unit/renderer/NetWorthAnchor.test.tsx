@@ -13,9 +13,15 @@ function squash(s: string | null | undefined): string {
 }
 
 describe('NetWorthAnchor', () => {
-  it('expanded + positive delta: serif figure and a sage, plus-signed delta', () => {
+  it('expanded + positive delta: serif figure, sage delta, navigates on click', () => {
+    const onNavigate = vi.fn();
     const { container } = render(
-      <NetWorthAnchor netWorth={54748} monthDelta={1240} collapsed={false} onNavigate={vi.fn()} />,
+      <NetWorthAnchor
+        netWorth={54748}
+        monthDelta={1240}
+        collapsed={false}
+        onNavigate={onNavigate}
+      />,
     );
 
     expect(screen.getByText('Patrimoine net')).toBeTruthy();
@@ -26,6 +32,9 @@ describe('NetWorthAnchor', () => {
     const delta = container.querySelector('.font-mono');
     expect(delta?.className).toContain('text-sage');
     expect(squash(delta?.textContent)).toBe('+1240€');
+
+    fireEvent.click(screen.getByRole('button'));
+    expect(onNavigate).toHaveBeenCalledWith('dashboard');
   });
 
   it('negative delta: coral colour and the true minus sign (U+2212, not a hyphen)', () => {
@@ -41,17 +50,9 @@ describe('NetWorthAnchor', () => {
     expect(squash(text)).toBe('−820€');
   });
 
-  it('collapsed: clickable pictogram button labelled with the amount; click navigates', () => {
-    const onNavigate = vi.fn();
-    render(<NetWorthAnchor netWorth={54748} monthDelta={1240} collapsed onNavigate={onNavigate} />);
-
-    // The label text is no longer inline (it moves to a hover tooltip), but the
-    // accessible name still carries the figure for screen readers.
-    expect(screen.queryByText('Patrimoine net')).toBeNull();
-    const btn = screen.getByRole('button', { name: /Patrimoine net/i });
-    expect(squash(btn.getAttribute('aria-label'))).toContain('54748');
-
-    fireEvent.click(btn);
-    expect(onNavigate).toHaveBeenCalledWith('dashboard');
+  it('collapsed: the card is disabled (out of the tab order) while it slides away', () => {
+    render(<NetWorthAnchor netWorth={54748} monthDelta={1240} collapsed onNavigate={vi.fn()} />);
+    // The card stays mounted (so it can animate height→0 + fade) but is disabled.
+    expect(screen.getByRole('button')).toBeDisabled();
   });
 });

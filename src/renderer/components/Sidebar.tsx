@@ -237,13 +237,18 @@ export function Sidebar({
             // otherwise shrink to its icon (UA control sizing) and sit left of the rail,
             // unlike the block-level <a> rows.
             <div key={group.key} className="flex flex-col pb-2">
-              {collapsed ? (
-                <div className="mx-3 my-2 h-px bg-line-2/60 first:hidden" aria-hidden />
-              ) : (
-                <span className="block px-4 pb-1.5 pt-3 font-sans text-[9px] font-semibold uppercase tracking-[0.18em] text-paper-dim">
+              {/* Animate the label's vertical space to 0 (grid-rows 1fr→0fr) + fade, so the
+                  rows below slide up smoothly on collapse instead of snapping. */}
+              <div
+                className={cn(
+                  'grid transition-[grid-template-rows,opacity] duration-200 ease-in-out',
+                  collapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100',
+                )}
+              >
+                <span className="block overflow-hidden px-4 pb-1.5 pt-3 font-sans text-[9px] font-semibold uppercase tracking-[0.18em] text-paper-dim">
                   {group.label}
                 </span>
-              )}
+              </div>
               {group.items.map((item) => (
                 <NavRow
                   key={item.kind === 'route' ? item.path : item.key}
