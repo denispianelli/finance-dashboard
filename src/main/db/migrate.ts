@@ -14,6 +14,7 @@ import sql012 from './migrations/012_account_declared_balance.sql?raw';
 import sql013 from './migrations/013_transaction_refund.sql?raw';
 import sql014 from './migrations/014_refund_category.sql?raw';
 import sql015 from './migrations/015_app_settings.sql?raw';
+import sql016 from './migrations/016_index_label_amount.sql?raw';
 
 interface Migration {
   version: number;
@@ -36,6 +37,7 @@ const MIGRATIONS: Migration[] = [
   { version: 13, sql: sql013 },
   { version: 14, sql: sql014 },
   { version: 15, sql: sql015 },
+  { version: 16, sql: sql016 },
 ];
 
 export function runMigrations(db: DatabaseSync): void {
