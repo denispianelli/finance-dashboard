@@ -236,7 +236,10 @@ export function Sidebar({
 
         <nav aria-label="Navigation principale" className="flex-1 py-2">
           {groups.map((group) => (
-            <div key={group.key} className="pb-2">
+            // flex-col so every row stretches to the same width — a bare <button> would
+            // otherwise shrink to its icon (UA control sizing) and sit left of the rail,
+            // unlike the block-level <a> rows.
+            <div key={group.key} className="flex flex-col pb-2">
               {collapsed ? (
                 <div className="mx-3 my-2 h-px bg-line-2/60 first:hidden" aria-hidden />
               ) : (
