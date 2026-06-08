@@ -65,7 +65,11 @@ export function AppShell() {
 
   return (
     <div className="flex h-full bg-ink-1">
-      <Sidebar />
+      <Sidebar
+        onImport={() => {
+          setImportOpen(true);
+        }}
+      />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
           onImport={() => {

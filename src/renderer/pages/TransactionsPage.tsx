@@ -188,7 +188,7 @@ export function TransactionsPage() {
           </p>
         ) : (
           <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-y-auto">
-            <div className="sticky top-0 z-10 bg-ink-1">
+            <div className="sticky top-0 z-10 bg-ink-2">
               <TxTableHeader />
             </div>
             {/* listRef sits below the sticky header, so scrollMargin = header height; each

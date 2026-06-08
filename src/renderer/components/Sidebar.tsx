@@ -3,7 +3,6 @@ import {
   Landmark,
   LayoutDashboard,
   LineChart,
-  MessageSquare,
   Settings,
   Tags,
   Upload,
@@ -14,35 +13,56 @@ import pkg from '../../../package.json';
 import { cn } from '../lib/utils';
 import { useBreakpoint } from '../hooks/useBreakpoint';
 
-interface NavItem {
-  path: string;
+type IconComponent = ComponentType<{ size: number; strokeWidth: number }>;
+
+// A navigation destination (renders a NavLink) vs. an in-app action like opening a
+// modal (renders a button). Import has no route — it opens the ImportModal owned by
+// AppShell — so it must be an action, not a NavLink to a non-existent `/import`.
+type NavItem =
+  | { kind: 'route'; path: string; label: string; Icon: IconComponent; enabled: boolean }
+  | { kind: 'action'; key: string; label: string; Icon: IconComponent; onClick: () => void };
+
+interface NavGroup {
+  key: string;
   label: string;
-  Icon: ComponentType<{ size: number; strokeWidth: number }>;
-  enabled: boolean;
+  items: NavItem[];
 }
 
-const GROUPS: { key: string; label: string; items: NavItem[] }[] = [
-  {
-    key: 'vue',
-    label: 'Vue',
-    items: [
-      { path: '/', label: 'Tableau de bord', Icon: LayoutDashboard, enabled: true },
-      { path: '/transactions', label: 'Transactions', Icon: ArrowLeftRight, enabled: true },
-      { path: '/accounts', label: 'Comptes', Icon: Landmark, enabled: true },
-      { path: '/categories', label: 'Catégories', Icon: Tags, enabled: true },
-      { path: '/reports', label: 'Rapports', Icon: LineChart, enabled: true },
-    ],
-  },
-  {
-    key: 'outils',
-    label: 'Outils',
-    items: [
-      { path: '/import', label: 'Importer', Icon: Upload, enabled: false },
-      { path: '/chat', label: 'Chat IA', Icon: MessageSquare, enabled: false },
-      { path: '/settings', label: 'Paramètres', Icon: Settings, enabled: true },
-    ],
-  },
-];
+function buildGroups(onImport: () => void): NavGroup[] {
+  return [
+    {
+      key: 'vue',
+      label: 'Vue',
+      items: [
+        {
+          kind: 'route',
+          path: '/',
+          label: 'Tableau de bord',
+          Icon: LayoutDashboard,
+          enabled: true,
+        },
+        {
+          kind: 'route',
+          path: '/transactions',
+          label: 'Transactions',
+          Icon: ArrowLeftRight,
+          enabled: true,
+        },
+        { kind: 'route', path: '/accounts', label: 'Comptes', Icon: Landmark, enabled: true },
+        { kind: 'route', path: '/categories', label: 'Catégories', Icon: Tags, enabled: true },
+        { kind: 'route', path: '/reports', label: 'Rapports', Icon: LineChart, enabled: true },
+      ],
+    },
+    {
+      key: 'outils',
+      label: 'Outils',
+      items: [
+        { kind: 'action', key: 'import', label: 'Importer', Icon: Upload, onClick: onImport },
+        { kind: 'route', path: '/settings', label: 'Paramètres', Icon: Settings, enabled: true },
+      ],
+    },
+  ];
+}
 
 function BrandMark() {
   return (
@@ -84,9 +104,29 @@ const ROW_EXPANDED = 'px-3';
 const ROW_COLLAPSED = 'justify-center px-0';
 
 function NavRow({ item, collapsed }: NavRowProps) {
-  const { Icon, label, path, enabled } = item;
+  const { Icon, label } = item;
   const sharedTitle = collapsed ? label : undefined;
-  if (!enabled) {
+
+  if (item.kind === 'action') {
+    return (
+      <button
+        type="button"
+        onClick={item.onClick}
+        title={sharedTitle}
+        aria-label={collapsed ? label : undefined}
+        className={cn(
+          ROW_BASE,
+          collapsed ? ROW_COLLAPSED : ROW_EXPANDED,
+          'border-0 bg-transparent text-left text-paper-mute transition-colors hover:text-paper',
+        )}
+      >
+        <Icon size={14} strokeWidth={1.6} />
+        {collapsed ? null : <span>{label}</span>}
+      </button>
+    );
+  }
+
+  if (!item.enabled) {
     return (
       <button
         type="button"
@@ -106,8 +146,8 @@ function NavRow({ item, collapsed }: NavRowProps) {
   }
   return (
     <NavLink
-      to={path}
-      end={path === '/'}
+      to={item.path}
+      end={item.path === '/'}
       title={sharedTitle}
       aria-label={collapsed ? label : undefined}
       className={({ isActive }) =>
@@ -135,9 +175,10 @@ function NavRow({ item, collapsed }: NavRowProps) {
   );
 }
 
-export function Sidebar() {
+export function Sidebar({ onImport }: { onImport: () => void }) {
   const expanded = useBreakpoint('xl');
   const collapsed = !expanded;
+  const groups = buildGroups(onImport);
 
   return (
     <aside
@@ -172,7 +213,7 @@ export function Sidebar() {
       <div className="mx-4 h-px bg-line-2" />
 
       <nav aria-label="Navigation principale" className="flex-1 py-2">
-        {GROUPS.map((group) => (
+        {groups.map((group) => (
           <div key={group.key} className="pb-2">
             {collapsed ? (
               <div className="mx-3 my-2 h-px bg-line-2/60 first:hidden" aria-hidden />
@@ -182,7 +223,11 @@ export function Sidebar() {
               </span>
             )}
             {group.items.map((item) => (
-              <NavRow key={item.path} item={item} collapsed={collapsed} />
+              <NavRow
+                key={item.kind === 'route' ? item.path : item.key}
+                item={item}
+                collapsed={collapsed}
+              />
             ))}
           </div>
         ))}

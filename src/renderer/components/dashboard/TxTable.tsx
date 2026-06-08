@@ -41,7 +41,7 @@ export interface TxTableProps {
 }
 
 const HEAD =
-  'font-sans text-[9px] font-semibold uppercase tracking-[0.18em] text-paper-mute pb-2.5 border-b border-line-2';
+  'font-sans text-[9px] font-semibold uppercase tracking-[0.18em] text-paper-mute pb-2.5';
 const CELL = 'py-[11px]';
 
 /** Shared column template. Fixed widths (description is the only flexible 1fr) so each row is
@@ -54,7 +54,7 @@ export const TX_GRID =
 
 export function TxTableHeader() {
   return (
-    <div className={TX_GRID}>
+    <div className={cn(TX_GRID, 'border-b border-line-2')}>
       <span className={HEAD}>Date</span>
       <span className={HEAD} />
       <span className={HEAD}>Description</span>
