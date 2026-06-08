@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { runMigrations } from '../../../src/main/db/migrate';
-import { listUncategorized, applyCategory } from '../../../src/main/categorize/pending';
+import { listPendingGroups, applyCategoryToKey } from '../../../src/main/categorize/pending';
 
 let db: DatabaseSync;
 
@@ -34,34 +34,56 @@ afterEach(() => {
   db.close();
 });
 
-describe('listUncategorized', () => {
-  it('returns only uncategorized, non-internal-transfer rows (oldest first)', () => {
-    insertTx({ id: 't1', label: 'ZZZ UNSEEN A' });
-    insertTx({ id: 't2', label: 'CARREFOUR', categoryId: 'cat-alimentation' });
-    insertTx({ id: 't3', label: 'VIR INTERNE', internal: true });
-    insertTx({ id: 't4', label: 'ZZZ UNSEEN B' });
+describe('listPendingGroups', () => {
+  it('collapses rows sharing a stable key into one group, oldest-first, with count and representative label', () => {
+    insertTx({ id: 't1', label: 'VIR PAYPAL 12/03/25' });
+    insertTx({ id: 't2', label: 'VIR PAYPAL 14/05/25' }); // same key as t1
+    insertTx({ id: 't3', label: 'CARREFOUR MARKET' });
 
-    const items = listUncategorized(db);
+    const groups = listPendingGroups(db);
 
-    expect(items.map((i) => i.id)).toEqual(['t1', 't4']);
-    expect(items[0]).toEqual({ id: 't1', label: 'ZZZ UNSEEN A' });
+    expect(groups).toEqual([
+      { key: 'VIR PAYPAL', label: 'VIR PAYPAL 12/03/25', count: 2 },
+      { key: 'CARREFOUR MARKET', label: 'CARREFOUR MARKET', count: 1 },
+    ]);
+  });
+
+  it('excludes categorized and internal-transfer rows', () => {
+    insertTx({ id: 't1', label: 'CARREFOUR', categoryId: 'cat-alimentation' });
+    insertTx({ id: 't2', label: 'VIR INTERNE', internal: true });
+    insertTx({ id: 't3', label: 'ZZZ UNSEEN' });
+
+    expect(listPendingGroups(db).map((g) => g.key)).toEqual(['ZZZ UNSEEN']);
   });
 });
 
-describe('applyCategory', () => {
-  it('writes the category only when the row is still uncategorized', () => {
-    insertTx({ id: 't1', label: 'ZZZ UNSEEN A' });
+describe('applyCategoryToKey', () => {
+  it('applies the category to every still-uncategorized row of the key and returns the count', () => {
+    insertTx({ id: 't1', label: 'VIR PAYPAL 12/03/25' });
+    insertTx({ id: 't2', label: 'VIR PAYPAL 14/05/25' });
+    insertTx({ id: 't3', label: 'CARREFOUR' });
 
-    expect(applyCategory(db, 't1', 'cat-alimentation')).toBe(true);
+    const applied = applyCategoryToKey(db, 'VIR PAYPAL', 'cat-alimentation');
+
+    expect(applied).toBe(2);
     expect(
       db.prepare('SELECT category_id, user_modified FROM transactions WHERE id = ?').get('t1'),
     ).toMatchObject({ category_id: 'cat-alimentation', user_modified: 0 });
+    expect(db.prepare('SELECT category_id FROM transactions WHERE id = ?').get('t2')).toMatchObject(
+      { category_id: 'cat-alimentation' },
+    );
+    expect(db.prepare('SELECT category_id FROM transactions WHERE id = ?').get('t3')).toMatchObject(
+      { category_id: null },
+    );
   });
 
-  it('never overwrites a category set meanwhile (manual pick wins)', () => {
-    insertTx({ id: 't1', label: 'ZZZ', categoryId: 'cat-loisirs' });
+  it('never overwrites a row categorized meanwhile (manual pick wins)', () => {
+    insertTx({ id: 't1', label: 'VIR PAYPAL 12/03/25', categoryId: 'cat-loisirs' });
+    insertTx({ id: 't2', label: 'VIR PAYPAL 14/05/25' });
 
-    expect(applyCategory(db, 't1', 'cat-alimentation')).toBe(false);
+    const applied = applyCategoryToKey(db, 'VIR PAYPAL', 'cat-alimentation');
+
+    expect(applied).toBe(1); // only t2
     expect(db.prepare('SELECT category_id FROM transactions WHERE id = ?').get('t1')).toMatchObject(
       {
         category_id: 'cat-loisirs',

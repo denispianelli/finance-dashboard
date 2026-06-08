@@ -7,19 +7,17 @@ import { getDb } from '../../db';
 import { getModel, isModelAvailable } from '../../llm/llm';
 import { modelsDir } from '../../llm/modelsDir';
 import { categorizeBatch, type LlmCategory } from '../../categorize/llm';
-import { listUncategorized, applyCategory } from '../../categorize/pending';
+import { listPendingGroups, applyCategoryToKey } from '../../categorize/pending';
 
-/** Transactions still awaiting a category (drives the background loop). */
+/** Distinct pending labels (drives the background loop — one call per label). */
 export function handleCategorizePending(): CategorizePendingResponse {
-  return { items: listUncategorized(getDb()) };
+  return { groups: listPendingGroups(getDb()) };
 }
 
 /**
- * LLM tier-3, run in the background after import: classify a batch of
- * uncategorized transactions into existing categories and persist the
- * suggestions (only for rows still uncategorized — a manual pick wins). Returns
- * how many rows were written. Best-effort: the renderer loop tolerates both error
- * codes (`model_unavailable` stops the loop, `inference_failed` skips the batch).
+ * Classify ONE distinct label (no batch anchoring) and apply the result to every
+ * transaction sharing its key. Best-effort: the renderer loop tolerates both error
+ * codes (`model_unavailable` stops the pass, `inference_failed` skips this label).
  */
 export async function handleCategorizeBatch(
   payload: CategorizeBatchPayload,
@@ -34,11 +32,11 @@ export async function handleCategorizeBatch(
 
   try {
     const model = await getModel(dir);
-    const results = await categorizeBatch(model, categories, payload.items);
-    let applied = 0;
-    for (const r of results) {
-      if (r.categoryId !== null && applyCategory(db, r.id, r.categoryId)) applied++;
-    }
+    const results = await categorizeBatch(model, categories, [
+      { id: payload.key, label: payload.label },
+    ]);
+    const categoryId = results[0]?.categoryId ?? null;
+    const applied = categoryId === null ? 0 : applyCategoryToKey(db, payload.key, categoryId);
     return { ok: true, applied };
   } catch {
     return { ok: false, error: 'inference_failed' };

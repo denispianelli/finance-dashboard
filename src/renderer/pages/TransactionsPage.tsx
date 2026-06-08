@@ -67,7 +67,7 @@ function Segmented<T extends string>({
 }
 
 export function TransactionsPage() {
-  const { refreshToken } = useOutletContext<AppOutletContext>();
+  const { refreshToken, categorizing } = useOutletContext<AppOutletContext>();
   const {
     accounts,
     transactions,
@@ -219,6 +219,7 @@ export function TransactionsPage() {
                     <TxTableRow
                       row={toTxRow(t)}
                       categories={categories}
+                      categorizing={categorizing}
                       onReassign={(txId, catId) => {
                         void reassign(txId, catId);
                       }}
