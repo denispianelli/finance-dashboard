@@ -1,6 +1,12 @@
 import { Wallet } from 'lucide-react';
 import { cn } from '@renderer/lib/utils';
 import { NBSP, MINUS } from '@renderer/lib/euro';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@renderer/components/ui/tooltip';
 
 interface NetWorthAnchorProps {
   /** Net worth (sum of every account's balance), in euros. */
@@ -35,19 +41,26 @@ export function NetWorthAnchor({
   const deltaText = `${positive ? '+' : MINUS}${NBSP}${formatWhole(Math.abs(monthDelta))}${NBSP}€`;
 
   if (collapsed) {
+    const summary = `Patrimoine net · ${formatWhole(netWorth)}${NBSP}€ · ${deltaText} ce mois`;
     return (
-      <button
-        type="button"
-        title={`Patrimoine net · ${formatWhole(netWorth)}${NBSP}€`}
-        aria-label={`Patrimoine net : ${formatWhole(netWorth)} euros`}
-        onClick={() => {
-          onNavigate('dashboard');
-        }}
-        className="mx-2 mb-2 mt-1 flex flex-col items-center gap-1 rounded-md border border-line-2 bg-ink-1 py-2.5 transition-colors hover:border-line-3 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brass"
-      >
-        <Wallet size={14} strokeWidth={1.6} className="text-brass" />
-        <span className={cn('size-[5px] rounded-full', positive ? 'bg-sage' : 'bg-coral')} />
-      </button>
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              aria-label={`Patrimoine net : ${formatWhole(netWorth)} euros`}
+              onClick={() => {
+                onNavigate('dashboard');
+              }}
+              className="mx-2 mb-2 mt-1 flex cursor-pointer flex-col items-center gap-1 rounded-md border border-line-2 bg-ink-1 py-2.5 transition-colors hover:border-line-3 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brass"
+            >
+              <Wallet size={14} strokeWidth={1.6} className="text-brass" />
+              <span className={cn('size-[5px] rounded-full', positive ? 'bg-sage' : 'bg-coral')} />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">{summary}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
 

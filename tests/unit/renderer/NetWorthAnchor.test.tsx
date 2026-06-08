@@ -41,14 +41,15 @@ describe('NetWorthAnchor', () => {
     expect(squash(text)).toBe('−820€');
   });
 
-  it('collapsed: pictogram button carrying the amount in its title; click navigates', () => {
+  it('collapsed: clickable pictogram button labelled with the amount; click navigates', () => {
     const onNavigate = vi.fn();
     render(<NetWorthAnchor netWorth={54748} monthDelta={1240} collapsed onNavigate={onNavigate} />);
 
+    // The label text is no longer inline (it moves to a hover tooltip), but the
+    // accessible name still carries the figure for screen readers.
     expect(screen.queryByText('Patrimoine net')).toBeNull();
-    const btn = screen.getByRole('button');
-    expect(btn.getAttribute('title')).toMatch(/Patrimoine net/);
-    expect(squash(btn.getAttribute('title'))).toContain('54748');
+    const btn = screen.getByRole('button', { name: /Patrimoine net/i });
+    expect(squash(btn.getAttribute('aria-label'))).toContain('54748');
 
     fireEvent.click(btn);
     expect(onNavigate).toHaveBeenCalledWith('dashboard');

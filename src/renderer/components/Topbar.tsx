@@ -1,6 +1,7 @@
 import { PanelLeft, Sparkles } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 interface PageMeta {
   title: string;
@@ -50,16 +51,22 @@ export function Topbar({
     >
       {onToggleSidebar ? (
         <>
-          <button
-            type="button"
-            onClick={onToggleSidebar}
-            aria-label={toggleLabel}
-            aria-expanded={!sidebarCollapsed}
-            title={toggleLabel}
-            className="hidden size-7 shrink-0 items-center justify-center rounded-md text-paper-mute transition-colors hover:bg-ink-3 hover:text-paper focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brass xl:inline-flex"
-          >
-            <PanelLeft size={16} strokeWidth={1.7} />
-          </button>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={onToggleSidebar}
+                  aria-label={toggleLabel}
+                  aria-expanded={!sidebarCollapsed}
+                  className="hidden size-7 shrink-0 items-center justify-center rounded-md text-paper-mute transition-colors hover:bg-ink-3 hover:text-paper focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brass xl:inline-flex"
+                >
+                  <PanelLeft size={16} strokeWidth={1.7} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{toggleLabel}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <span className="hidden h-5 w-px shrink-0 bg-line-2 xl:block" aria-hidden />
         </>
       ) : null}

@@ -7,11 +7,12 @@ import {
   Tags,
   Upload,
 } from 'lucide-react';
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import pkg from '../../../package.json';
 import { cn } from '../lib/utils';
 import { NetWorthAnchor } from './NetWorthAnchor';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 type IconComponent = ComponentType<{ size: number; strokeWidth: number }>;
 
@@ -100,78 +101,86 @@ interface NavRowProps {
 
 const ROW_BASE =
   'nav-item relative mx-2 flex h-9 items-center gap-2 rounded-md text-[13px] transition-colors';
-const ROW_EXPANDED = 'px-3';
+// Collapsed rows are icon-only and centered; expanded rows are left-aligned with padding.
+// Keeping both kinds (link / button) on the exact same class set guarantees the icons
+// line up vertically in the rail (no per-kind drift).
+const ROW_EXPANDED = 'justify-start px-3';
 const ROW_COLLAPSED = 'justify-center px-0';
+
+function rowClassName(collapsed: boolean, extra: string): string {
+  return cn(ROW_BASE, collapsed ? ROW_COLLAPSED : ROW_EXPANDED, extra);
+}
 
 function NavRow({ item, collapsed }: NavRowProps) {
   const { Icon, label } = item;
-  const sharedTitle = collapsed ? label : undefined;
+  const labelSpan = collapsed ? null : <span className="whitespace-nowrap">{label}</span>;
 
+  let row: ReactNode;
   if (item.kind === 'action') {
-    return (
+    row = (
       <button
         type="button"
         onClick={item.onClick}
-        title={sharedTitle}
         aria-label={collapsed ? label : undefined}
-        className={cn(
-          ROW_BASE,
-          collapsed ? ROW_COLLAPSED : ROW_EXPANDED,
-          'border-0 bg-transparent text-left text-paper-mute transition-colors hover:text-paper',
+        className={rowClassName(
+          collapsed,
+          'border-0 bg-transparent text-paper-mute hover:text-paper',
         )}
       >
         <Icon size={14} strokeWidth={1.6} />
-        {collapsed ? null : <span>{label}</span>}
+        {labelSpan}
       </button>
     );
-  }
-
-  if (!item.enabled) {
-    return (
+  } else if (!item.enabled) {
+    row = (
       <button
         type="button"
         disabled
-        title={sharedTitle}
         aria-label={collapsed ? label : undefined}
-        className={cn(
-          ROW_BASE,
-          collapsed ? ROW_COLLAPSED : ROW_EXPANDED,
-          'cursor-not-allowed border-0 bg-transparent text-left text-paper-dim opacity-50',
+        className={rowClassName(
+          collapsed,
+          'cursor-not-allowed border-0 bg-transparent text-paper-dim opacity-50',
         )}
       >
         <Icon size={14} strokeWidth={1.6} />
-        {collapsed ? null : <span>{label}</span>}
+        {labelSpan}
       </button>
     );
+  } else {
+    row = (
+      <NavLink
+        to={item.path}
+        end={item.path === '/'}
+        aria-label={collapsed ? label : undefined}
+        className={({ isActive }) =>
+          rowClassName(
+            collapsed,
+            cn('no-underline', isActive ? 'bg-brass-soft text-paper' : 'text-paper-mute'),
+          )
+        }
+      >
+        {({ isActive }) => (
+          <>
+            <span
+              className={cn(
+                'absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full',
+                isActive ? 'bg-brass' : 'bg-transparent',
+              )}
+            />
+            <Icon size={14} strokeWidth={1.6} />
+            {labelSpan}
+          </>
+        )}
+      </NavLink>
+    );
   }
+
+  if (!collapsed) return row;
   return (
-    <NavLink
-      to={item.path}
-      end={item.path === '/'}
-      title={sharedTitle}
-      aria-label={collapsed ? label : undefined}
-      className={({ isActive }) =>
-        cn(
-          ROW_BASE,
-          collapsed ? ROW_COLLAPSED : ROW_EXPANDED,
-          'no-underline',
-          isActive ? 'bg-brass-soft text-paper' : 'text-paper-mute',
-        )
-      }
-    >
-      {({ isActive }) => (
-        <>
-          <span
-            className={cn(
-              'absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full',
-              isActive ? 'bg-brass' : 'bg-transparent',
-            )}
-          />
-          <Icon size={14} strokeWidth={1.6} />
-          {collapsed ? null : <span>{label}</span>}
-        </>
-      )}
-    </NavLink>
+    <Tooltip>
+      <TooltipTrigger asChild>{row}</TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -190,91 +199,97 @@ export function Sidebar({
   const navigate = useNavigate();
 
   return (
-    <aside
-      aria-label="Barre latérale"
-      data-collapsed={collapsed}
-      className={cn(
-        'flex h-full shrink-0 flex-col border-r border-line-2 bg-ink-2 transition-[width] duration-150',
-        collapsed ? 'w-[60px]' : 'w-[232px]',
-      )}
-    >
-      <div
+    <TooltipProvider delayDuration={200}>
+      <aside
+        aria-label="Barre latérale"
+        data-collapsed={collapsed}
         className={cn(
-          'flex items-center gap-3 pb-[18px] pt-5',
-          collapsed ? 'justify-center px-0' : 'px-[18px]',
+          'flex h-full shrink-0 flex-col overflow-hidden border-r border-line-2 bg-ink-2 transition-[width] duration-200 ease-in-out',
+          collapsed ? 'w-[60px]' : 'w-[232px]',
         )}
       >
-        <span className="flex text-brass">
-          <BrandMark />
-        </span>
-        {collapsed ? null : (
-          <div className="flex flex-col gap-1 leading-none">
-            <span className="font-sans text-[13px] font-medium leading-none tracking-[-0.015em] text-paper">
-              Finance
-            </span>
-            <span className="font-serif text-[15px] italic font-normal leading-none text-paper-soft">
-              Dashboard
-            </span>
-          </div>
-        )}
-      </div>
-
-      <NetWorthAnchor
-        netWorth={netWorth}
-        monthDelta={monthDelta}
-        collapsed={collapsed}
-        onNavigate={() => {
-          void navigate('/');
-        }}
-      />
-
-      <div className="mx-4 h-px bg-line-2" />
-
-      <nav aria-label="Navigation principale" className="flex-1 py-2">
-        {groups.map((group) => (
-          <div key={group.key} className="pb-2">
-            {collapsed ? (
-              <div className="mx-3 my-2 h-px bg-line-2/60 first:hidden" aria-hidden />
-            ) : (
-              <span className="block px-4 pb-1.5 pt-3 font-sans text-[9px] font-semibold uppercase tracking-[0.18em] text-paper-dim">
-                {group.label}
+        <div
+          className={cn(
+            'flex items-center gap-3 pb-[18px] pt-5',
+            collapsed ? 'justify-center px-0' : 'px-[18px]',
+          )}
+        >
+          <span className="flex text-brass">
+            <BrandMark />
+          </span>
+          {collapsed ? null : (
+            <div className="flex flex-col gap-1 leading-none">
+              <span className="font-sans text-[13px] font-medium leading-none tracking-[-0.015em] text-paper">
+                Finance
               </span>
-            )}
-            {group.items.map((item) => (
-              <NavRow
-                key={item.kind === 'route' ? item.path : item.key}
-                item={item}
-                collapsed={collapsed}
-              />
-            ))}
-          </div>
-        ))}
-      </nav>
+              <span className="font-serif text-[15px] italic font-normal leading-none text-paper-soft">
+                Dashboard
+              </span>
+            </div>
+          )}
+        </div>
 
-      <div
-        className={cn(
-          'flex items-center border-t border-line-2 py-3.5',
-          collapsed ? 'justify-center px-0' : 'justify-between px-[18px]',
-        )}
-      >
-        {collapsed ? (
-          <span
-            aria-label="local · privé"
-            title="local · privé"
-            className="h-1.5 w-1.5 shrink-0 rounded-full bg-sage"
-          />
-        ) : (
-          <>
-            <span className="flex items-center gap-1.5 font-mono text-[11px] font-medium leading-none text-paper-mute">
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sage" />
-              local · privé
-            </span>
-            <span className="font-mono text-[11px] font-medium leading-none text-paper-dim">
-              v{pkg.version}
-            </span>
-          </>
-        )}
-      </div>
-    </aside>
+        <NetWorthAnchor
+          netWorth={netWorth}
+          monthDelta={monthDelta}
+          collapsed={collapsed}
+          onNavigate={() => {
+            void navigate('/');
+          }}
+        />
+
+        <div className="mx-4 h-px bg-line-2" />
+
+        <nav aria-label="Navigation principale" className="flex-1 py-2">
+          {groups.map((group) => (
+            <div key={group.key} className="pb-2">
+              {collapsed ? (
+                <div className="mx-3 my-2 h-px bg-line-2/60 first:hidden" aria-hidden />
+              ) : (
+                <span className="block px-4 pb-1.5 pt-3 font-sans text-[9px] font-semibold uppercase tracking-[0.18em] text-paper-dim">
+                  {group.label}
+                </span>
+              )}
+              {group.items.map((item) => (
+                <NavRow
+                  key={item.kind === 'route' ? item.path : item.key}
+                  item={item}
+                  collapsed={collapsed}
+                />
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <div
+          className={cn(
+            'flex items-center border-t border-line-2 py-3.5',
+            collapsed ? 'justify-center px-0' : 'justify-between px-[18px]',
+          )}
+        >
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  aria-label="local · privé"
+                  className="h-1.5 w-1.5 shrink-0 rounded-full bg-sage"
+                />
+              </TooltipTrigger>
+              <TooltipContent side="right">local · privé</TooltipContent>
+            </Tooltip>
+          ) : (
+            <>
+              <span className="flex items-center gap-1.5 font-mono text-[11px] font-medium leading-none text-paper-mute">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sage" />
+                local · privé
+              </span>
+              <span className="font-mono text-[11px] font-medium leading-none text-paper-dim">
+                v{pkg.version}
+              </span>
+            </>
+          )}
+        </div>
+      </aside>
+    </TooltipProvider>
   );
 }
