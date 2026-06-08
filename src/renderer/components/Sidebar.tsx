@@ -14,7 +14,7 @@ import { cn } from '../lib/utils';
 import { NetWorthAnchor } from './NetWorthAnchor';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
-type IconComponent = ComponentType<{ size: number; strokeWidth: number }>;
+type IconComponent = ComponentType<{ size: number; strokeWidth: number; className?: string }>;
 
 // A navigation destination (renders a NavLink) vs. an in-app action like opening a
 // modal (renders a button). Import has no route — it opens the ImportModal owned by
@@ -99,21 +99,25 @@ interface NavRowProps {
   collapsed: boolean;
 }
 
+// Rows keep a CONSTANT left padding in both states (no justify-center switch). The icon
+// is shrink-0 at a fixed offset, and the label is always mounted — it fades and gets
+// clipped by the shrinking rail width rather than being unmounted. So when the sidebar
+// collapses the icons stay put and the text "slides out" (shadcn collapsible="icon"
+// behaviour) instead of teleporting. The collapsed rail width is tuned so the fixed-offset
+// icon lands dead-centre (see w-[54px] below): left inset mx-2(8)+px-3(12)=20, icon 14 →
+// 20+14+20 = 54.
 const ROW_BASE =
-  'nav-item relative mx-2 flex h-9 items-center gap-2 rounded-md text-[13px] transition-colors';
-// Collapsed rows are icon-only and centered; expanded rows are left-aligned with padding.
-// Keeping both kinds (link / button) on the exact same class set guarantees the icons
-// line up vertically in the rail (no per-kind drift).
-const ROW_EXPANDED = 'justify-start px-3';
-const ROW_COLLAPSED = 'justify-center px-0';
-
-function rowClassName(collapsed: boolean, extra: string): string {
-  return cn(ROW_BASE, collapsed ? ROW_COLLAPSED : ROW_EXPANDED, extra);
-}
+  'nav-item group relative mx-2 flex h-9 items-center gap-2 overflow-hidden rounded-md px-3 text-[13px] transition-colors';
 
 function NavRow({ item, collapsed }: NavRowProps) {
   const { Icon, label } = item;
-  const labelSpan = collapsed ? null : <span className="whitespace-nowrap">{label}</span>;
+  const labelSpan = (
+    <span
+      className={cn('whitespace-nowrap transition-opacity duration-200', collapsed && 'opacity-0')}
+    >
+      {label}
+    </span>
+  );
 
   let row: ReactNode;
   if (item.kind === 'action') {
@@ -121,13 +125,9 @@ function NavRow({ item, collapsed }: NavRowProps) {
       <button
         type="button"
         onClick={item.onClick}
-        aria-label={collapsed ? label : undefined}
-        className={rowClassName(
-          collapsed,
-          'border-0 bg-transparent text-paper-mute hover:text-paper',
-        )}
+        className={cn(ROW_BASE, 'border-0 bg-transparent text-paper-mute hover:text-paper')}
       >
-        <Icon size={14} strokeWidth={1.6} />
+        <Icon size={14} strokeWidth={1.6} className="shrink-0" />
         {labelSpan}
       </button>
     );
@@ -136,34 +136,31 @@ function NavRow({ item, collapsed }: NavRowProps) {
       <button
         type="button"
         disabled
-        aria-label={collapsed ? label : undefined}
-        className={rowClassName(
-          collapsed,
+        className={cn(
+          ROW_BASE,
           'cursor-not-allowed border-0 bg-transparent text-paper-dim opacity-50',
         )}
       >
-        <Icon size={14} strokeWidth={1.6} />
+        <Icon size={14} strokeWidth={1.6} className="shrink-0" />
         {labelSpan}
       </button>
     );
   } else {
-    // String className (not the function form): when collapsed this NavLink is wrapped
-    // in a Radix Tooltip trigger (asChild → Slot), and Slot only merges *string*
-    // classNames — a function className gets stringified, dropping every layout class.
-    // NavLink sets aria-current="page" when active, so style the active state via the
-    // aria-[current=page] variant instead of an isActive callback.
+    // String className (not the function form): when collapsed this NavLink is wrapped in
+    // a Radix Tooltip trigger (asChild → Slot), and Slot only merges *string* classNames —
+    // a function className gets stringified, dropping every layout class. NavLink sets
+    // aria-current="page" when active, so the active state is styled via that variant.
     row = (
       <NavLink
         to={item.path}
         end={item.path === '/'}
-        aria-label={collapsed ? label : undefined}
-        className={rowClassName(
-          collapsed,
-          'group no-underline text-paper-mute aria-[current=page]:bg-brass-soft aria-[current=page]:text-paper',
+        className={cn(
+          ROW_BASE,
+          'no-underline text-paper-mute aria-[current=page]:bg-brass-soft aria-[current=page]:text-paper',
         )}
       >
         <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-transparent group-aria-[current=page]:bg-brass" />
-        <Icon size={14} strokeWidth={1.6} />
+        <Icon size={14} strokeWidth={1.6} className="shrink-0" />
         {labelSpan}
       </NavLink>
     );
@@ -199,7 +196,7 @@ export function Sidebar({
         data-collapsed={collapsed}
         className={cn(
           'flex h-full shrink-0 flex-col overflow-hidden border-r border-line-2 bg-ink-2 transition-[width] duration-200 ease-in-out',
-          collapsed ? 'w-[60px]' : 'w-[232px]',
+          collapsed ? 'w-[54px]' : 'w-[232px]',
         )}
       >
         <div

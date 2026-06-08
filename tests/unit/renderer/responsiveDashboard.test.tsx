@@ -56,16 +56,18 @@ describe('Sidebar collapsed rendering', () => {
     expect(aside.dataset.collapsed).toBe('false');
   });
 
-  it('collapses to an icon-only rail', () => {
+  it('collapses to an icon-only rail (labels mounted but faded out for the slide)', () => {
     render(
       <MemoryRouter>
         <Sidebar onImport={() => undefined} netWorth={0} monthDelta={0} collapsed />
       </MemoryRouter>,
     );
-    expect(screen.queryByText('Tableau de bord')).not.toBeInTheDocument();
     const aside = screen.getByRole('complementary');
     expect(aside.dataset.collapsed).toBe('true');
+    // The link stays in the tree; its label is kept mounted (so it can slide/fade
+    // rather than teleport) but rendered transparent, so the rail reads as icon-only.
     expect(screen.getByRole('link', { name: 'Tableau de bord' })).toBeInTheDocument();
+    expect(screen.getByText('Tableau de bord').className).toContain('opacity-0');
   });
 });
 
