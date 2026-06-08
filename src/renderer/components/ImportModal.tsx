@@ -161,7 +161,7 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
       <PdfModelRequiredDialog
         open={sub?.step === 'modelRequired'}
         sizeLabel={
-          modelStatus.target ? `~${formatModelSize(modelStatus.target.sizeBytes)}` : '~1,9 Go'
+          modelStatus.target ? `~${formatModelSize(modelStatus.target.sizeBytes)}` : '~2,0 Go'
         }
         onInstall={() => {
           void ipc.invoke('model:download:start', {});
