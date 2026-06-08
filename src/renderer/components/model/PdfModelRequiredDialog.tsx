@@ -11,11 +11,17 @@ import { Button } from '@renderer/components/ui/button';
 
 interface PdfModelRequiredDialogProps {
   open: boolean;
+  sizeLabel: string; // e.g. "~4,7 Go" — from the parent's modelStatus.target
   onInstall: () => void;
   onClose: () => void;
 }
 
-export function PdfModelRequiredDialog({ open, onInstall, onClose }: PdfModelRequiredDialogProps) {
+export function PdfModelRequiredDialog({
+  open,
+  sizeLabel,
+  onInstall,
+  onClose,
+}: PdfModelRequiredDialogProps) {
   return (
     <Dialog
       open={open}
@@ -35,7 +41,7 @@ export function PdfModelRequiredDialog({ open, onInstall, onClose }: PdfModelReq
           </div>
 
           <DialogDescription className="pt-1 font-sans text-[13px] leading-relaxed text-paper-soft">
-            Lire la mise en page d'une banque inconnue requiert le modèle local (~1,9 Go,
+            Lire la mise en page d'une banque inconnue requiert le modèle local ({sizeLabel},
             hors-ligne). Tu peux l'installer — l'import reprendra automatiquement — ou réimporter ce
             relevé en <span className="text-paper">CSV</span> ou{' '}
             <span className="text-paper">OFX</span> exporté depuis ta banque : ces formats ne

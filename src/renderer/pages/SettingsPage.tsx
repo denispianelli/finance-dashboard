@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from 'react';
+import { useEffect, type ComponentType, type ReactNode } from 'react';
 import { Cpu, Database, Palette } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
@@ -28,6 +28,13 @@ export function SettingsPage() {
 
 function ModelSection() {
   const status = useModelStatus();
+
+  useEffect(() => {
+    void ipc.invoke('model:selection:detect', {});
+  }, []);
+
+  const modelName = status.active?.label ?? status.target?.label ?? '—';
+
   return (
     <Section icon={Cpu} overline="— Local" title="Modèle LLM">
       <p className="pb-1 font-sans text-[12px] leading-relaxed text-paper-mute">
@@ -37,9 +44,7 @@ function ModelSection() {
 
       <Row label="Modèle">
         <div className="flex items-center gap-2.5">
-          <span className="font-mono text-[12px] text-paper-soft">
-            Llama 3.2 3B Instruct · Q4_K_M
-          </span>
+          <span className="font-mono text-[12px] text-paper-soft">{modelName}</span>
           <ModelSettingsSection
             status={status}
             onDownload={() => void ipc.invoke('model:download:start', {})}

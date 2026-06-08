@@ -28,6 +28,7 @@ import {
 import type { StatementExtraction } from '@shared/types/import';
 import type { AccountSummary, CreateAccountInput } from '@shared/types/dashboard';
 import { formatEuro } from '@renderer/lib/euro';
+import { formatModelSize } from '@renderer/lib/modelFormat';
 
 const FIELD =
   'h-9 w-full rounded-md border border-line-2 bg-ink-3 px-2.5 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
@@ -126,6 +127,12 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
     }
   }, [modelStatus.state, state, learnBank]);
 
+  // Lazy hardware detection: trigger when the PDF-required dialog becomes visible.
+  const pdfModelRequired = state.step === 'queue' && state.sub.step === 'modelRequired';
+  useEffect(() => {
+    if (pdfModelRequired) void ipc.invoke('model:selection:detect', {});
+  }, [pdfModelRequired]);
+
   function handleClose() {
     reset();
     setOverlapDismissed(false);
@@ -153,6 +160,9 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
     <>
       <PdfModelRequiredDialog
         open={sub?.step === 'modelRequired'}
+        sizeLabel={
+          modelStatus.target ? `~${formatModelSize(modelStatus.target.sizeBytes)}` : '~1,9 Go'
+        }
         onInstall={() => {
           void ipc.invoke('model:download:start', {});
         }}
