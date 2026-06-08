@@ -57,13 +57,20 @@ passthrough purchases (unique amounts) never recur, so they correctly stay manua
 `isPassthrough(db, labelKey): boolean` — `labelKey` is `stableLabelKey(label_clean)`.
 Returns true when **either**:
 
-- **Seed:** `labelKey` contains a known passthrough token. Seed set (uppercase):
-  `PAYPAL`, `SUMUP`, `LYDIA`, `LYF`, `LEETCHI`. Covers cold-start before any history.
+- **Seed:** `labelKey` contains a known passthrough token **as a whole word**
+  (token boundaries, not a raw substring). Seed set (uppercase): `PAYPAL`, `SUMUP`,
+  `LEETCHI` — distinctive, no false-match risk. (`LYDIA`/`LYF` are deliberately
+  excluded: `LYDIA` is also a first name, `LYF` is too short for safe matching;
+  entropy catches them after the first split.) Covers cold-start before any history.
 - **Entropy:** the user has filed this key under **≥ 2 distinct categories**
   (`user_modified = 1`, `category_id NOT NULL`). Self-tuning for unknown
   passthroughs. Computed by scanning user-categorized rows, grouping by
   `stableLabelKey(label_clean)`, counting distinct `category_id` — built once as a
   `Map<key, Set<categoryId>>` per pass and reused.
+
+Intended consequence: any label the user files under ≥ 2 categories — e.g. Amazon,
+which sells everything — becomes amount-driven. That is the desired behaviour for an
+everything-store, not a side effect to guard against.
 
 ### B. Amount-aware history — `src/main/categorize/history.ts`
 
