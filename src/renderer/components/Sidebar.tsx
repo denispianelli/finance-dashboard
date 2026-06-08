@@ -199,25 +199,26 @@ export function Sidebar({
           collapsed ? 'w-[54px]' : 'w-[232px]',
         )}
       >
-        <div
-          className={cn(
-            'flex items-center gap-3 pb-[18px] pt-5',
-            collapsed ? 'justify-center px-0' : 'px-[18px]',
-          )}
-        >
-          <span className="flex text-brass">
+        {/* Constant px so the mark stays put (its centre sits on the same x as the nav
+            icons in both states); the wordmark stays mounted and fades + is clipped by the
+            shrinking rail rather than being unmounted — so the logo slides, never teleports. */}
+        <div className="flex items-center gap-3 overflow-hidden px-[13px] pb-[18px] pt-5">
+          <span className="flex shrink-0 text-brass">
             <BrandMark />
           </span>
-          {collapsed ? null : (
-            <div className="flex flex-col gap-1 leading-none">
-              <span className="font-sans text-[13px] font-medium leading-none tracking-[-0.015em] text-paper">
-                Finance
-              </span>
-              <span className="font-serif text-[15px] italic font-normal leading-none text-paper-soft">
-                Dashboard
-              </span>
-            </div>
-          )}
+          <div
+            className={cn(
+              'flex shrink-0 flex-col gap-1 whitespace-nowrap leading-none transition-opacity duration-200',
+              collapsed && 'opacity-0',
+            )}
+          >
+            <span className="font-sans text-[13px] font-medium leading-none tracking-[-0.015em] text-paper">
+              Finance
+            </span>
+            <span className="font-serif text-[15px] italic font-normal leading-none text-paper-soft">
+              Dashboard
+            </span>
+          </div>
         </div>
 
         <NetWorthAnchor
