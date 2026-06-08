@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import type { AppOutletContext } from '@renderer/lib/outletContext';
 import { useBackgroundCategorization } from '@renderer/hooks/useBackgroundCategorization';
 import { useModelStatus } from '@renderer/hooks/useModelStatus';
+import { useNetWorthSummary } from '@renderer/hooks/useNetWorthSummary';
 import { ipc } from '@renderer/ipc/client';
 import { ImportModal } from './ImportModal';
 import { CreateAccountModal } from './accounts/CreateAccountModal';
@@ -20,6 +21,7 @@ export function AppShell() {
     setRefreshToken((t) => t + 1);
   }, []);
   const bg = useBackgroundCategorization({ onApplied });
+  const { netWorth, monthDelta } = useNetWorthSummary(refreshToken);
 
   const modelStatus = useModelStatus();
   const startModelDownload = () => {
@@ -69,6 +71,8 @@ export function AppShell() {
         onImport={() => {
           setImportOpen(true);
         }}
+        netWorth={netWorth}
+        monthDelta={monthDelta}
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar

@@ -8,10 +8,11 @@ import {
   Upload,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import pkg from '../../../package.json';
 import { cn } from '../lib/utils';
 import { useBreakpoint } from '../hooks/useBreakpoint';
+import { NetWorthAnchor } from './NetWorthAnchor';
 
 type IconComponent = ComponentType<{ size: number; strokeWidth: number }>;
 
@@ -175,10 +176,19 @@ function NavRow({ item, collapsed }: NavRowProps) {
   );
 }
 
-export function Sidebar({ onImport }: { onImport: () => void }) {
+export function Sidebar({
+  onImport,
+  netWorth,
+  monthDelta,
+}: {
+  onImport: () => void;
+  netWorth: number;
+  monthDelta: number;
+}) {
   const expanded = useBreakpoint('xl');
   const collapsed = !expanded;
   const groups = buildGroups(onImport);
+  const navigate = useNavigate();
 
   return (
     <aside
@@ -209,6 +219,15 @@ export function Sidebar({ onImport }: { onImport: () => void }) {
           </div>
         )}
       </div>
+
+      <NetWorthAnchor
+        netWorth={netWorth}
+        monthDelta={monthDelta}
+        collapsed={collapsed}
+        onNavigate={() => {
+          void navigate('/');
+        }}
+      />
 
       <div className="mx-4 h-px bg-line-2" />
 

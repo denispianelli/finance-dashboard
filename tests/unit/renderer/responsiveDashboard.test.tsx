@@ -48,7 +48,7 @@ describe('Sidebar responsive collapse', () => {
     setViewport(1280);
     render(
       <MemoryRouter>
-        <Sidebar onImport={() => undefined} />
+        <Sidebar onImport={() => undefined} netWorth={0} monthDelta={0} />
       </MemoryRouter>,
     );
     expect(screen.getByText('Tableau de bord')).toBeInTheDocument();
@@ -61,7 +61,7 @@ describe('Sidebar responsive collapse', () => {
     setViewport(1024);
     render(
       <MemoryRouter>
-        <Sidebar onImport={() => undefined} />
+        <Sidebar onImport={() => undefined} netWorth={0} monthDelta={0} />
       </MemoryRouter>,
     );
     expect(screen.queryByText('Tableau de bord')).not.toBeInTheDocument();
