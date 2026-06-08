@@ -147,30 +147,24 @@ function NavRow({ item, collapsed }: NavRowProps) {
       </button>
     );
   } else {
+    // String className (not the function form): when collapsed this NavLink is wrapped
+    // in a Radix Tooltip trigger (asChild → Slot), and Slot only merges *string*
+    // classNames — a function className gets stringified, dropping every layout class.
+    // NavLink sets aria-current="page" when active, so style the active state via the
+    // aria-[current=page] variant instead of an isActive callback.
     row = (
       <NavLink
         to={item.path}
         end={item.path === '/'}
         aria-label={collapsed ? label : undefined}
-        className={({ isActive }) =>
-          rowClassName(
-            collapsed,
-            cn('no-underline', isActive ? 'bg-brass-soft text-paper' : 'text-paper-mute'),
-          )
-        }
-      >
-        {({ isActive }) => (
-          <>
-            <span
-              className={cn(
-                'absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full',
-                isActive ? 'bg-brass' : 'bg-transparent',
-              )}
-            />
-            <Icon size={14} strokeWidth={1.6} />
-            {labelSpan}
-          </>
+        className={rowClassName(
+          collapsed,
+          'group no-underline text-paper-mute aria-[current=page]:bg-brass-soft aria-[current=page]:text-paper',
         )}
+      >
+        <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-transparent group-aria-[current=page]:bg-brass" />
+        <Icon size={14} strokeWidth={1.6} />
+        {labelSpan}
       </NavLink>
     );
   }
