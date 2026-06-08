@@ -138,3 +138,111 @@ selected absent + lesser present → upgrade banner (opt-in)
   implementation; fall back to 3B if detection throws.
 - **Lazy detection timing:** must not load the backend addon at launch; verify the
   download prompt/status path stays light until the user acts or categorization runs.
+
+---
+
+## Phase B — concrete design (2026-06-08)
+
+Phase A shipped the engine (registry, `selectModelSpec`, `getActiveSelection`,
+best-present load, selected-spec download). Phase B is the **status surface + UX**, and
+it also closes a correctness gap Phase A left: the UI hardcodes "~1,9 Go" / "Llama 3.2
+3B" in four places, now wrong whenever Qwen-7B is the active/selected model.
+
+**Maintainer decisions (locked):** upgrade banner lives in **Réglages only**; after an
+upgrade the old (lower-tier) model is **auto-removed**; the active-model display shows
+**name + real size** (no backend/CPU-GPU line — deferred).
+
+### B1. The launch invariant shapes everything
+
+`model:status` is polled at app launch (`AppShell` → `useModelStatus`), and hardware
+detection (`getActiveSelection` → `getLlama`) loads the native backend. So detection
+**must never** sit on the status path. Status splits into:
+
+- **Sync part** (always available, zero detection): `state`, progress, and `active` —
+  the best-present model's name + real size, from `findBestPresentModel` + its registry
+  spec. This alone fixes the "1,9 Go" lie everywhere.
+- **Lazy part** (only after a user-initiated trigger): `target` (the selected download
+  spec) and `upgrade`. Resolved by a new `detectSelection()` that the **Settings page**
+  and the **PDF-required dialog flow** call on mount/open — both post-launch, user-driven.
+
+### B2. `ModelStatus` extension (`src/shared/types/model.ts`)
+
+```ts
+export interface ModelInfo {
+  id: string; // registry id, e.g. 'qwen2.5-7b'
+  label: string; // 'Qwen2.5 7B'
+  sizeBytes: number; // real size, formatted via existing formatModelSize()
+}
+
+export interface ModelStatus {
+  state: ModelState;
+  receivedBytes?: number;
+  totalBytes?: number;
+  error?: string;
+  active?: ModelInfo; // best-present model (SYNC) — drives "Présent · {label} · {size}"
+  target?: ModelInfo; // download target: cached selection once detected, else fallbackModel()
+  upgrade?: ModelInfo; // set ONLY when ready + selection is a better, not-yet-downloaded model → banner
+}
+```
+
+### B3. Controller changes (`src/main/llm/downloadController.ts`)
+
+- Hold `let selected: ModelSpec | null = null`.
+- New `detectSelection(): Promise<void>` → `selected = await getActiveSelection(); emit();`
+  (lazy; the resolved status reaches the renderer via the existing `subscribe →
+model:progress` push — no new push channel needed).
+- `getStatus()` enriches the sync status:
+  - `active` = `findBestPresentModel(dir)` → `ModelInfo` (omitted when none present).
+  - `target` = `(selected ?? fallbackModel())` → `ModelInfo`.
+  - `upgrade` = set iff `state === 'ready'` AND `selected` is resolved AND `selected`'s
+    file is **absent** AND `selected` is a **higher tier** than `active` (i.e. the user
+    has the 3B, the machine wants the 7B, the 7B isn't downloaded). "Higher tier" =
+    earlier index in `MODELS` (best-first).
+- New `pruneToBestPresent()`: after **every successful** download (`res.ok`, before
+  `set(null)`), delete every present model file (and `.part`) except the highest-tier
+  present one. First download → no-op; 3B→7B upgrade → removes the 3B. Idempotent
+  invariant: **only the best-present model is ever kept on disk.**
+
+### B4. IPC — one new lazy channel
+
+- `channels.ts`: `modelDetectSelection: 'model:selection:detect'`.
+- `ipc.ts` contract: `'model:selection:detect': { payload: Record<string, never>;
+response: { ok: true } }`.
+- `handlers/model.ts`: `handleModelDetectSelection()` → `await
+modelController.detectSelection(); return { ok: true }`. (Result lands via the existing
+  `model:progress` push; the invoke just triggers + acks.)
+- `register.ts`: wire it. No preload change (generic `invoke`).
+
+### B5. Renderer
+
+- **`ModelSettingsSection.tsx`** — drive all copy from `status`:
+  - `ready`: `Présent · {active.label} · ~{formatModelSize(active.sizeBytes)}`.
+  - `absent`/`paused`: button copy from `target` (`Télécharger {target.label}
+(~{size})` / `Reprendre`).
+  - `ready` **and** `status.upgrade`: render a non-blocking **upgrade banner** beneath
+    the present chip — "Un meilleur modèle est disponible pour ta machine —
+    {upgrade.label} (~{size})" + a download button calling `onDownload` (same handler;
+    `start()` fetches the selected spec, then `pruneToBestPresent` removes the 3B).
+  - Remove the hardcoded "~1,9 Go".
+- **`SettingsPage.tsx`** — the model-name line (currently hardcoded "Llama 3.2 3B
+  Instruct · Q4_K_M") shows `active.label` when present else `target.label`; trigger
+  `ipc.invoke('model:selection:detect', {})` once on `ModelSection` mount (lazy, so
+  `target`/`upgrade` resolve while the user is on Settings).
+- **PDF flow** — `ImportModal` triggers `detect` when it opens `PdfModelRequiredDialog`
+  and passes the model size label (from `modelStatus.target`) into the dialog;
+  `PdfModelRequiredDialog` takes a `sizeLabel` prop instead of the hardcoded "~1,9 Go".
+
+### B6. Testing
+
+- `downloadController`: `getStatus()` includes `active` from best-present (sync, no
+  detection); after `detectSelection()` mock resolves to 7B with only 3B present →
+  `upgrade` set; with 7B present → no `upgrade`; `pruneToBestPresent` removes the 3B
+  when the 7B is present, no-ops when only one model present.
+- `selectModelSpec` / tier-ordering already covered (Phase A).
+- Renderer (jsdom): `ModelSettingsSection` shows `active.label`+size when ready; renders
+  the upgrade banner only when `upgrade` present; download button copy from `target`.
+
+### B7. Out of scope (Phase B)
+
+- Backend (CPU/GPU/CUDA) transparency line — deferred (needs gpu plumbed into status).
+- Manual model switch/override UI. Mac/Metal VRAM-threshold tuning (separate validation).
