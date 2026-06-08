@@ -64,8 +64,11 @@ test('downloads the model (stubbed) and reflects it in Settings', async () => {
     await window.getByRole('link', { name: /paramètres/i }).click();
     await expect(window.getByRole('heading', { name: /paramètres/i })).toBeVisible();
 
-    // 4. The model section should show the download button (state=absent).
-    const downloadBtn = window.getByRole('button', { name: /télécharger le modèle/i });
+    // 4. The model section should show the download button (state=absent). The copy is
+    //    model-specific now ("Télécharger {label} (~{size})"), so match on the verb only;
+    //    in the absent state it is the only "Télécharger" button (the upgrade banner, the
+    //    other "Télécharger", only renders in the ready+upgrade state).
+    const downloadBtn = window.getByRole('button', { name: /télécharger/i });
     await expect(downloadBtn).toBeVisible();
 
     // 5. Click download — the stub server responds immediately so the download
