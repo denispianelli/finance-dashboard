@@ -1,11 +1,10 @@
-import { MoreHorizontal, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
 
 interface PageMeta {
   title: string;
   breadcrumb: string[];
-  account?: string;
 }
 
 // One entry per route. The serif page title + breadcrumb live in the Topbar
@@ -15,7 +14,6 @@ const PAGE_META: Record<string, PageMeta> = {
   '/': {
     title: 'Tableau de bord',
     breadcrumb: ['Vue', 'Dashboard'],
-    account: 'Compte joint · Boursorama',
   },
   '/transactions': { title: 'Transactions', breadcrumb: ['Vue', 'Transactions'] },
   '/accounts': { title: 'Comptes', breadcrumb: ['Vue', 'Comptes'] },
@@ -78,18 +76,6 @@ export function Topbar({
         >
           <Sparkles size={12} strokeWidth={1.6} className="shrink-0 text-brass" />
           <span>Catégoriser ({pendingCount})</span>
-        </button>
-      ) : null}
-      {meta.account ? (
-        <button
-          type="button"
-          disabled
-          aria-label="Changer de compte (bientôt disponible)"
-          className="inline-flex min-w-0 items-center gap-2 rounded-md border border-line-2 bg-ink-2 px-3 py-[7px] font-sans text-xs font-medium text-paper-soft"
-        >
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brass" />
-          <span className="truncate">{meta.account}</span>
-          <MoreHorizontal size={12} strokeWidth={1.6} className="shrink-0" />
         </button>
       ) : null}
       <Button onClick={onImport} className="shrink-0">
