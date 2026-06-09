@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import type { CashflowPoint, DashboardTransaction, NetWorth } from '@shared/types/dashboard';
 import type { RecurringReport } from '@shared/types/recurring';
 import { ipc } from '@renderer/ipc/client';
@@ -27,20 +28,34 @@ export function useReports(refreshToken = 0): UseReports {
 
   useEffect(() => {
     let active = true;
-    void ipc.invoke('dashboard:netWorth', {}).then((nw) => {
-      if (active) setNetWorth(nw);
-    });
-    void ipc.invoke('recurring:list', {}).then((r) => {
-      if (active) setRecurring(r);
-    });
+    // A read failure must be visible, not silently rendered as "no data".
+    const onError = (): void => {
+      if (active) toast.error('Chargement des rapports impossible. Réessayez.');
+    };
+    void ipc
+      .invoke('dashboard:netWorth', {})
+      .then((nw) => {
+        if (active) setNetWorth(nw);
+      })
+      .catch(onError);
+    void ipc
+      .invoke('recurring:list', {})
+      .then((r) => {
+        if (active) setRecurring(r);
+      })
+      .catch(onError);
     void ipc
       .invoke('dashboard:getTransactions', { limit: REPORT_TX_LIMIT })
       .then(({ transactions: t }) => {
         if (active) setTransactions(t);
-      });
-    void ipc.invoke('dashboard:cashflow', { granularity: 'year' }).then(({ series }) => {
-      if (active) setYearSeries(series);
-    });
+      })
+      .catch(onError);
+    void ipc
+      .invoke('dashboard:cashflow', { granularity: 'year' })
+      .then(({ series }) => {
+        if (active) setYearSeries(series);
+      })
+      .catch(onError);
     return () => {
       active = false;
     };

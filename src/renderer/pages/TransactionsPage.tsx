@@ -83,12 +83,17 @@ export function TransactionsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Pre-select the account passed via ?account=… (e.g. clicking an account on the
-  // dashboard navigates here). Re-applies when the param changes (navigating from
-  // a different account) once the matching account has loaded.
+  // dashboard navigates here), once per param value. The guard is essential:
+  // `accounts` gets a new identity on every refetch (edit / delete / background
+  // categorization), and without it the effect would re-fire and snap the view
+  // back to the URL's account after the user manually switched tabs.
   const [searchParams] = useSearchParams();
   const accountParam = searchParams.get('account');
+  const appliedAccountParam = useRef<string | null>(null);
   useEffect(() => {
-    if (accountParam !== null && accounts.some((a) => a.id === accountParam)) {
+    if (accountParam === null || appliedAccountParam.current === accountParam) return;
+    if (accounts.some((a) => a.id === accountParam)) {
+      appliedAccountParam.current = accountParam;
       selectAccount(accountParam);
     }
   }, [accountParam, accounts, selectAccount]);
