@@ -5,8 +5,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 vi.mock('@renderer/ipc/client', () => ({
   ipc: { invoke: vi.fn() },
 }));
+vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 import { ipc } from '@renderer/ipc/client';
+import { toast } from 'sonner';
 import { useBackgroundCategorization } from '@renderer/hooks/useBackgroundCategorization';
 import type { PendingGroup } from '@shared/types/import';
 
@@ -26,6 +28,7 @@ function batchCalls(): unknown[] {
 
 beforeEach(() => {
   mockInvoke.mockReset();
+  vi.mocked(toast.error).mockReset();
 });
 
 afterEach(() => {
@@ -80,6 +83,8 @@ describe('useBackgroundCategorization', () => {
 
     expect(batchCalls()).toHaveLength(1); // stopped after the first label
     expect(onApplied).not.toHaveBeenCalled();
+    // The user is told why nothing happened, instead of a silent flash-and-reset.
+    expect(vi.mocked(toast.error)).toHaveBeenCalledTimes(1);
   });
 
   it('continues past inference_failed without calling onApplied for it', async () => {
