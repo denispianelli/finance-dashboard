@@ -1,15 +1,15 @@
-import { readFileSync } from 'node:fs';
 import type { ConfirmPayload, ConfirmResponse } from '@shared/types/ipc';
 import { getDb } from '../../db';
 import { insertStatement } from '../../import/insertStatement';
 import { ImportError } from '../../import/importError';
+import { readImportFile } from '../../import/readImportFile';
 import { readIdentifier } from '../../import/accountIdentifier';
 import { learnAccountRoute } from '../../import/accountRoutes';
 import { detectTransfers } from '../../transfers/detect';
 
 export async function handleImportConfirm(payload: ConfirmPayload): Promise<ConfirmResponse> {
   try {
-    const content = readFileSync(payload.path);
+    const content = readImportFile(payload.path);
     const result = await insertStatement(getDb(), payload.accountId, content, {
       acknowledgedCannotVerify: payload.acknowledgedCannotVerify,
       selectedHashes: payload.selectedHashes,
