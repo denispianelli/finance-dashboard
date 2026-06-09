@@ -33,6 +33,20 @@ describe('detectRecurring', () => {
     expect(sub?.nextDueDate).toBe('2027-03-01');
   });
 
+  it('clamps the next due date for a month-end anchor instead of overflowing', () => {
+    // Charges on the 30th/31st: the next due after Jan 31 must be Feb 28, not
+    // the overflowed Mar 3 the old setUTCMonth(+1) produced.
+    const txns: RecurringInput[] = [
+      { date: '2025-11-30', amount: -20, label: 'LOYER' },
+      { date: '2025-12-31', amount: -20, label: 'LOYER' },
+      { date: '2026-01-31', amount: -20, label: 'LOYER' },
+    ];
+    const [sub] = detectRecurring(txns);
+    expect(sub?.cadence).toBe('monthly');
+    expect(sub?.lastDate).toBe('2026-01-31');
+    expect(sub?.nextDueDate).toBe('2026-02-28');
+  });
+
   it('ignores one-off charges and fewer than three occurrences', () => {
     const txns: RecurringInput[] = [
       { date: '2026-01-10', amount: -50, label: 'GARAGE' },

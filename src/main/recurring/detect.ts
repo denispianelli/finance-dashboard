@@ -26,9 +26,13 @@ function cadenceOf(intervals: number[]): RecurringCadence | null {
 
 function addInterval(date: string, cadence: RecurringCadence): string {
   const d = new Date(`${date}T00:00:00Z`);
-  if (cadence === 'monthly') d.setUTCMonth(d.getUTCMonth() + 1);
-  else d.setUTCFullYear(d.getUTCFullYear() + 1);
-  return d.toISOString().slice(0, 10);
+  const day = d.getUTCDate();
+  const month = d.getUTCMonth() + (cadence === 'monthly' ? 1 : 0);
+  const year = d.getUTCFullYear() + (cadence === 'annual' ? 1 : 0);
+  // Clamp to the target month's last day so a month-end anchor doesn't overflow
+  // (Jan 31 + 1 month → Feb 28/29, not Mar 3; Feb 29 + 1 year → Feb 28).
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(year, month, Math.min(day, lastDay))).toISOString().slice(0, 10);
 }
 
 /**

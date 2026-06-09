@@ -1,8 +1,21 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach, beforeEach, beforeAll } from 'vitest';
 import { render, screen, waitFor, cleanup } from '@testing-library/react';
+import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 import * as ipcMod from '@renderer/ipc/client';
 import { ReportsPage } from '@renderer/pages/ReportsPage';
+
+function renderPage() {
+  return render(
+    <MemoryRouter initialEntries={['/reports']}>
+      <Routes>
+        <Route element={<Outlet context={{ refreshToken: 0, openImport: () => undefined }} />}>
+          <Route path="/reports" element={<ReportsPage />} />
+        </Route>
+      </Routes>
+    </MemoryRouter>,
+  );
+}
 
 // Recharts' ResponsiveContainer (bars + donut) needs ResizeObserver.
 beforeAll(() => {
@@ -79,7 +92,7 @@ beforeEach(() => {
 
 describe('ReportsPage', () => {
   it('leads with the verdict pastilles and the month-by-month chart', async () => {
-    render(<ReportsPage />);
+    renderPage();
     await waitFor(() => {
       expect(screen.getByText('Résultat')).toBeTruthy();
     });
@@ -89,7 +102,7 @@ describe('ReportsPage', () => {
   });
 
   it('renders the net worth donut, top categories, recurring and biggest movements', async () => {
-    render(<ReportsPage />);
+    renderPage();
     await waitFor(() => {
       expect(screen.getByText(/Patrimoine/)).toBeTruthy();
     });
@@ -98,5 +111,22 @@ describe('ReportsPage', () => {
     expect(screen.getByText('NETFLIX')).toBeTruthy();
     expect(screen.getByText(/plus gros mouvements/i)).toBeTruthy();
     expect(screen.getByText('SUPER U')).toBeTruthy();
+  });
+
+  it('shows an import call-to-action, not a perpetual spinner, when there is no data', async () => {
+    vi.spyOn(ipcMod.ipc, 'invoke').mockImplementation(((channel: string) => {
+      if (channel === 'dashboard:cashflow') return Promise.resolve({ series: [] });
+      if (channel === 'dashboard:netWorth') return Promise.resolve({ total: 0, accounts: [] });
+      if (channel === 'recurring:list')
+        return Promise.resolve({ subscriptions: [], monthlyTotal: 0 });
+      if (channel === 'dashboard:getTransactions') return Promise.resolve({ transactions: [] });
+      return Promise.resolve({});
+    }) as typeof ipcMod.ipc.invoke);
+
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText(/importez un relevé/i)).toBeTruthy();
+    });
+    expect(screen.queryByText(/Chargement des rapports/)).toBeNull();
   });
 });
