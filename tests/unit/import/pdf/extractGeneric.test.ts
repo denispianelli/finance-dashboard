@@ -89,6 +89,38 @@ describe('extractTransactions — Société Générale layout (slashes, SOLDE PR
     expect(r.openingDate).toBe('2011-03-09');
   });
 
+  it('rolls bare dates back a year when the month is past the statement month (Dec→Jan)', () => {
+    // Statement closes in January 2026; the opening balance line and the
+    // December transaction carry bare dd/mm only. They must land in 2025, not
+    // 2026 (regression: a single inferred year put December 11 months ahead).
+    const p = page([
+      it_('31/12', 37, 100),
+      it_('SOLDE PRECEDENT', 136, 100),
+      it_('500,00', 527, 100),
+      it_('31/12', 37, 90),
+      it_('ACHAT DECEMBRE', 136, 90),
+      it_('20,00', 470, 90),
+      it_('05/01/26', 37, 80), // the only year-bearing token: January 2026
+      it_('ACHAT JANVIER', 136, 80),
+      it_('10,00', 470, 80),
+    ]);
+    const r = extractTransactions([p], SG);
+
+    expect(r.openingDate).toBe('2025-12-31');
+    expect(r.transactions[0]).toMatchObject({ date: '2025-12-31', label: 'ACHAT DECEMBRE' });
+    expect(r.transactions[1]).toMatchObject({ date: '2026-01-05', label: 'ACHAT JANVIER' });
+  });
+
+  it('reads an overdrawn (débiteur) balance printed in the debit column as negative', () => {
+    const p = page([
+      it_('09/03/11', 37, 100),
+      it_('SOLDE PRECEDENT', 136, 100),
+      it_('123,45', 470, 100), // in the DEBIT column → négatif
+    ]);
+    const r = extractTransactions([p], SG);
+    expect(r.openingBalance).toBeCloseTo(-123.45, 2);
+  });
+
   it('ignores footer/legal rows whose date is not in the date column', () => {
     const p = page([
       it_('10/06/10', 37, 90),

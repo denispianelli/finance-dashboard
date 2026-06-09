@@ -22,10 +22,63 @@ export interface ExtractionResult {
   closingDate: string;
 }
 
+/**
+ * Parse a monetary amount across the locale formats real bank statements use:
+ * French space/dot thousands with comma decimal (`1 234,56`, `1.234,56`), anglo
+ * grouping (`1,234.56`), trailing- or leading-minus and parenthesised negatives.
+ * Returns null on anything that isn't cleanly a number (so trailing garbage is
+ * rejected, never silently truncated). Regression: the old implementation turned
+ * `,`→`.` blindly, so `1.234,56` parsed as 1.23 — a 1000x error.
+ */
 export function parseAmount(str: string): number | null {
-  const cleaned = str.replace(/\s/g, '').replace(/,/g, '.');
-  const n = parseFloat(cleaned);
-  return isNaN(n) ? null : n;
+  let s = str.trim();
+  if (s === '') return null;
+
+  let negative = false;
+  if (/^\(.*\)$/.test(s)) {
+    negative = true;
+    s = s.slice(1, -1).trim();
+  }
+  if (s.endsWith('-')) {
+    negative = true;
+    s = s.slice(0, -1).trim();
+  } else if (s.startsWith('-')) {
+    negative = true;
+    s = s.slice(1).trim();
+  } else if (s.startsWith('+')) {
+    s = s.slice(1).trim();
+  }
+
+  // Drop spaces (incl. NBSP / narrow NBSP) and currency symbols.
+  s = s.replace(/\s/g, '').replace(/[€$£]/g, '');
+  if (!/^[0-9.,]+$/.test(s) || !/[0-9]/.test(s)) return null;
+
+  // Decide which separator (if any) is the decimal point: when both appear, the
+  // rightmost wins; a lone separator is decimal unless it groups three digits
+  // (e.g. `1.234` = 1234) or repeats. Everything else is a thousands grouper.
+  const lastComma = s.lastIndexOf(',');
+  const lastDot = s.lastIndexOf('.');
+  let decSep: ',' | '.' | null = null;
+  if (lastComma !== -1 && lastDot !== -1) {
+    decSep = lastComma > lastDot ? ',' : '.';
+  } else if (lastComma !== -1) {
+    const digitsAfter = s.length - lastComma - 1;
+    if ((s.match(/,/g) ?? []).length === 1 && digitsAfter !== 3) decSep = ',';
+  } else if (lastDot !== -1) {
+    const digitsAfter = s.length - lastDot - 1;
+    if ((s.match(/\./g) ?? []).length === 1 && digitsAfter !== 3) decSep = '.';
+  }
+
+  const decPos = decSep === ',' ? lastComma : decSep === '.' ? lastDot : -1;
+  const intPart = (decPos === -1 ? s : s.slice(0, decPos)).replace(/[.,]/g, '');
+  const fracPart = decPos === -1 ? '' : s.slice(decPos + 1);
+  if (!/^\d*$/.test(intPart) || !/^\d*$/.test(fracPart) || intPart + fracPart === '') {
+    return null;
+  }
+
+  const n = parseFloat(`${intPart || '0'}.${fracPart || '0'}`);
+  if (isNaN(n)) return null;
+  return negative ? -n : n;
 }
 
 export function parseDateStr(ddmm: string, year: number): string {
@@ -60,9 +113,17 @@ function hasYear(s: string): boolean {
   return DATE_TOKEN.exec(s.trim())?.[3] !== undefined;
 }
 
-/** Parse any supported date token to ISO. Uses the token's own year if present,
- *  else `fallbackYear`. Returns null if not a date token. */
-function parseDate(token: string, fallbackYear: number): string | null {
+interface YearRef {
+  year: number;
+  month: number;
+}
+
+/** Parse any supported date token to ISO. Uses the token's own year if present.
+ *  For a bare dd/mm, assigns `ref.year`, except months past `ref.month` roll
+ *  back a year (statements run oldest→newest and close on the reference date),
+ *  which keeps a Dec→Jan statement's December rows in the previous year. Returns
+ *  null if not a date token. */
+function parseDate(token: string, ref: YearRef): string | null {
   const m = DATE_TOKEN.exec(token.trim());
   if (m === null) return null;
   const dd = m[1] ?? '';
@@ -70,23 +131,32 @@ function parseDate(token: string, fallbackYear: number): string | null {
   const yy = m[3];
   const year =
     yy === undefined
-      ? fallbackYear
+      ? parseInt(mm, 10) > ref.month
+        ? ref.year - 1
+        : ref.year
       : yy.length <= 2
         ? yyToFullYear(parseInt(yy, 10))
         : parseInt(yy, 10);
   return `${String(year)}-${mm}-${dd}`;
 }
 
-function inferYear(items: PdfTextItem[]): number {
+/** Latest year-bearing date in the document — the reference for assigning years
+ *  to bare dd/mm tokens (see parseDate). Falls back to the current year with a
+ *  December anchor so a document with no year at all keeps the old behaviour
+ *  (every bare date resolves to the current year). */
+function inferYearRef(items: PdfTextItem[]): YearRef {
+  let best: YearRef | null = null;
   for (const item of items) {
-    if (hasYear(item.str)) {
-      const m = DATE_TOKEN.exec(item.str.trim());
-      const yy = m?.[3];
-      if (yy !== undefined)
-        return yy.length <= 2 ? yyToFullYear(parseInt(yy, 10)) : parseInt(yy, 10);
+    const m = DATE_TOKEN.exec(item.str.trim());
+    const yy = m?.[3];
+    if (m === null || yy === undefined) continue;
+    const year = yy.length <= 2 ? yyToFullYear(parseInt(yy, 10)) : parseInt(yy, 10);
+    const month = parseInt(m[2] ?? '0', 10);
+    if (best === null || year > best.year || (year === best.year && month > best.month)) {
+      best = { year, month };
     }
   }
-  return new Date().getFullYear();
+  return best ?? { year: new Date().getFullYear(), month: 12 };
 }
 
 function normalizeMarker(s: string): string {
@@ -110,7 +180,7 @@ function fold(s: string): string {
 /** Y of the transaction-table header row. Requires Date + Débit + Crédit column
  *  titles on the same row, so stray "débit"/"crédit" words in legal prose (other
  *  pages) don't get mistaken for a header. Null if there is no such row. */
-function findHeaderY(items: PdfTextItem[]): number | null {
+export function findHeaderY(items: PdfTextItem[]): number | null {
   for (const d of items) {
     if (fold(d.str) !== 'debit') continue;
     const sameRow = new Set(items.filter((i) => Math.abs(i.y - d.y) <= 5).map((i) => fold(i.str)));
@@ -157,8 +227,18 @@ function groupItemsByY(items: PdfTextItem[], tolerance = 4): PdfTextItem[][] {
   return groups;
 }
 
+/** A statement balance: read from the credit column, else from the debit column
+ *  as a negative value — overdrawn ("débiteur") balances print in the debit
+ *  column, and reading only credit used to drop their sign (or the value). */
+function readBalance(creditItems: PdfTextItem[], debitItems: PdfTextItem[]): number | null {
+  const fromCredit = creditItems.map((i) => parseAmount(i.str)).find((n) => n !== null);
+  if (fromCredit != null) return fromCredit;
+  const fromDebit = debitItems.map((i) => parseAmount(i.str)).find((n) => n !== null);
+  return fromDebit != null ? -Math.abs(fromDebit) : null;
+}
+
 export function extractTransactions(pages: PdfPage[], mapping: ColumnMapping): ExtractionResult {
-  const year = inferYear(pages.flatMap((p) => p.items));
+  const yearRef = inferYearRef(pages.flatMap((p) => p.items));
 
   let openingBalance: number | null = null;
   let closingBalance: number | null = null;
@@ -180,7 +260,7 @@ export function extractTransactions(pages: PdfPage[], mapping: ColumnMapping): E
       if (!dateItems.some((i) => i.x < mapping.label_col)) continue;
       const dateItem = dateItems.find((i) => hasYear(i.str)) ?? dateItems[0];
       if (!dateItem) continue;
-      const date = parseDate(dateItem.str, year);
+      const date = parseDate(dateItem.str, yearRef);
       if (date === null) continue;
 
       const labelItems = row.filter(
@@ -201,12 +281,12 @@ export function extractTransactions(pages: PdfPage[], mapping: ColumnMapping): E
       const marker = normalizeMarker(labelStr);
 
       if (OPENING_MARKER.test(marker)) {
-        openingBalance = creditItems.map((i) => parseAmount(i.str)).find((n) => n !== null) ?? null;
+        openingBalance = readBalance(creditItems, debitItems);
         openingDate = date;
         continue;
       }
       if (CLOSING_MARKER.test(marker)) {
-        closingBalance = creditItems.map((i) => parseAmount(i.str)).find((n) => n !== null) ?? null;
+        closingBalance = readBalance(creditItems, debitItems);
         closingDate = date;
         continue;
       }

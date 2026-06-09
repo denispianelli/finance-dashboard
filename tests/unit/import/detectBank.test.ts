@@ -25,6 +25,27 @@ describe('detectBank', () => {
     db.close();
   });
 
+  it('does not match a signature that only appears in a transaction label', () => {
+    const db = new DatabaseSync(':memory:');
+    runMigrations(db);
+    // A non-LCL statement: the masthead has Date/Débit/Crédit headers, and the
+    // string "CREDIT LYONNAIS" appears only in a transfer label below them.
+    const pages: PdfPage[] = [
+      {
+        pageNumber: 1,
+        items: [
+          { str: 'RELEVE BOURSORAMA', x: 0, y: 100, width: 0 },
+          { str: 'Date', x: 10, y: 50, width: 0 },
+          { str: 'Débit', x: 200, y: 50, width: 0 },
+          { str: 'Crédit', x: 300, y: 50, width: 0 },
+          { str: 'VIR CREDIT LYONNAIS JEAN', x: 50, y: 30, width: 0 },
+        ],
+      },
+    ];
+    expect(detectBank(db, pages)).toBeNull();
+    db.close();
+  });
+
   it('returns null when no known signature is present', () => {
     const db = new DatabaseSync(':memory:');
     runMigrations(db);
