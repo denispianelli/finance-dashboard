@@ -1,12 +1,12 @@
-import { readFileSync } from 'node:fs';
 import type { ExtractPayload, ExtractResponse } from '@shared/types/ipc';
 import { getDb } from '../../db';
 import { extractStatement } from '../../import/extractStatement';
 import { ImportError } from '../../import/importError';
+import { readImportFile } from '../../import/readImportFile';
 
 export async function handleImportExtract(payload: ExtractPayload): Promise<ExtractResponse> {
   try {
-    const content = readFileSync(payload.path);
+    const content = readImportFile(payload.path);
     const extraction = await extractStatement(getDb(), payload.accountId, content);
     return { ok: true, extraction };
   } catch (e) {

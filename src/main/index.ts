@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registerAllHandlers } from './ipc/register';
@@ -25,9 +25,18 @@ function createWindow(): void {
     },
   });
 
-  win.webContents.setWindowOpenHandler(({ url }) => {
-    void shell.openExternal(url);
-    return { action: 'deny' };
+  // Hardening (ADR-002 defence in depth). The renderer is a single-page app
+  // loaded from file:// (or the dev server); it never opens external windows,
+  // navigates the top frame (routing is hash-based), or needs OS permissions.
+  // Deny all three so a hypothetical renderer compromise cannot open arbitrary
+  // URLs/apps, exfiltrate data via a top-frame navigation (which CSP
+  // connect-src does NOT cover), or be granted camera/geolocation/etc.
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  win.webContents.on('will-navigate', (event) => {
+    event.preventDefault();
+  });
+  win.webContents.session.setPermissionRequestHandler((_wc, _permission, callback) => {
+    callback(false);
   });
 
   // Push every model-status change to the renderer (progress bar, banner, settings).

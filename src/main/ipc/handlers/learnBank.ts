@@ -1,9 +1,9 @@
-import { readFileSync } from 'node:fs';
 import type { LearnBankInput, LearnBankResponse } from '@shared/types/bank';
 import { getDb } from '../../db';
 import { extractPdfText } from '../../import/pdf/extract';
 import { inferColumnOrder } from '../../import/pdf/inferColumns';
 import { learnBankMapping, persistLearnedBank, slugifyBank } from '../../import/pdf/learnBank';
+import { readImportFile } from '../../import/readImportFile';
 import { getModel, isModelAvailable } from '../../llm/llm';
 import { modelsDir } from '../../llm/modelsDir';
 
@@ -17,7 +17,14 @@ export async function handleBanksLearn(payload: LearnBankInput): Promise<LearnBa
   const dir = modelsDir();
   if (!isModelAvailable(dir)) return { ok: false, error: 'model_unavailable' };
 
-  const buffer = readFileSync(payload.path);
+  let buffer: Buffer;
+  try {
+    buffer = readImportFile(payload.path);
+  } catch {
+    // Disallowed extension / non-file (only a malicious renderer reaches here):
+    // learning accepts PDFs only, so surface the existing not_pdf code.
+    return { ok: false, error: 'not_pdf' };
+  }
   if (buffer.length < PDF_MAGIC.length || !buffer.subarray(0, PDF_MAGIC.length).equals(PDF_MAGIC)) {
     return { ok: false, error: 'not_pdf' };
   }
