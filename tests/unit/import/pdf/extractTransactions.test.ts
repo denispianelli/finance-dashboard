@@ -24,6 +24,41 @@ describe('parseAmount', () => {
   it('returns null for empty string', () => {
     expect(parseAmount('')).toBeNull();
   });
+
+  // Non-LCL locale formats (regression: dot-thousands used to parse 1000x wrong).
+  it('parses dot-thousands with comma decimal (1.234,56)', () => {
+    expect(parseAmount('1.234,56')).toBeCloseTo(1234.56, 2);
+  });
+  it('parses multi-group dot-thousands (1.234.567,89)', () => {
+    expect(parseAmount('1.234.567,89')).toBeCloseTo(1234567.89, 2);
+  });
+  it('parses anglo grouping (1,234.56)', () => {
+    expect(parseAmount('1,234.56')).toBeCloseTo(1234.56, 2);
+  });
+  it('treats a single dot before three digits as a thousands group (1.234)', () => {
+    expect(parseAmount('1.234')).toBeCloseTo(1234, 2);
+  });
+  it('treats a single dot before two digits as a decimal (12.34)', () => {
+    expect(parseAmount('12.34')).toBeCloseTo(12.34, 2);
+  });
+  it('parses a trailing-minus amount as negative (12,34-)', () => {
+    expect(parseAmount('12,34-')).toBeCloseTo(-12.34, 2);
+  });
+  it('parses a leading-minus amount as negative (-1 234,56)', () => {
+    expect(parseAmount('-1 234,56')).toBeCloseTo(-1234.56, 2);
+  });
+  it('parses a parenthesised amount as negative ((1 234,56))', () => {
+    expect(parseAmount('(1 234,56)')).toBeCloseTo(-1234.56, 2);
+  });
+  it('strips a currency symbol', () => {
+    expect(parseAmount('1 234,56 €')).toBeCloseTo(1234.56, 2);
+  });
+  it('rejects trailing garbage instead of silently truncating (12ABC)', () => {
+    expect(parseAmount('12ABC')).toBeNull();
+  });
+  it('rejects a lone sign', () => {
+    expect(parseAmount('-')).toBeNull();
+  });
 });
 
 describe('parseDateStr', () => {
