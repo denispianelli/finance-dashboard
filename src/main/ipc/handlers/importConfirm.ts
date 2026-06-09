@@ -21,16 +21,19 @@ export async function handleImportConfirm(payload: ConfirmPayload): Promise<Conf
       if (identifier !== null) {
         learnAccountRoute(getDb(), identifier, payload.accountId);
       }
-    } catch {
-      // ignore — the import succeeded; routing just won't be remembered this time
+    } catch (e) {
+      // best-effort — the import succeeded; routing just won't be remembered.
+      // Log so a persistent failure leaves a trail instead of failing silently.
+      console.error('importConfirm: route learning failed', e);
     }
     // Re-run transfer-pair detection across all accounts (ADR-016): a pair can
     // span this import and a previously-imported account, so we re-pair the whole
     // set. Best-effort — a failure must not fail an import already written.
     try {
       detectTransfers(getDb());
-    } catch {
-      // ignore — figures will be corrected on the next import / re-run
+    } catch (e) {
+      // best-effort — figures will be corrected on the next import / re-run.
+      console.error('importConfirm: transfer detection failed', e);
     }
     return { ok: true, ...result };
   } catch (e) {

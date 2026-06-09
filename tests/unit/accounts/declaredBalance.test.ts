@@ -32,4 +32,15 @@ describe('setDeclaredBalance', () => {
     expect(() => setDeclaredBalance(db, { id: 'nope', balance: 1 })).toThrow();
     db.close();
   });
+
+  it('rejects NaN instead of persisting a NULL balance with a set date', () => {
+    const db = db1();
+    expect(() => setDeclaredBalance(db, { id: 'av', balance: Number.NaN })).toThrow(/finite/);
+    const row = db
+      .prepare('SELECT declared_balance, declared_balance_date FROM accounts WHERE id = ?')
+      .get('av') as { declared_balance: number | null; declared_balance_date: string | null };
+    expect(row.declared_balance).toBeNull();
+    expect(row.declared_balance_date).toBeNull();
+    db.close();
+  });
 });

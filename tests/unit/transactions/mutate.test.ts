@@ -67,12 +67,14 @@ describe('updateTransaction', () => {
     db.close();
   });
 
-  it('edits the label without setting any figure snapshot', () => {
+  it('normalizes the edited label into label_clean (history/recurring key) without a figure snapshot', () => {
     const db = freshDb();
     seed(db);
-    updateTransaction(db, { transactionId: 't1', label: 'Carrefour Market' });
+    updateTransaction(db, { transactionId: 't1', label: 'Carrefour Marché' });
     const r = read(db);
-    expect(r.label_clean).toBe('Carrefour Market');
+    // label_clean is the exact-match key for the history/recurring tiers, so the
+    // edit is normalized the same way imports are (NFD, diacritics, upper-case).
+    expect(r.label_clean).toBe('CARREFOUR MARCHE');
     expect(r.original_date).toBeNull();
     expect(r.original_amount).toBeNull();
     expect(r.edited_at).not.toBeNull(); // still a manual edit
