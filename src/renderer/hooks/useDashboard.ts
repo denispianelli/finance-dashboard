@@ -63,20 +63,27 @@ export function useDashboard(
   // elsewhere (e.g. categories) can never blank out accounts/transactions.
   useEffect(() => {
     let active = true;
-    void ipc.invoke('dashboard:getAccounts', {}).then(({ accounts: next }) => {
-      if (!active) return;
-      setAccounts(next);
-      const first = next[0];
-      if (first === undefined) {
-        setSelectedAccountId(null);
-        setTransactions([]);
-        setMetrics(EMPTY_METRICS);
-        return;
-      }
-      setSelectedAccountId((prev) =>
-        prev !== null && next.some((a) => a.id === prev) ? prev : first.id,
-      );
-    });
+    void ipc
+      .invoke('dashboard:getAccounts', {})
+      .then(({ accounts: next }) => {
+        if (!active) return;
+        setAccounts(next);
+        const first = next[0];
+        if (first === undefined) {
+          setSelectedAccountId(null);
+          setTransactions([]);
+          setMetrics(EMPTY_METRICS);
+          return;
+        }
+        setSelectedAccountId((prev) =>
+          prev !== null && next.some((a) => a.id === prev) ? prev : first.id,
+        );
+      })
+      .catch((e: unknown) => {
+        // Surface the failure instead of rendering the empty state, which would
+        // wrongly tell the user they have no accounts/data.
+        if (active) toast.error(`Chargement impossible : ${errMessage(e)}`);
+      });
     return () => {
       active = false;
     };
@@ -104,6 +111,9 @@ export function useDashboard(
   useEffect(() => {
     if (selectedAccountId === null) return;
     let active = true;
+    const onError = (e: unknown): void => {
+      if (active) toast.error(`Chargement impossible : ${errMessage(e)}`);
+    };
     void ipc
       .invoke('dashboard:getTransactions', {
         accountId: selectedAccountId,
@@ -111,10 +121,14 @@ export function useDashboard(
       })
       .then(({ transactions: next }) => {
         if (active) setTransactions(next);
-      });
-    void ipc.invoke('dashboard:metrics', { accountId: selectedAccountId }).then((next) => {
-      if (active) setMetrics(next);
-    });
+      })
+      .catch(onError);
+    void ipc
+      .invoke('dashboard:metrics', { accountId: selectedAccountId })
+      .then((next) => {
+        if (active) setMetrics(next);
+      })
+      .catch(onError);
     return () => {
       active = false;
     };

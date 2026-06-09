@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { Overline } from '../components/ui/overline';
 import { PeriodPicker } from '../components/reports/PeriodPicker';
 import { VerdictRow, type VerdictKind } from '../components/reports/VerdictRow';
@@ -22,6 +23,7 @@ import {
   type ReportPeriod,
 } from '../lib/reports';
 import { monthLabelFr } from '../lib/dashboardCharts';
+import type { AppOutletContext } from '../lib/outletContext';
 
 function periodLabel(period: ReportPeriod): string {
   return period.granularity === 'year'
@@ -35,8 +37,9 @@ function periodLabel(period: ReportPeriod): string {
  * the selected period; then the month-by-month bars and the supporting cards.
  */
 export function ReportsPage() {
-  const { series } = useCashflow();
-  const { netWorth, recurring, transactions } = useReports();
+  const { refreshToken, openImport } = useOutletContext<AppOutletContext>();
+  const { series, loading } = useCashflow(refreshToken);
+  const { netWorth, recurring, transactions } = useReports(refreshToken);
 
   const available = useMemo(() => availablePeriods(series), [series]);
   const [picked, setPicked] = useState<ReportPeriod | null>(null);
@@ -46,7 +49,24 @@ export function ReportsPage() {
     picked ?? (firstYear !== undefined ? { granularity: 'year', value: firstYear } : null);
 
   if (period === null) {
-    return <p className="py-8 text-center text-sm text-paper-mute">Chargement des rapports…</p>;
+    // Distinguish "still loading" from "loaded but empty" — a fresh user used to
+    // get a perpetual "Chargement…" instead of an invitation to import.
+    return loading ? (
+      <p className="py-8 text-center text-sm text-paper-mute">Chargement des rapports…</p>
+    ) : (
+      <div className="flex flex-col items-center gap-3 py-12 text-center">
+        <p className="text-sm text-paper-mute">
+          Aucune donnée à analyser — importez un relevé pour commencer.
+        </p>
+        <button
+          type="button"
+          onClick={openImport}
+          className="rounded-sm border border-line-2 bg-ink-3 px-3 py-1.5 font-sans text-[13px] font-medium text-paper-soft transition-colors hover:bg-ink-4"
+        >
+          Importer un relevé
+        </button>
+      </div>
+    );
   }
 
   const scoped = txInPeriod(transactions, period);
