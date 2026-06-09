@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, act, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('@renderer/ipc/client', () => ({ ipc: { invoke: vi.fn() } }));
 
@@ -44,6 +44,13 @@ function extraction(): StatementExtraction {
 
 beforeEach(() => {
   mockInvoke.mockReset();
+});
+
+// The per-file `@vitest-environment jsdom` directive disables auto-cleanup, so
+// mounted hooks must be torn down explicitly (CLAUDE.md) to avoid leaking
+// between tests.
+afterEach(() => {
+  cleanup();
 });
 
 describe('useImport — queue', () => {
