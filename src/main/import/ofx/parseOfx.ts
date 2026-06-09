@@ -50,8 +50,35 @@ function tokenize(body: string): { tag: string; value: string }[] {
   return out;
 }
 
+/** Pick the text encoding declared by the OFX file. OFX 2.x is XML (encoding in
+ *  the `<?xml?>` declaration, default UTF-8); OFX 1.x is SGML with an
+ *  `ENCODING:`/`CHARSET:` header. French exports are typically windows-1252, so
+ *  that is the 1.x default — decoding everything as latin1 (the old behaviour)
+ *  mojibakes UTF-8 accents and turns cp1252's €/œ into control characters. */
+function detectOfxEncoding(header: string): string {
+  const xmlEncoding = /<\?xml[^>]*\bencoding\s*=\s*["']([^"']+)["']/i.exec(header);
+  if (xmlEncoding?.[1] !== undefined) return xmlEncoding[1];
+  if (/<\?xml/i.test(header) || /OFXHEADER\s*=\s*["']?2\d\d/i.test(header)) return 'utf-8';
+
+  const encoding = /ENCODING:\s*(\S+)/i.exec(header)?.[1]?.toUpperCase();
+  const charset = /CHARSET:\s*(\S+)/i.exec(header)?.[1]?.toUpperCase();
+  if (encoding?.includes('UTF') === true) return 'utf-8';
+  if (charset === '8859-1' || charset === 'ISO-8859-1' || charset === '88591') return 'iso-8859-1';
+  return 'windows-1252';
+}
+
+function decodeOfx(content: Buffer): string {
+  const encoding = detectOfxEncoding(content.subarray(0, 1024).toString('latin1'));
+  try {
+    return new TextDecoder(encoding).decode(content);
+  } catch {
+    // Unknown/misdeclared label — fall back to the OFX 1.x norm rather than fail.
+    return new TextDecoder('windows-1252').decode(content);
+  }
+}
+
 export function parseOfx(content: Buffer): ParsedOfx {
-  const text = content.toString('latin1');
+  const text = decodeOfx(content);
   const ofxStart = text.indexOf('<OFX>');
   if (ofxStart === -1) throw new Error('OFX: no <OFX> root');
   const tokens = tokenize(text.slice(ofxStart));
