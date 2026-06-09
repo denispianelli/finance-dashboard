@@ -1,5 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { UpdateTransactionInput, DeletedTransactionSnapshot } from '@shared/types/transaction';
+import { normalizeLabel } from '../import/txHash';
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -15,7 +16,11 @@ interface EditableRow {
  * Edit a transaction's date / label / amount. Figures (date, amount) are
  * snapshotted into original_* the first time they change, so the extracted
  * value is never lost (see ADR-012). Any edit sets edited_at + user_modified.
- * label edits change label_clean only; label_raw is never touched.
+ * label edits change label_clean only; label_raw is never touched. The edited
+ * label is normalized the same way imports are (NFD, diacritics stripped,
+ * upper-cased), because label_clean doubles as the exact-match key for the
+ * history/recurring tiers — storing a raw mixed-case label would make the row
+ * invisible to them.
  */
 export function updateTransaction(db: DatabaseSync, input: UpdateTransactionInput): void {
   if (input.date !== undefined && !ISO_DATE.test(input.date)) {
@@ -39,7 +44,7 @@ export function updateTransaction(db: DatabaseSync, input: UpdateTransactionInpu
 
   const nextDate = input.date ?? row.date;
   const nextAmount = input.amount ?? row.amount;
-  const nextLabel = input.label !== undefined ? input.label.trim() : row.label_clean;
+  const nextLabel = input.label !== undefined ? normalizeLabel(input.label) : row.label_clean;
 
   const dateChanged = nextDate !== row.date;
   const amountChanged = nextAmount !== row.amount;

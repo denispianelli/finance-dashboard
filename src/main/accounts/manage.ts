@@ -56,6 +56,9 @@ export function setDeclaredBalance(
   db: DatabaseSync,
   input: SetDeclaredBalanceInput,
 ): AccountSummary {
+  if (input.balance !== null && !Number.isFinite(input.balance)) {
+    throw new Error('setDeclaredBalance: balance must be a finite number or null');
+  }
   const date = input.balance === null ? null : new Date().toISOString().slice(0, 10);
   const res = db
     .prepare('UPDATE accounts SET declared_balance = ?, declared_balance_date = ? WHERE id = ?')

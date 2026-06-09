@@ -58,8 +58,10 @@ void app.whenReady().then(() => {
   // corrected without needing a fresh import. Idempotent; respects user locks.
   try {
     detectTransfers(getDb());
-  } catch {
-    // best-effort — never block startup on this
+  } catch (e) {
+    // best-effort — never block startup on this; log so a persistent failure
+    // (e.g. a SQL regression) leaves a trail instead of silently stale flags.
+    console.error('startup: transfer detection failed', e);
   }
   registerAllHandlers();
   createWindow();

@@ -37,4 +37,10 @@ describe('transactions:setTransfer handler', () => {
     handleTransactionsSetTransfer({ transactionId: 't1', isTransfer: false });
     expect(read('t1')).toEqual({ is_internal_transfer: 0, user_modified: 1 });
   });
+
+  it('throws on a stale id instead of reporting a false success', () => {
+    expect(() =>
+      handleTransactionsSetTransfer({ transactionId: 'gone', isTransfer: true }),
+    ).toThrow(/not found/);
+  });
 });
