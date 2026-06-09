@@ -30,6 +30,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
+          # Pinned to 22 to match Electron's bundled Node; bumping to the engines
+          # minimum (24) broke the Electron binary install in the E2E step, so
+          # aligning the CI runtime is deferred.
           node-version: '22'
           cache: npm
 
@@ -40,6 +43,10 @@ jobs:
       - run: npm run lint
 
       - run: npm test
+
+      # Integration suite (real SQLite, no fixtures): runs the 2 non-fixture-gated
+      # files so they can't silently rot while "CI green" holds.
+      - run: npm run test:integration
 
       - run: npm run build
 

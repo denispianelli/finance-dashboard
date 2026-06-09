@@ -22,7 +22,7 @@
     "dist:mac": "electron-vite build && electron-builder --mac",
     "dist:win": "electron-vite build && electron-builder --win",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src tests playwright.config.ts --max-warnings 0",
+    "lint": "eslint src tests playwright.config.ts electron.vite.config.ts --max-warnings 0",
     "test": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:all": "vitest run",
