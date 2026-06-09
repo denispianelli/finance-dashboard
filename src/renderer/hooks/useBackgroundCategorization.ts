@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { ipc } from '@renderer/ipc/client';
 
 export interface BackgroundCategorization {
@@ -52,8 +53,12 @@ export function useBackgroundCategorization(opts: {
       for (const group of groups) {
         const res = await ipc.invoke('categorize:batch', { key: group.key, label: group.label });
 
-        // The model isn't installed: nothing will ever succeed, so stop the pass.
-        if (!res.ok && res.error === 'model_unavailable') break;
+        // The model isn't installed: nothing will ever succeed, so stop the pass
+        // and tell the user why (otherwise the button just flashes and resets).
+        if (!res.ok && res.error === 'model_unavailable') {
+          toast.error('Modèle IA non installé — installez-le dans Paramètres pour catégoriser.');
+          break;
+        }
         // On `inference_failed` we just skip this label and carry on.
         if (res.ok && res.applied > 0) onApplied();
 

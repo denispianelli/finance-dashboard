@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { StatementExtraction } from '@shared/types/import';
 import { ipc } from '@renderer/ipc/client';
 
-const VALID_EXT = ['pdf', 'csv', 'ofx'];
+const VALID_EXT = ['pdf', 'ofx'];
 
 export interface QueuedFile {
   path: string;

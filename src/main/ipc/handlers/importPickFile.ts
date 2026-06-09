@@ -5,7 +5,7 @@ export async function handlePickFile(): Promise<PickFileResponse> {
   const result = await dialog.showOpenDialog({
     title: 'Select bank statements',
     properties: ['openFile', 'multiSelections'],
-    filters: [{ name: 'Statements', extensions: ['pdf', 'csv', 'ofx'] }],
+    filters: [{ name: 'Statements', extensions: ['pdf', 'ofx'] }],
   });
 
   if (result.canceled || result.filePaths.length === 0) {

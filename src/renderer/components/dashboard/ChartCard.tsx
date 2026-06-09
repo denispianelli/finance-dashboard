@@ -1,8 +1,4 @@
-import { useState } from 'react';
 import { Overline } from '../ui/overline';
-import { Chip } from '../ui/chip';
-
-const RANGES = ['1M', '3M', '6M', '1A', 'MAX'] as const;
 
 export interface ChartCardProps {
   /** Polyline points for the balance line (`"x,y x,y …"`). Empty → empty state. */
@@ -14,7 +10,6 @@ export interface ChartCardProps {
 }
 
 export function ChartCard({ line, area, caption }: ChartCardProps) {
-  const [range, setRange] = useState<string>('1A');
   const hasData = line.length > 0;
 
   return (
@@ -25,19 +20,6 @@ export function ChartCard({ line, area, caption }: ChartCardProps) {
           <span className="truncate font-sans text-sm font-medium tracking-[-0.012em]">
             Solde sur 12 mois
           </span>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {RANGES.map((r) => (
-            <Chip
-              key={r}
-              active={r === range}
-              onClick={() => {
-                setRange(r);
-              }}
-            >
-              {r}
-            </Chip>
-          ))}
         </div>
       </div>
       {hasData ? (
