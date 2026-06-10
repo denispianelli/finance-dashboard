@@ -15,10 +15,10 @@ const KEY_STOPWORDS = new Set([
 
 /**
  * A stable, propagation-friendly key for a transaction label: uppercased, with
- * trailing date tokens (`dd/mm/yy[yy]`) and long digit runs (transaction refs)
+ * date tokens (`dd/mm/yy[yy]`, LCL `dd.mm[.yy]`) and long digit runs (transaction refs)
  * stripped, whitespace collapsed. Used so that assigning Transfert / Remboursement
- * to one transaction can flow to all similar ones (`VIREMENT M DENIS PIANELLI
- * 12/03/25` and `… 14/05/25` share the key `VIREMENT M DENIS PIANELLI`).
+ * to one transaction can flow to all similar ones (`VIREMENT M JEAN DUPONT
+ * 12/03/25` and `… 14/05/25` share the key `VIREMENT M JEAN DUPONT`).
  *
  * If stripping leaves no significant token (length ≥ 4, not generic bank
  * vocabulary), the full uppercased label is returned instead — so a label that is
@@ -28,6 +28,7 @@ export function stableLabelKey(label: string): string {
   const stripped = label
     .toUpperCase()
     .replace(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/g, ' ')
+    .replace(/\b\d{1,2}\.\d{1,2}(?:\.\d{2,4})?\b/g, ' ')
     .replace(/\b\d{4,}\b/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
