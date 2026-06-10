@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Link, useNavigate, useOutletContext } from 'react-router-dom';
+import type { ChartRange } from '@shared/types/dashboard';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Overline } from '../components/ui/overline';
@@ -9,6 +11,7 @@ import { ChartCard } from '../components/dashboard/ChartCard';
 import { Insight, Quote, QuoteNum } from '../components/dashboard/Insight';
 import { TxTable } from '../components/dashboard/TxTable';
 import { useDashboard } from '../hooks/useDashboard';
+import { useBalanceSeries } from '../hooks/useBalanceSeries';
 import { toAccount, toTxRow } from '../lib/dashboardMap';
 import { formatEuro, MINUS, NBSP } from '../lib/euro';
 import {
@@ -58,7 +61,9 @@ export function DashboardPage() {
     last && prev ? kpiDelta(Math.abs(last.expense), Math.abs(prev.expense), false) : undefined;
   const incomeDelta = last && prev ? kpiDelta(last.income, prev.income, true) : undefined;
 
-  const geom = chartGeometry(series.map((s) => s.balance));
+  const [chartRange, setChartRange] = useState<ChartRange>('1y');
+  const { points } = useBalanceSeries(selectedAccountId, chartRange, refreshToken);
+  const geom = chartGeometry(points.map((p) => p.balance));
   const accountCount = accounts.length;
   const chartCaption =
     month !== null
@@ -120,7 +125,13 @@ export function DashboardPage() {
       </KpiGrid>
 
       <Row2>
-        <ChartCard line={geom.line} area={geom.area} caption={chartCaption} />
+        <ChartCard
+          line={geom.line}
+          area={geom.area}
+          caption={chartCaption}
+          range={chartRange}
+          onRangeChange={setChartRange}
+        />
         <Insight>
           {topCat ? (
             <>

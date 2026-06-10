@@ -90,6 +90,17 @@ export interface DashboardMetrics {
   readonly series: MonthPoint[];
 }
 
+/** Time window for the dashboard balance chart. `3m` is daily, the rest monthly. */
+export type ChartRange = '3m' | '6m' | '1y' | 'max';
+
+/** One point of the balance chart series. */
+export interface BalancePoint {
+  /** `yyyy-mm-dd` for the daily `3m` range, `yyyy-mm` for monthly ranges. */
+  readonly period: string;
+  /** Cumulative balance at the end of the period (all amounts, transfers included). */
+  readonly balance: number;
+}
+
 /** Month (`yyyy-mm`) or calendar-year (`yyyy`) bucketing for consolidated cash flow. */
 export type CashflowGranularity = 'month' | 'year';
 

@@ -1,4 +1,13 @@
+import type { ChartRange } from '@shared/types/dashboard';
 import { Overline } from '../ui/overline';
+import { Chip } from '../ui/chip';
+
+const RANGES: { value: ChartRange; label: string; title: string }[] = [
+  { value: '3m', label: '3M', title: 'Solde sur 3 mois' },
+  { value: '6m', label: '6M', title: 'Solde sur 6 mois' },
+  { value: '1y', label: '1A', title: 'Solde sur 12 mois' },
+  { value: 'max', label: 'MAX', title: 'Solde — historique complet' },
+];
 
 export interface ChartCardProps {
   /** Polyline points for the balance line (`"x,y x,y …"`). Empty → empty state. */
@@ -7,10 +16,14 @@ export interface ChartCardProps {
   area: string;
   /** Caption shown bottom-right, e.g. `"mai 2026 · 1 compte"`. */
   caption?: string;
+  /** Selected time window — controls the chip highlight and the title. */
+  range: ChartRange;
+  onRangeChange: (range: ChartRange) => void;
 }
 
-export function ChartCard({ line, area, caption }: ChartCardProps) {
+export function ChartCard({ line, area, caption, range, onRangeChange }: ChartCardProps) {
   const hasData = line.length > 0;
+  const title = RANGES.find((r) => r.value === range)?.title ?? '';
 
   return (
     <div className="flex flex-col gap-3.5 rounded-lg border border-line-2 bg-ink-2 px-[22px] pb-4 pt-5">
@@ -18,8 +31,21 @@ export function ChartCard({ line, area, caption }: ChartCardProps) {
         <div className="flex min-w-0 items-center gap-3.5">
           <Overline>— II</Overline>
           <span className="truncate font-sans text-sm font-medium tracking-[-0.012em]">
-            Solde sur 12 mois
+            {title}
           </span>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {RANGES.map((r) => (
+            <Chip
+              key={r.value}
+              active={r.value === range}
+              onClick={() => {
+                onRangeChange(r.value);
+              }}
+            >
+              {r.label}
+            </Chip>
+          ))}
         </div>
       </div>
       {hasData ? (
