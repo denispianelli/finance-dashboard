@@ -60,8 +60,8 @@ export function AppShell() {
   }, [modelStatus.state, bg]);
 
   // Keep the pending count current (on mount, and after each import / edit) so the
-  // Topbar can offer the "Catégoriser (N)" trigger. This is a cheap COUNT — it never
-  // loads the model; only the user's click does (`bg.run`).
+  // model-install banner can size its message. This is a cheap COUNT — it never
+  // loads the model.
   const refresh = bg.refresh;
   useEffect(() => {
     void refresh();
@@ -86,10 +86,6 @@ export function AppShell() {
           sidebarCollapsed={sidebarCollapsed}
           categorizing={bg.running}
           categorizeRemaining={bg.remaining}
-          pendingCount={bg.pending}
-          onCategorize={() => {
-            void bg.run();
-          }}
         />
         <ModelDownloadIndicator status={modelStatus} onResume={startModelDownload} />
         {showCategorizationPrompt && (
