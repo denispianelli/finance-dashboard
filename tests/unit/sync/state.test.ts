@@ -104,4 +104,21 @@ describe('sync state', () => {
     expect(getDirty()).toBe(false);
     expect(getLastSeenSnapshotId()).toBeNull();
   });
+
+  it('enableSync throws and persists nothing when the cipher is unavailable', () => {
+    const deadCipher: PassphraseCipher = {
+      isAvailable: () => false,
+      encrypt: () => {
+        throw new Error('unreachable');
+      },
+      decrypt: () => {
+        throw new Error('unreachable');
+      },
+    };
+    expect(() => {
+      enableSync('/sync/folder', 'pw', deadCipher);
+    }).toThrow();
+    expect(getSyncEnabled()).toBe(false);
+    expect(getSyncFolder()).toBeNull();
+  });
 });

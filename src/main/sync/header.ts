@@ -23,6 +23,10 @@ export function buildSnapshotFile(header: SnapshotHeader, ciphertext: Uint8Array
   return Buffer.concat([MAGIC, len, json, Buffer.from(ciphertext)]);
 }
 
+/**
+ * Note: the returned ciphertext is a zero-copy view into `buf` — do not
+ * mutate the input buffer after parsing.
+ */
 export function parseSnapshotFile(
   buf: Buffer,
 ): { header: SnapshotHeader; ciphertext: Buffer } | null {

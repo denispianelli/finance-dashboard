@@ -65,6 +65,9 @@ export function setLastSeenSnapshotId(id: string): void {
 }
 
 export function enableSync(folderPath: string, passphrase: string, cipher: PassphraseCipher): void {
+  if (!cipher.isAvailable()) {
+    throw new Error('sync: passphrase cipher unavailable — cannot enable sync');
+  }
   write(KEYS.folder, folderPath);
   write(KEYS.passphraseEnc, cipher.encrypt(passphrase));
   write(KEYS.enabled, '1');

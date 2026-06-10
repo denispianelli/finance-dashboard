@@ -42,11 +42,11 @@ export async function writeSnapshot(
 
     const schemaRow = db
       .prepare('SELECT COALESCE(MAX(version), 0) AS v FROM schema_migrations')
-      .get() as { v: number };
+      .get() as { v: number } | undefined;
 
     const header: SnapshotHeader = {
       formatVersion: 1,
-      schemaVersion: schemaRow.v,
+      schemaVersion: schemaRow?.v ?? 0,
       createdAt: new Date().toISOString(),
       machineName: opts.machineName,
       snapshotId: randomUUID(),
@@ -56,8 +56,13 @@ export async function writeSnapshot(
 
     const file = buildSnapshotFile(header, ciphertext);
     const tmpOut = join(opts.folderPath, `${SNAPSHOT_FILENAME}.tmp`);
-    writeFileSync(tmpOut, file);
-    renameSync(tmpOut, join(opts.folderPath, SNAPSHOT_FILENAME));
+    try {
+      writeFileSync(tmpOut, file);
+      renameSync(tmpOut, join(opts.folderPath, SNAPSHOT_FILENAME));
+    } catch (e) {
+      rmSync(tmpOut, { force: true });
+      throw e;
+    }
     return header;
   } finally {
     rmSync(vacuumPath, { force: true });
@@ -106,6 +111,13 @@ export async function decryptSnapshotToFile(
   const key = await deriveKey(passphrase, salt);
   const plain = await decrypt(parsed.ciphertext, key, nonce);
   if (plain === null) return 'mac_failed';
-  writeFileSync(destPath, plain);
+  const tmpDest = `${destPath}.tmp`;
+  try {
+    writeFileSync(tmpDest, plain);
+    renameSync(tmpDest, destPath);
+  } catch (e) {
+    rmSync(tmpDest, { force: true });
+    throw e;
+  }
   return 'ok';
 }
