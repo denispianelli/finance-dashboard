@@ -1,5 +1,3 @@
-import type { AggregationMode } from './taxonomy';
-
 /** Input to create a new account. `type` defaults to checking; bank is a
  *  free-text label for display (e.g. "LCL", "Boursorama"). */
 export interface CreateAccountInput {
@@ -68,13 +66,6 @@ export interface GetTransactionsQuery {
   readonly from?: string;
   readonly to?: string;
   readonly limit?: number;
-}
-
-/** Payload for `dashboard:aggregate`. */
-export interface AggregateQuery {
-  readonly from: string;
-  readonly to: string;
-  readonly mode: AggregationMode;
 }
 
 /** One calendar month of activity for an account, with the running end-of-month balance. */

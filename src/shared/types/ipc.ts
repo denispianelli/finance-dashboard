@@ -12,13 +12,11 @@ import type {
   SetDeclaredBalanceInput,
   DashboardTransaction,
   GetTransactionsQuery,
-  AggregateQuery,
   DashboardMetrics,
   CashflowGranularity,
   CashflowPoint,
   NetWorth,
 } from './dashboard';
-import type { AggregationBucket } from './taxonomy';
 import type {
   CategoryDTO,
   RenameCategoryInput,
@@ -120,7 +118,6 @@ export interface IpcContract {
     payload: GetTransactionsQuery;
     response: { transactions: DashboardTransaction[] };
   };
-  'dashboard:aggregate': { payload: AggregateQuery; response: { buckets: AggregationBucket[] } };
   'dashboard:metrics': { payload: { accountId: string }; response: DashboardMetrics };
   'dashboard:cashflow': {
     payload: { granularity: CashflowGranularity };

@@ -10,7 +10,6 @@ export const CHANNELS = {
   categorizeBatch: 'categorize:batch',
   dashboardGetAccounts: 'dashboard:getAccounts',
   dashboardGetTransactions: 'dashboard:getTransactions',
-  dashboardAggregate: 'dashboard:aggregate',
   dashboardMetrics: 'dashboard:metrics',
   dashboardCashflow: 'dashboard:cashflow',
   dashboardNetWorth: 'dashboard:netWorth',
