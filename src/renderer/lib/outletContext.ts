@@ -3,8 +3,6 @@
  *  can refetch. */
 export interface AppOutletContext {
   readonly refreshToken: number;
-  /** True while a background categorization pass is running (drives the skeleton). */
-  readonly categorizing: boolean;
   /** Open the import-a-statement modal (Topbar). */
   readonly openImport: () => void;
   /** Open the create-account modal (account tabs "+ Ajouter" button). */
