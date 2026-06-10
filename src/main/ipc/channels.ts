@@ -36,4 +36,12 @@ export const CHANNELS = {
   modelDetectSelection: 'model:selection:detect',
   settingsGetCategorizeOptOut: 'settings:getCategorizeOptOut',
   settingsSetCategorizeOptOut: 'settings:setCategorizeOptOut',
+  syncGetStatus: 'sync:getStatus',
+  syncPickFolder: 'sync:pickFolder',
+  syncEnable: 'sync:enable',
+  syncDisable: 'sync:disable',
+  syncNow: 'sync:now',
+  syncLaunchCheck: 'sync:launchCheck',
+  syncRestore: 'sync:restore',
+  syncKeepLocal: 'sync:keepLocal',
 } as const satisfies Record<string, IpcChannel>;

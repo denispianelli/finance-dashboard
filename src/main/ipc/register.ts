@@ -43,6 +43,17 @@ import {
   handleGetCategorizeOptOut,
   handleSetCategorizeOptOut,
 } from './handlers/model';
+import {
+  handleSyncGetStatus,
+  handleSyncPickFolder,
+  handleSyncEnable,
+  handleSyncDisable,
+  handleSyncNow,
+  handleSyncLaunchCheck,
+  handleSyncRestore,
+  handleSyncKeepLocal,
+} from './handlers/sync';
+import { syncController } from '../sync/controller';
 
 type Handler<C extends IpcChannel> = (
   payload: IpcPayload<C>,
@@ -56,12 +67,35 @@ function isValidSender(event: IpcMainInvokeEvent): boolean {
   return url.startsWith('file://');
 }
 
+// Channels whose successful completion changes user data — each one marks the
+// DB dirty so the sync controller schedules a debounced snapshot.
+const MUTATING_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
+  'import:confirm',
+  'categorize:batch',
+  'accounts:create',
+  'accounts:update',
+  'accounts:delete',
+  'accounts:setDeclaredBalance',
+  'categories:rename',
+  'categories:create',
+  'categories:delete',
+  'transactions:setCategory',
+  'transactions:update',
+  'transactions:delete',
+  'transactions:restore',
+  'transactions:setTransfer',
+  'banks:learn',
+  'settings:setCategorizeOptOut',
+]);
+
 function register<C extends IpcChannel>(channel: C, handler: Handler<C>): void {
-  ipcMain.handle(channel, (event, payload: IpcPayload<C>) => {
+  ipcMain.handle(channel, async (event, payload: IpcPayload<C>) => {
     if (!isValidSender(event)) {
       throw new Error(`IPC: unauthorized sender for channel "${channel}"`);
     }
-    return handler(payload);
+    const result = await handler(payload);
+    if (MUTATING_CHANNELS.has(channel)) syncController.markDirty();
+    return result;
   });
 }
 
@@ -101,4 +135,12 @@ export function registerAllHandlers(): void {
   register(CHANNELS.modelDetectSelection, () => handleModelDetectSelection());
   register(CHANNELS.settingsGetCategorizeOptOut, () => handleGetCategorizeOptOut());
   register(CHANNELS.settingsSetCategorizeOptOut, handleSetCategorizeOptOut);
+  register(CHANNELS.syncGetStatus, () => handleSyncGetStatus());
+  register(CHANNELS.syncPickFolder, () => handleSyncPickFolder());
+  register(CHANNELS.syncEnable, handleSyncEnable);
+  register(CHANNELS.syncDisable, () => handleSyncDisable());
+  register(CHANNELS.syncNow, () => handleSyncNow());
+  register(CHANNELS.syncLaunchCheck, () => handleSyncLaunchCheck());
+  register(CHANNELS.syncRestore, () => handleSyncRestore());
+  register(CHANNELS.syncKeepLocal, () => handleSyncKeepLocal());
 }
