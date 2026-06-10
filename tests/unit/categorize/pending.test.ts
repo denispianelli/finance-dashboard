@@ -122,4 +122,11 @@ describe('countPendingForKey', () => {
 
     expect(countPendingForKey(db, 'VIR LOYER')).toBe(2);
   });
+
+  it('ignores internal transfers', () => {
+    insertTx({ id: 't1', label: 'VIR LOYER 12/03/25' });
+    insertTx({ id: 't2', label: 'VIR LOYER 14/05/25', internal: true });
+
+    expect(countPendingForKey(db, 'VIR LOYER')).toBe(1);
+  });
 });

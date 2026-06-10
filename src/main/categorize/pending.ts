@@ -3,6 +3,16 @@ import type { PendingGroup } from '@shared/types/import';
 import { stableLabelKey } from './labelKey';
 import { buildPassthroughDetector } from './passthrough';
 
+/** Fetch all still-uncategorized, non-internal rows for local grouping/filtering. */
+function fetchUncategorizedRows(db: DatabaseSync): { id: string; label_clean: string }[] {
+  return db
+    .prepare(
+      `SELECT id, label_clean FROM transactions
+        WHERE category_id IS NULL AND is_internal_transfer = 0`,
+    )
+    .all() as unknown as { id: string; label_clean: string }[];
+}
+
 /**
  * Pending transactions grouped by their stable label key (see stableLabelKey).
  * Each distinct label is one group, so the LLM classifies it once and the result
@@ -42,12 +52,7 @@ export function listPendingGroups(
  * history tier reuses it on the next import; no rule is created. Returns the count.
  */
 export function applyCategoryToKey(db: DatabaseSync, key: string, categoryId: string): number {
-  const rows = db
-    .prepare(
-      `SELECT id, label_clean FROM transactions
-        WHERE category_id IS NULL AND is_internal_transfer = 0`,
-    )
-    .all() as unknown as { id: string; label_clean: string }[];
+  const rows = fetchUncategorizedRows(db);
 
   const ids = rows.filter((r) => stableLabelKey(r.label_clean) === key).map((r) => r.id);
   if (ids.length === 0) return 0;
@@ -64,11 +69,5 @@ export function applyCategoryToKey(db: DatabaseSync, key: string, categoryId: st
 
 /** Still-uncategorized transactions sharing this stable key (feeds the residual toast). */
 export function countPendingForKey(db: DatabaseSync, key: string): number {
-  const rows = db
-    .prepare(
-      `SELECT label_clean FROM transactions
-        WHERE category_id IS NULL AND is_internal_transfer = 0`,
-    )
-    .all() as unknown as { label_clean: string }[];
-  return rows.filter((r) => stableLabelKey(r.label_clean) === key).length;
+  return fetchUncategorizedRows(db).filter((r) => stableLabelKey(r.label_clean) === key).length;
 }
