@@ -44,7 +44,7 @@ Adopt an **event-log model** for the taxonomy:
    transaction is ever dropped from `as_of_now` aggregation.
 
 Full implementation contract:
-`docs/superpowers/specs/2026-05-20-versioned-taxonomy-design.md`.
+`docs/superpowers/specs/archive/2026-05-20-versioned-taxonomy-design.md`.
 
 ## Alternatives considered
 
@@ -93,7 +93,7 @@ Concrete landings:
 
 Resolver, aggregation builder and IPC channels (T3, T4) land in follow-up
 PRs and do not invalidate this decision. The design spec
-(`docs/superpowers/specs/2026-05-20-versioned-taxonomy-design.md`) remains
+(`docs/superpowers/specs/archive/2026-05-20-versioned-taxonomy-design.md`) remains
 the implementation contract — consult it for the full operation, resolver
 and aggregation semantics.
 

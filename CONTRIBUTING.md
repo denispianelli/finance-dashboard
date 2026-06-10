@@ -113,6 +113,9 @@ NVIDIA driver.
 - **ADRs** (single source of truth) : `docs/adr/`
 - **Plans** : `docs/superpowers/plans/` (one per Epic or sub-project)
 
+Specs and plans for **shipped** work are moved to the `archive/` subfolder of each directory
+once merged — only active documents stay at the top level.
+
 ## Issue types
 
 Use the templates. Blank issues are disabled.

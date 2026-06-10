@@ -10,7 +10,7 @@ import { useModelStatus } from '../hooks/useModelStatus';
 import { ModelSettingsSection } from '../components/model/ModelSettingsSection';
 import { ipc } from '../ipc/client';
 
-// First draft per docs/superpowers/specs/2026-06-03-settings-view-content-design.md.
+// First draft per docs/superpowers/specs/archive/2026-06-03-settings-view-content-design.md.
 // Content/structure only — nothing is wired to IPC yet. Values shown as static placeholders
 // are flagged inline; "À venir" controls are disabled. UI/UX is refined separately.
 const PLACEHOLDER = '—';
