@@ -7,11 +7,13 @@ import { CategoriesPage } from './pages/CategoriesPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TransactionsPage } from './pages/TransactionsPage';
 import { ReportsPage } from './pages/ReportsPage';
+import { SyncLaunchGate } from './components/sync/SyncLaunchGate';
 
 export default function App() {
   return (
     <HashRouter>
       <Toaster richColors />
+      <SyncLaunchGate />
       <Routes>
         <Route element={<AppShell />}>
           <Route index element={<DashboardPage />} />
