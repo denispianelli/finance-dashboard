@@ -23,6 +23,16 @@ export function monthLabelFr(month: string): string {
   return MONTHS_FR[idx] ?? month;
 }
 
+/** Balance-chart tooltip label: `yyyy-mm` → `'mai 2026'`, `yyyy-mm-dd` →
+ *  `'15 mai 2026'`; passes through if unparseable. */
+export function chartPeriodLabelFr(period: string): string {
+  const month = MONTHS_FR[Number(period.slice(5, 7)) - 1];
+  if (month === undefined) return period;
+  const year = period.slice(0, 4);
+  if (period.length === 7) return `${month} ${year}`;
+  return `${String(Number(period.slice(8, 10)))} ${month} ${year}`;
+}
+
 /** Splits a formatted euro amount into an integer part and a `,dd €` remainder,
  *  matching the KPI tile's large-number / small-suffix layout. */
 export function splitEuro(amount: number): { value: string; sub: string } {
@@ -72,34 +82,6 @@ export function sparkPoints(values: number[], width = 84, height = 32): string {
   const max = Math.max(...values);
   const step = values.length > 1 ? width / (values.length - 1) : 0;
   return values.map((v, i) => point(i * step, scaleY(v, min, max, height, 2))).join(' ');
-}
-
-export interface ChartGeometry {
-  line: string;
-  area: string;
-}
-
-/** Line polyline + filled area path for the 12-month chart (default 600×220 box). */
-export function chartGeometry(
-  values: number[],
-  width = 600,
-  height = 220,
-  pad = 20,
-): ChartGeometry {
-  if (values.length === 0) return { line: '', area: '' };
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const step = values.length > 1 ? width / (values.length - 1) : 0;
-  const coords = values.map((v, i) => ({ x: i * step, y: scaleY(v, min, max, height, pad) }));
-  const line = coords.map((c) => point(c.x, c.y)).join(' ');
-  const first = coords[0];
-  const last = coords[coords.length - 1];
-  // Non-empty values guarantees both ends exist.
-  const area =
-    first && last
-      ? `M${point(first.x, first.y)} ${line} L${point(last.x, height)} L${point(first.x, height)} Z`
-      : '';
-  return { line, area };
 }
 
 export interface CategoryShare {

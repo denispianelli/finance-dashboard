@@ -15,7 +15,6 @@ import { useBalanceSeries } from '../hooks/useBalanceSeries';
 import { toAccount, toTxRow } from '../lib/dashboardMap';
 import { formatEuro, MINUS, NBSP } from '../lib/euro';
 import {
-  chartGeometry,
   kpiDelta,
   latestMonth,
   monthLabelFr,
@@ -63,7 +62,6 @@ export function DashboardPage() {
 
   const [chartRange, setChartRange] = useState<ChartRange>('1y');
   const { points } = useBalanceSeries(selectedAccountId, chartRange, refreshToken);
-  const geom = chartGeometry(points.map((p) => p.balance));
   const accountCount = accounts.length;
   const chartCaption =
     month !== null
@@ -126,8 +124,7 @@ export function DashboardPage() {
 
       <Row2>
         <ChartCard
-          line={geom.line}
-          area={geom.area}
+          points={points}
           caption={chartCaption}
           range={chartRange}
           onRangeChange={setChartRange}
