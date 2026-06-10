@@ -9,8 +9,12 @@ import { buildPassthroughDetector } from './passthrough';
  * fans out to all rows sharing it — killing the per-row inconsistency we measured.
  * Oldest-first: the representative `label` is the oldest row's faithful label_raw.
  * Passthrough payees (PayPal…) are excluded — they are categorized by amount, not label.
+ * Keys in excludeKeys (already attempted by the active model) are excluded too.
  */
-export function listPendingGroups(db: DatabaseSync): PendingGroup[] {
+export function listPendingGroups(
+  db: DatabaseSync,
+  excludeKeys: ReadonlySet<string> = new Set(),
+): PendingGroup[] {
   const rows = db
     .prepare(
       `SELECT id, label_raw, label_clean
@@ -28,7 +32,7 @@ export function listPendingGroups(db: DatabaseSync): PendingGroup[] {
     else groups.set(key, { key, label: r.label_raw, count: 1 });
   }
   const isPassthrough = buildPassthroughDetector(db);
-  return [...groups.values()].filter((g) => !isPassthrough(g.key));
+  return [...groups.values()].filter((g) => !isPassthrough(g.key) && !excludeKeys.has(g.key));
 }
 
 /**
@@ -56,4 +60,15 @@ export function applyCategoryToKey(db: DatabaseSync, key: string, categoryId: st
     )
     .run(categoryId, ...ids);
   return Number(res.changes);
+}
+
+/** Still-uncategorized transactions sharing this stable key (feeds the residual toast). */
+export function countPendingForKey(db: DatabaseSync, key: string): number {
+  const rows = db
+    .prepare(
+      `SELECT label_clean FROM transactions
+        WHERE category_id IS NULL AND is_internal_transfer = 0`,
+    )
+    .all() as unknown as { label_clean: string }[];
+  return rows.filter((r) => stableLabelKey(r.label_clean) === key).length;
 }
