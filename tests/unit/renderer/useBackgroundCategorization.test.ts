@@ -29,6 +29,7 @@ function batchCalls(): unknown[] {
 beforeEach(() => {
   mockInvoke.mockReset();
   vi.mocked(toast.error).mockReset();
+  vi.mocked(toast.success).mockReset();
 });
 
 afterEach(() => {
@@ -69,7 +70,7 @@ describe('useBackgroundCategorization', () => {
     expect(result.current.running).toBe(false);
   });
 
-  it('stops the whole pass on model_unavailable', async () => {
+  it('stops the whole pass silently on model_unavailable (the banner is the call to action)', async () => {
     mockInvoke.mockImplementation((channel) => {
       if (channel === 'categorize:pending') return Promise.resolve({ groups: groups(3) });
       return Promise.resolve({ ok: false as const, error: 'model_unavailable' as const });
@@ -83,8 +84,8 @@ describe('useBackgroundCategorization', () => {
 
     expect(batchCalls()).toHaveLength(1); // stopped after the first label
     expect(onApplied).not.toHaveBeenCalled();
-    // The user is told why nothing happened, instead of a silent flash-and-reset.
-    expect(vi.mocked(toast.error)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(toast.error)).not.toHaveBeenCalled();
+    expect(vi.mocked(toast.success)).not.toHaveBeenCalled();
   });
 
   it('continues past inference_failed without calling onApplied for it', async () => {
@@ -138,5 +139,36 @@ describe('useBackgroundCategorization', () => {
 
     expect(result.current.pending).toBe(5);
     expect(batchCalls()).toHaveLength(0);
+  });
+
+  it('shows one summary toast with applied and residual totals at the end of a pass', async () => {
+    let call = 0;
+    mockInvoke.mockImplementation((channel) => {
+      if (channel === 'categorize:pending') return Promise.resolve({ groups: groups(2) });
+      call += 1;
+      if (call === 1) return Promise.resolve({ ok: true as const, applied: 3, residual: 0 });
+      return Promise.resolve({ ok: true as const, applied: 0, residual: 2 });
+    });
+    const { result } = renderHook(() => useBackgroundCategorization({ onApplied: vi.fn() }));
+
+    await act(async () => {
+      await result.current.run();
+    });
+
+    expect(vi.mocked(toast.success)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(toast.success)).toHaveBeenCalledWith(
+      'Catégorisation terminée — 3 transactions catégorisées, 2 à classer manuellement',
+    );
+  });
+
+  it('shows no toast when the pass did nothing (no groups)', async () => {
+    mockInvoke.mockResolvedValue({ groups: [] });
+    const { result } = renderHook(() => useBackgroundCategorization({ onApplied: vi.fn() }));
+
+    await act(async () => {
+      await result.current.run();
+    });
+
+    expect(vi.mocked(toast.success)).not.toHaveBeenCalled();
   });
 });
