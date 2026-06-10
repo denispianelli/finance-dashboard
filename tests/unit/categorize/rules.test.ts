@@ -32,6 +32,33 @@ describe('matchRule', () => {
     expect(matchRule(rules, 'UBER TRIP PARIS')?.categoryId).toBe('cat-transport');
   });
 
+  it('does not match a contains value embedded inside a longer word', () => {
+    // Audit #184: short seeded tokens substring-matched unrelated labels,
+    // e.g. ORANGE → "BOULANGERIE DE L'ORANGERIE" filed under Énergie.
+    const rules = [rule({ matchValue: 'ORANGE', categoryId: 'cat-energie' })];
+    expect(matchRule(rules, "BOULANGERIE DE L'ORANGERIE")).toBeNull();
+    expect(matchRule(rules, 'PRLV ORANGE SA')?.categoryId).toBe('cat-energie');
+  });
+
+  it('does not match a contains value embedded at the end of a longer word', () => {
+    const rules = [rule({ matchValue: 'EDF', categoryId: 'cat-energie' })];
+    expect(matchRule(rules, 'CB REDFOX STORE')).toBeNull();
+    expect(matchRule(rules, 'PRLV SEPA EDF CLIENTS')?.categoryId).toBe('cat-energie');
+  });
+
+  it('matches a contains value at punctuation and digit boundaries', () => {
+    const rules = [rule({ matchValue: 'EDF', categoryId: 'cat-energie' })];
+    // Bank labels glue references and punctuation onto payee names.
+    expect(matchRule(rules, 'VIR/EDF FACTURE')?.categoryId).toBe('cat-energie');
+    expect(matchRule(rules, 'EDF5521004412')?.categoryId).toBe('cat-energie');
+  });
+
+  it('treats regex metacharacters in a contains value literally', () => {
+    const rules = [rule({ matchValue: 'NETFLIX.COM', categoryId: 'cat-loisirs' })];
+    expect(matchRule(rules, 'CB NETFLIX.COM PARIS')?.categoryId).toBe('cat-loisirs');
+    expect(matchRule(rules, 'CB NETFLIXXCOM PARIS')).toBeNull();
+  });
+
   it('supports exact match', () => {
     const rules = [rule({ matchType: 'exact', matchValue: 'LOYER', categoryId: 'cat-logement' })];
     expect(matchRule(rules, 'LOYER')?.categoryId).toBe('cat-logement');
