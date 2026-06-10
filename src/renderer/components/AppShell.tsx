@@ -131,6 +131,9 @@ export function AppShell() {
         }}
         onImported={() => {
           setRefreshToken((t) => t + 1);
+          // Kick off the LLM pass over what the deterministic cascade left
+          // uncategorized. Non-blocking: rows stay editable during the pass.
+          void bg.run();
         }}
       />
       <CreateAccountModal
