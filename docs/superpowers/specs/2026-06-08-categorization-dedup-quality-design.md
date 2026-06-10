@@ -16,7 +16,7 @@ transactions) was instrumented and measured:
 - **No dedup, hence contradictions:** the _same_ label
   `"PRLV SEPA PayPal..."` (37 rows) got **5 different answers** across batches
   (24× AUCUNE, 9× Frais bancaires, 2× Restaurants, 1× Éducation, 1× Abonnements).
-  `"VIREMENT MLLE LAURA AMENDOLA"` → AUCUNE / Éducation / Voyages at random.
+  `"VIREMENT MLLE MARIE DURAND"` → AUCUNE / Éducation / Voyages at random.
 
 Root cause is **structural** (the batching design), not just model weakness. Parsing
 was verified correct — when the model returns a valid name it maps fine.

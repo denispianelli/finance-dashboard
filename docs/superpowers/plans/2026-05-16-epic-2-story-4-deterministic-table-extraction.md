@@ -48,7 +48,7 @@
 - Sum of debits (as positive): `3809.73`
 - Sum of credits: `2345.24`
 - Arithmetic check: `2638.20 + 2345.24 − 3809.73 = 1173.71` ✓
-- First transaction: `{ date: '2025-11-01', label: 'VIR.PERMANENT MR PIANELLI OU ML', amount: -1000.00 }`
+- First transaction: `{ date: '2025-11-01', label: 'VIR.PERMANENT …' (redacted), amount: -1000.00 }`
 
 ---
 
@@ -152,7 +152,7 @@ describe('extractTransactions', () => {
       // First transaction
       const first = result.transactions[0]!;
       expect(first.date).toBe('2025-11-01');
-      expect(first.label).toBe('VIR.PERMANENT MR PIANELLI OU ML');
+      expect(first.label).toMatch(/^VIR\.PERMANENT /);
       expect(first.amount).toBeCloseTo(-1000.0, 2);
 
       // Arithmetic verification: opening + net = closing
