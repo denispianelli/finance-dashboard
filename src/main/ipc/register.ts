@@ -10,6 +10,7 @@ import { handleCategorizePending, handleCategorizeBatch } from './handlers/categ
 import { handleDashboardGetAccounts } from './handlers/dashboardGetAccounts';
 import { handleDashboardGetTransactions } from './handlers/dashboardGetTransactions';
 import { handleDashboardMetrics } from './handlers/dashboardMetrics';
+import { handleDashboardBalanceSeries } from './handlers/dashboardBalanceSeries';
 import { handleDashboardCashflow, handleDashboardNetWorth } from './handlers/dashboardConsolidated';
 import {
   handleAccountsCreate,
@@ -74,6 +75,7 @@ export function registerAllHandlers(): void {
   register(CHANNELS.dashboardGetAccounts, () => handleDashboardGetAccounts());
   register(CHANNELS.dashboardGetTransactions, handleDashboardGetTransactions);
   register(CHANNELS.dashboardMetrics, handleDashboardMetrics);
+  register(CHANNELS.dashboardBalanceSeries, handleDashboardBalanceSeries);
   register(CHANNELS.dashboardCashflow, handleDashboardCashflow);
   register(CHANNELS.dashboardNetWorth, () => handleDashboardNetWorth());
   register(CHANNELS.accountsCreate, handleAccountsCreate);

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 
@@ -56,11 +57,17 @@ const METRICS: DashboardMetrics = {
   ],
 };
 
+const POINTS = [
+  { period: '2026-04', balance: 987.32 },
+  { period: '2026-05', balance: 1487.32 },
+];
+
 function stubIpc(transactions: DashboardTransaction[], metrics: DashboardMetrics = METRICS): void {
   mockInvoke.mockImplementation(((channel: string) => {
     if (channel === 'dashboard:getAccounts') return Promise.resolve({ accounts: ACCOUNTS });
     if (channel === 'dashboard:getTransactions') return Promise.resolve({ transactions });
     if (channel === 'dashboard:metrics') return Promise.resolve(metrics);
+    if (channel === 'dashboard:balanceSeries') return Promise.resolve({ points: POINTS });
     if (channel === 'categories:list') return Promise.resolve({ categories: [] });
     return Promise.resolve(undefined);
   }) as typeof ipc.invoke);
@@ -155,6 +162,28 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Tx 09')).toBeInTheDocument();
     expect(screen.queryByText('Tx 10')).not.toBeInTheDocument();
     expect(screen.queryByText('Tx 11')).not.toBeInTheDocument();
+  });
+
+  it('fetches the balance series for the selected account with the 12-month default', async () => {
+    renderPage();
+    expect(await screen.findByText('Solde sur 12 mois')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith('dashboard:balanceSeries', {
+        accountId: 'acc-lcl-default',
+        range: '1y',
+      });
+    });
+  });
+
+  it('refetches the balance series when a range chip is clicked', async () => {
+    renderPage();
+    await screen.findByText('Solde sur 12 mois');
+    await userEvent.click(screen.getByRole('button', { name: '3M' }));
+    expect(await screen.findByText('Solde sur 3 mois')).toBeInTheDocument();
+    expect(mockInvoke).toHaveBeenCalledWith('dashboard:balanceSeries', {
+      accountId: 'acc-lcl-default',
+      range: '3m',
+    });
   });
 
   it('links "Tout voir" to the transactions page', () => {

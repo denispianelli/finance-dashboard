@@ -13,6 +13,8 @@ import type {
   DashboardTransaction,
   GetTransactionsQuery,
   DashboardMetrics,
+  ChartRange,
+  BalancePoint,
   CashflowGranularity,
   CashflowPoint,
   NetWorth,
@@ -119,6 +121,10 @@ export interface IpcContract {
     response: { transactions: DashboardTransaction[] };
   };
   'dashboard:metrics': { payload: { accountId: string }; response: DashboardMetrics };
+  'dashboard:balanceSeries': {
+    payload: { accountId: string; range: ChartRange };
+    response: { points: BalancePoint[] };
+  };
   'dashboard:cashflow': {
     payload: { granularity: CashflowGranularity };
     response: { series: CashflowPoint[] };
