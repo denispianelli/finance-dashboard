@@ -1,5 +1,5 @@
 import { useEffect, type ComponentType, type ReactNode } from 'react';
-import { Cpu, Database, Palette } from 'lucide-react';
+import { Cpu, Database, FolderSync, Palette } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -8,6 +8,7 @@ import { Overline } from '../components/ui/overline';
 import { cn } from '../lib/utils';
 import { useModelStatus } from '../hooks/useModelStatus';
 import { ModelSettingsSection } from '../components/model/ModelSettingsSection';
+import { SyncSettingsSection } from '../components/sync/SyncSettingsSection';
 import { ipc } from '../ipc/client';
 
 // First draft per docs/superpowers/specs/2026-06-03-settings-view-content-design.md.
@@ -21,8 +22,17 @@ export function SettingsPage() {
     <div className="flex max-w-[680px] flex-col gap-4">
       <ModelSection />
       <DataSection />
+      <SyncSection />
       <AppearanceSection />
     </div>
+  );
+}
+
+function SyncSection() {
+  return (
+    <Section icon={FolderSync} overline="— Multi-machines" title="Synchronisation">
+      <SyncSettingsSection Row={Row} />
+    </Section>
   );
 }
 
