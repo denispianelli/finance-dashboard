@@ -9,7 +9,6 @@ import { handleImportConfirm } from './handlers/importConfirm';
 import { handleCategorizePending, handleCategorizeBatch } from './handlers/categorize';
 import { handleDashboardGetAccounts } from './handlers/dashboardGetAccounts';
 import { handleDashboardGetTransactions } from './handlers/dashboardGetTransactions';
-import { handleDashboardAggregate } from './handlers/dashboardAggregate';
 import { handleDashboardMetrics } from './handlers/dashboardMetrics';
 import { handleDashboardCashflow, handleDashboardNetWorth } from './handlers/dashboardConsolidated';
 import {
@@ -74,7 +73,6 @@ export function registerAllHandlers(): void {
   register(CHANNELS.categorizeBatch, handleCategorizeBatch);
   register(CHANNELS.dashboardGetAccounts, () => handleDashboardGetAccounts());
   register(CHANNELS.dashboardGetTransactions, handleDashboardGetTransactions);
-  register(CHANNELS.dashboardAggregate, handleDashboardAggregate);
   register(CHANNELS.dashboardMetrics, handleDashboardMetrics);
   register(CHANNELS.dashboardCashflow, handleDashboardCashflow);
   register(CHANNELS.dashboardNetWorth, () => handleDashboardNetWorth());
