@@ -167,6 +167,7 @@ function normalizeMarker(s: string): string {
 }
 
 const OPENING_MARKER = /ANCIEN SOLDE|SOLDE PRECEDENT/;
+const REFERENCE_LINE = /^(REF\.CLIENT|REF\.MANDAT|ID\.CREANCIER)/;
 const CLOSING_MARKER = /SOLDE EN EUROS|NOUVEAU SOLDE/;
 
 function fold(s: string): string {
@@ -248,6 +249,11 @@ export function extractTransactions(pages: PdfPage[], mapping: ColumnMapping): E
 
   for (const page of pages) {
     const rows = groupItemsByY(page.items);
+    // The transaction the next continuation row (if any) belongs to. Continuation
+    // rows are physically right below their transaction, so anything else — a
+    // marker, a skipped row, page furniture — breaks the chain. Reset per page:
+    // page headers/footers sit between a transaction and any spilled-over text.
+    let lastTx: ExtractedTransaction | null = null;
 
     for (const row of rows) {
       // The transaction date: prefer a date token that carries a year (LCL's
@@ -257,11 +263,38 @@ export function extractTransactions(pages: PdfPage[], mapping: ColumnMapping): E
       // labels); this rejects header rows and dates embedded in footer / legal
       // prose (their dates are mid-line, not in the date column), so multi-page
       // statements work without needing a repeated header on every page.
-      if (!dateItems.some((i) => i.x < mapping.label_col)) continue;
+      if (!dateItems.some((i) => i.x < mapping.label_col)) {
+        // No date in the date column: a continuation of the previous
+        // transaction's label (card details, SEPA references — common on LCL)
+        // when every token sits inside the label window; page furniture
+        // (footers, legal prose, headers) spans outside it and breaks the chain.
+        const significant = row.filter((i) => i.str.trim().length > 0);
+        if (
+          lastTx !== null &&
+          significant.length > 0 &&
+          significant.every((i) => i.x >= mapping.label_col - 1 && i.x < mapping.debit_col)
+        ) {
+          const text = significant.map((i) => i.str.trim()).join(' ');
+          // Pure SEPA reference lines are noise for matching, display and the
+          // LLM alike — skip their text but keep the continuation chain alive.
+          if (!REFERENCE_LINE.test(normalizeMarker(text))) {
+            lastTx.label = `${lastTx.label} ${text}`;
+          }
+        } else {
+          lastTx = null;
+        }
+        continue;
+      }
       const dateItem = dateItems.find((i) => hasYear(i.str)) ?? dateItems[0];
-      if (!dateItem) continue;
+      if (!dateItem) {
+        lastTx = null;
+        continue;
+      }
       const date = parseDate(dateItem.str, yearRef);
-      if (date === null) continue;
+      if (date === null) {
+        lastTx = null;
+        continue;
+      }
 
       const labelItems = row.filter(
         (i) =>
@@ -283,27 +316,37 @@ export function extractTransactions(pages: PdfPage[], mapping: ColumnMapping): E
       if (OPENING_MARKER.test(marker)) {
         openingBalance = readBalance(creditItems, debitItems);
         openingDate = date;
+        lastTx = null;
         continue;
       }
       if (CLOSING_MARKER.test(marker)) {
         closingBalance = readBalance(creditItems, debitItems);
         closingDate = date;
+        lastTx = null;
         continue;
       }
       // Any other balance line (intermediate "SOLDE", page totals) is not a
       // transaction — skip it rather than mis-counting it.
-      if (marker.includes('SOLDE')) continue;
+      if (marker.includes('SOLDE')) {
+        lastTx = null;
+        continue;
+      }
 
       const debitAmt = debitItems.map((i) => parseAmount(i.str)).find((n) => n !== null);
       const creditAmt = creditItems.map((i) => parseAmount(i.str)).find((n) => n !== null);
 
-      if (debitAmt == null && creditAmt == null) continue;
+      if (debitAmt == null && creditAmt == null) {
+        lastTx = null;
+        continue;
+      }
 
-      transactions.push({
+      const tx: ExtractedTransaction = {
         date,
         label: labelStr,
         amount: debitAmt != null ? -debitAmt : (creditAmt ?? 0),
-      });
+      };
+      transactions.push(tx);
+      lastTx = tx;
     }
   }
 
