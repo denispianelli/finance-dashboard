@@ -67,8 +67,20 @@ function isValidSender(event: IpcMainInvokeEvent): boolean {
   return url.startsWith('file://');
 }
 
+/** Mutating handlers signal no-op failures with `{ ok: false }` envelopes. */
+function isDomainFailure(result: unknown): boolean {
+  return (
+    typeof result === 'object' &&
+    result !== null &&
+    'ok' in result &&
+    (result as { ok?: unknown }).ok === false
+  );
+}
+
 // Channels whose successful completion changes user data — each one marks the
 // DB dirty so the sync controller schedules a debounced snapshot.
+// Sync channels themselves are intentionally excluded — they write sync
+// metadata, not user financial data.
 const MUTATING_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'import:confirm',
   'categorize:batch',
@@ -94,7 +106,7 @@ function register<C extends IpcChannel>(channel: C, handler: Handler<C>): void {
       throw new Error(`IPC: unauthorized sender for channel "${channel}"`);
     }
     const result = await handler(payload);
-    if (MUTATING_CHANNELS.has(channel)) syncController.markDirty();
+    if (MUTATING_CHANNELS.has(channel) && !isDomainFailure(result)) syncController.markDirty();
     return result;
   });
 }

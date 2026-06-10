@@ -79,8 +79,15 @@ app.on('will-quit', (event) => {
   if (!quitFlushStarted && syncController.needsQuitFlush()) {
     quitFlushStarted = true;
     event.preventDefault();
-    void syncController
-      .flushOnQuit()
+    const QUIT_FLUSH_TIMEOUT_MS = 10_000;
+    void Promise.race([
+      syncController.flushOnQuit(),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('sync: quit flush timed out'));
+        }, QUIT_FLUSH_TIMEOUT_MS).unref();
+      }),
+    ])
       .catch((e: unknown) => {
         console.error('sync: quit flush failed', e);
       })

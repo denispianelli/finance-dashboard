@@ -124,4 +124,20 @@ describe('SyncController', () => {
     controller.markDirty();
     expect(controller.needsQuitFlush()).toBe(true);
   });
+
+  it('flushOnQuit is a no-op when sync is disabled', async () => {
+    vi.useRealTimers();
+    await expect(controller.flushOnQuit()).resolves.toBeUndefined();
+    expect(existsSync(join(folder, SNAPSHOT_FILENAME))).toBe(false);
+  });
+
+  it('disable clears a pending debounced write', async () => {
+    controller.enable(folder, 'pw');
+    controller.markDirty();
+    controller.disable();
+    await vi.advanceTimersByTimeAsync(31_000);
+    vi.useRealTimers();
+    await new Promise((r) => setTimeout(r, 300));
+    expect(existsSync(join(folder, SNAPSHOT_FILENAME))).toBe(false);
+  });
 });
