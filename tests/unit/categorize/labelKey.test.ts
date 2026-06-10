@@ -14,6 +14,20 @@ describe('stableLabelKey', () => {
     expect(stableLabelKey('CB MONOPRIX 03.02 PARIS')).toBe('CB MONOPRIX PARIS');
   });
 
+  it('drops volatile digit-bearing tokens (amounts, rates, glued refs)', () => {
+    // Continuation lines append original-currency amounts and exchange rates
+    // that change every purchase — they must not enter the key.
+    expect(stableLabelKey('CB UBER * EATS PE 30/04/26 AMSTERDAM EUR 7,77')).toBe(
+      stableLabelKey('CB UBER * EATS PE 14/05/26 AMSTERDAM EUR 12,30'),
+    );
+    expect(stableLabelKey('CB CLAUDE.AI SUBSCR COM CHANGE 2,06E TX 1,1713')).toBe(
+      stableLabelKey('CB CLAUDE.AI SUBSCR COM CHANGE 1,98E TX 1,1592'),
+    );
+    expect(stableLabelKey('PRLV ASSURANCE -ECHEANCE 05/20 COTISATION')).toBe(
+      stableLabelKey('PRLV ASSURANCE -ECHEANCE 06/20 COTISATION'),
+    );
+  });
+
   it('strips long reference numbers', () => {
     expect(stableLabelKey('VIREMENT ETRANGER 26022598893')).toBe('VIREMENT ETRANGER');
   });
