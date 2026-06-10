@@ -38,6 +38,7 @@ export type SubState =
       accountId: string;
       selected: Set<string>;
       acknowledgedCannotVerify: boolean;
+      acknowledgedArithmeticFailed: boolean;
       autoRouted: boolean;
     }
   | { step: 'confirming' }
@@ -57,6 +58,7 @@ export interface UseImport {
   toggleTx: (txHash: string) => void;
   toggleAll: () => void;
   setAcknowledgedCannotVerify: (value: boolean) => void;
+  setAcknowledgedArithmeticFailed: (value: boolean) => void;
   confirm: () => Promise<void>;
   skipFile: () => void;
   reset: () => void;
@@ -67,7 +69,8 @@ const ERROR_MESSAGES: Partial<Record<string, string>> = {
   malformed_ofx: 'Fichier OFX invalide ou corrompu.',
   not_pdf: 'Le fichier ne semble pas être un PDF valide.',
   no_text: 'Ce PDF ne contient pas de texte extractible (scan image ?).',
-  arithmetic_failed: 'Le solde ne correspond pas aux transactions. Import bloqué.',
+  arithmetic_failed_unacknowledged:
+    'Le solde ne correspond pas aux transactions. Import non confirmé.',
   cannot_verify_unacknowledged: 'Vérification du solde non confirmée.',
   already_imported: 'Déjà importé — rien de nouveau.',
   model_unavailable: "Modèle IA non installé — impossible d'analyser une nouvelle banque.",
@@ -212,6 +215,7 @@ export function useImport(): UseImport {
         accountId,
         selected,
         acknowledgedCannotVerify: false,
+        acknowledgedArithmeticFailed: false,
         autoRouted,
       },
     });
@@ -316,10 +320,24 @@ export function useImport(): UseImport {
     });
   }
 
+  function setAcknowledgedArithmeticFailed(value: boolean): void {
+    updateSub((prev) => {
+      if (prev.sub.step !== 'review') return prev;
+      return { ...prev, sub: { ...prev.sub, acknowledgedArithmeticFailed: value } };
+    });
+  }
+
   async function confirm(): Promise<void> {
     const cur = stateRef.current;
     if (cur.step !== 'queue' || cur.sub.step !== 'review') return;
-    const { extraction, accountId, selected, acknowledgedCannotVerify, autoRouted } = cur.sub;
+    const {
+      extraction,
+      accountId,
+      selected,
+      acknowledgedCannotVerify,
+      acknowledgedArithmeticFailed,
+      autoRouted,
+    } = cur.sub;
     const file = cur.files[cur.index];
     if (file === undefined) return;
     setS({ ...cur, sub: { step: 'confirming' } });
@@ -330,6 +348,7 @@ export function useImport(): UseImport {
         accountId,
         selectedHashes: [...selected],
         acknowledgedCannotVerify: ack,
+        acknowledgedArithmeticFailed,
       }),
     );
     if (res === null) {
@@ -388,6 +407,7 @@ export function useImport(): UseImport {
     toggleTx,
     toggleAll,
     setAcknowledgedCannotVerify,
+    setAcknowledgedArithmeticFailed,
     confirm,
     skipFile,
     reset,

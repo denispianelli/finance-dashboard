@@ -73,7 +73,7 @@ describe('insertStatement — guards', () => {
     db.close();
   });
 
-  it('refuses when arithmetic failed and writes nothing', async () => {
+  it('refuses when arithmetic failed without acknowledgement and writes nothing', async () => {
     const db = freshDb();
     extractMock.mockResolvedValue(
       baseExtraction({
@@ -87,9 +87,49 @@ describe('insertStatement — guards', () => {
       }),
     );
     await expect(insertStatement(db, 'acc-lcl-default', Buffer.from('x'))).rejects.toMatchObject({
-      code: 'arithmetic_failed',
+      code: 'arithmetic_failed_unacknowledged',
     });
     expect(db.prepare('SELECT count(*) n FROM transactions').get()).toMatchObject({ n: 0 });
+    db.close();
+  });
+
+  it('inserts when arithmetic failed is acknowledged', async () => {
+    const db = freshDb();
+    extractMock.mockResolvedValue(
+      baseExtraction({
+        arithmetic: {
+          status: 'failed',
+          openingBalance: 0,
+          closingBalance: 999,
+          computedClosing: 10,
+          delta: -989,
+        },
+      }),
+    );
+    const r = await insertStatement(db, 'acc-lcl-default', Buffer.from('x'), {
+      acknowledgedArithmeticFailed: true,
+    });
+    expect(r.insertedCount).toBe(2);
+    expect(db.prepare('SELECT count(*) n FROM transactions').get()).toMatchObject({ n: 2 });
+    db.close();
+  });
+
+  it('does not let acknowledgedCannotVerify bypass a failed check', async () => {
+    const db = freshDb();
+    extractMock.mockResolvedValue(
+      baseExtraction({
+        arithmetic: {
+          status: 'failed',
+          openingBalance: 0,
+          closingBalance: 999,
+          computedClosing: 10,
+          delta: -989,
+        },
+      }),
+    );
+    await expect(
+      insertStatement(db, 'acc-lcl-default', Buffer.from('x'), { acknowledgedCannotVerify: true }),
+    ).rejects.toMatchObject({ code: 'arithmetic_failed_unacknowledged' });
     db.close();
   });
 
