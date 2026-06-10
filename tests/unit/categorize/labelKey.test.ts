@@ -7,6 +7,13 @@ describe('stableLabelKey', () => {
     expect(stableLabelKey('VIREMENT M DENIS PIANELLI 14/05/25')).toBe('VIREMENT M DENIS PIANELLI');
   });
 
+  it('strips LCL dot dates so dated variants share a key', () => {
+    // Audit #184: only /-dates were stripped; LCL card labels carry 13.10.25-style dates.
+    expect(stableLabelKey('CB TICKETMASTER 13.10.25')).toBe('CB TICKETMASTER');
+    expect(stableLabelKey('CB TICKETMASTER 14.11.25')).toBe('CB TICKETMASTER');
+    expect(stableLabelKey('CB MONOPRIX 03.02 PARIS')).toBe('CB MONOPRIX PARIS');
+  });
+
   it('strips long reference numbers', () => {
     expect(stableLabelKey('VIREMENT ETRANGER 26022598893')).toBe('VIREMENT ETRANGER');
   });

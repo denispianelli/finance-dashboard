@@ -4,6 +4,7 @@ import { runMigrations } from '../../../src/main/db/migrate';
 import { loadRules } from '../../../src/main/categorize/rules';
 import { buildPassthroughDetector } from '../../../src/main/categorize/passthrough';
 import { resolveImportCategory } from '../../../src/main/categorize/resolveImportCategory';
+import { buildHistoryIndex } from '../../../src/main/categorize/history';
 
 let db: DatabaseSync;
 
@@ -27,21 +28,39 @@ describe('resolveImportCategory', () => {
   it('passthrough: matches a learned (label, amount), ignoring label history', () => {
     seedCategorized('p1', 'PRLV SEPA PAYPAL EUROPE', -17.2, 'cat-alimentation');
     const is = buildPassthroughDetector(db);
-    const res = resolveImportCategory(db, 'PRLV SEPA PAYPAL EUROPE', -17.2, loadRules(db), is);
+    const res = resolveImportCategory(
+      'PRLV SEPA PAYPAL EUROPE',
+      -17.2,
+      loadRules(db),
+      is,
+      buildHistoryIndex(db),
+    );
     expect(res).toEqual({ categoryId: 'cat-alimentation', ruleId: null });
   });
 
   it('passthrough with an unseen amount stays uncategorized', () => {
     seedCategorized('p1', 'PRLV SEPA PAYPAL EUROPE', -17.2, 'cat-alimentation');
     const is = buildPassthroughDetector(db);
-    const res = resolveImportCategory(db, 'PRLV SEPA PAYPAL EUROPE', -43, loadRules(db), is);
+    const res = resolveImportCategory(
+      'PRLV SEPA PAYPAL EUROPE',
+      -43,
+      loadRules(db),
+      is,
+      buildHistoryIndex(db),
+    );
     expect(res).toEqual({ categoryId: null, ruleId: null });
   });
 
   it('non-passthrough uses label history', () => {
     seedCategorized('c1', 'CARREFOUR MARKET', -10, 'cat-alimentation');
     const is = buildPassthroughDetector(db);
-    const res = resolveImportCategory(db, 'CARREFOUR MARKET', -99, loadRules(db), is);
+    const res = resolveImportCategory(
+      'CARREFOUR MARKET',
+      -99,
+      loadRules(db),
+      is,
+      buildHistoryIndex(db),
+    );
     expect(res).toEqual({ categoryId: 'cat-alimentation', ruleId: null }); // amount irrelevant for normal labels
   });
 });
