@@ -74,6 +74,7 @@ export interface ConfirmPayload {
   accountId: string;
   selectedHashes?: string[];
   acknowledgedCannotVerify?: boolean;
+  acknowledgedArithmeticFailed?: boolean;
 }
 
 export type ConfirmResponse =
@@ -81,7 +82,7 @@ export type ConfirmResponse =
   | {
       ok: false;
       error:
-        | 'arithmetic_failed'
+        | 'arithmetic_failed_unacknowledged'
         | 'cannot_verify_unacknowledged'
         | 'already_imported'
         | 'unknown_bank'

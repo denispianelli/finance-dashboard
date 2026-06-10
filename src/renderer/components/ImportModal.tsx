@@ -49,6 +49,7 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
     toggleTx,
     toggleAll,
     setAcknowledgedCannotVerify,
+    setAcknowledgedArithmeticFailed,
     confirm,
     skipFile,
     reset,
@@ -246,6 +247,7 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
               autoRouted={sub.autoRouted}
               selected={sub.selected}
               acknowledgedCannotVerify={sub.acknowledgedCannotVerify}
+              acknowledgedArithmeticFailed={sub.acknowledgedArithmeticFailed}
               overlapDismissed={overlapDismissed}
               onDismissOverlap={() => {
                 setOverlapDismissed(true);
@@ -253,6 +255,7 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
               onToggleTx={toggleTx}
               onToggleAll={toggleAll}
               onAcknowledge={setAcknowledgedCannotVerify}
+              onAcknowledgeFailed={setAcknowledgedArithmeticFailed}
               onSkip={skipFile}
               onConfirm={() => {
                 void confirm();
@@ -291,7 +294,9 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
 function canConfirm(sub: SubState): boolean {
   if (sub.step !== 'review') return false;
   if (sub.selected.size === 0) return false;
-  if (sub.extraction.arithmetic.status === 'failed') return false;
+  if (sub.extraction.arithmetic.status === 'failed' && !sub.acknowledgedArithmeticFailed) {
+    return false;
+  }
   if (
     sub.extraction.sourceType === 'pdf' &&
     sub.extraction.arithmetic.status === 'cannot_verify' &&
@@ -559,11 +564,13 @@ interface ReviewViewProps {
   autoRouted: boolean;
   selected: Set<string>;
   acknowledgedCannotVerify: boolean;
+  acknowledgedArithmeticFailed: boolean;
   overlapDismissed: boolean;
   onDismissOverlap: () => void;
   onToggleTx: (hash: string) => void;
   onToggleAll: () => void;
   onAcknowledge: (v: boolean) => void;
+  onAcknowledgeFailed: (v: boolean) => void;
   onSkip: () => void;
   onConfirm: () => void;
   confirmDisabled: boolean;
@@ -576,11 +583,13 @@ function ReviewView({
   autoRouted,
   selected,
   acknowledgedCannotVerify,
+  acknowledgedArithmeticFailed,
   overlapDismissed,
   onDismissOverlap,
   onToggleTx,
   onToggleAll,
   onAcknowledge,
+  onAcknowledgeFailed,
   onSkip,
   onConfirm,
   confirmDisabled,
@@ -606,7 +615,9 @@ function ReviewView({
       <ArithmeticBadge
         extraction={extraction}
         acknowledgedCannotVerify={acknowledgedCannotVerify}
+        acknowledgedArithmeticFailed={acknowledgedArithmeticFailed}
         onAcknowledge={onAcknowledge}
+        onAcknowledgeFailed={onAcknowledgeFailed}
       />
 
       {extraction.periodOverlap.hasOverlap && !overlapDismissed && (
@@ -661,11 +672,15 @@ function ReviewView({
 function ArithmeticBadge({
   extraction,
   acknowledgedCannotVerify,
+  acknowledgedArithmeticFailed,
   onAcknowledge,
+  onAcknowledgeFailed,
 }: {
   extraction: StatementExtraction;
   acknowledgedCannotVerify: boolean;
+  acknowledgedArithmeticFailed: boolean;
   onAcknowledge: (v: boolean) => void;
+  onAcknowledgeFailed: (v: boolean) => void;
 }) {
   const { arithmetic, sourceType } = extraction;
 
@@ -687,11 +702,23 @@ function ArithmeticBadge({
   if (arithmetic.status === 'failed') {
     return (
       <div
-        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm"
+        className="flex flex-col gap-2 rounded-md px-3 py-2 text-sm"
         style={{ background: 'hsl(var(--coral-soft))', color: 'hsl(var(--coral))' }}
       >
-        <XCircle size={14} strokeWidth={1.6} />
-        <span>Écart de {arithmetic.delta !== null ? formatEuro(arithmetic.delta) : '—'}</span>
+        <div className="flex items-center gap-2">
+          <XCircle size={14} strokeWidth={1.6} />
+          <span>Écart de {arithmetic.delta !== null ? formatEuro(arithmetic.delta) : '—'}</span>
+        </div>
+        <label className="flex cursor-pointer items-center gap-2">
+          <Checkbox
+            checked={acknowledgedArithmeticFailed}
+            onCheckedChange={(v) => {
+              onAcknowledgeFailed(v === true);
+            }}
+            aria-label="Importer quand même — je comprends que le solde ne correspond pas aux transactions"
+          />
+          <span>Importer quand même — je comprends que le solde ne correspond pas</span>
+        </label>
       </div>
     );
   }

@@ -18,12 +18,18 @@ export async function insertStatement(
   db: DatabaseSync,
   accountId: string,
   content: Buffer,
-  opts: { acknowledgedCannotVerify?: boolean; selectedHashes?: string[] } = {},
+  opts: {
+    acknowledgedCannotVerify?: boolean;
+    acknowledgedArithmeticFailed?: boolean;
+    selectedHashes?: string[];
+  } = {},
 ): Promise<InsertResult> {
   const extraction = await extractStatement(db, accountId, content);
 
   if (extraction.alreadyImported) throw new ImportError('already_imported');
-  if (extraction.arithmetic.status === 'failed') throw new ImportError('arithmetic_failed');
+  if (extraction.arithmetic.status === 'failed' && opts.acknowledgedArithmeticFailed !== true) {
+    throw new ImportError('arithmetic_failed_unacknowledged');
+  }
   if (extraction.arithmetic.status === 'cannot_verify' && opts.acknowledgedCannotVerify !== true) {
     throw new ImportError('cannot_verify_unacknowledged');
   }
