@@ -19,11 +19,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
-      # PRs validate on Linux only (×1 minutes); the full cross-OS matrix runs
-      # post-merge on `main` — macOS bills ×10 and Windows ×2, so keeping them off
-      # the per-push PR loop is the bulk of the Actions-minutes savings.
+      # Full cross-OS matrix on every PR and push. The repo is public, so Actions
+      # minutes are free — there's no longer a reason to keep macOS/Windows off the
+      # PR loop, and all three are required status checks (see branch-protection.md).
       matrix:
-        os: ${{ github.event_name == 'push' && fromJSON('["ubuntu-latest", "macos-latest", "windows-latest"]') || fromJSON('["ubuntu-latest"]') }}
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4

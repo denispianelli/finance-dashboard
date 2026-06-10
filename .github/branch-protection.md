@@ -33,9 +33,9 @@ as PR comments (see PR #95 for the pattern).
 | Rule                               | Value     | Why                                              |
 | ---------------------------------- | --------- | ------------------------------------------------ |
 | `required_status_checks.strict`    | `true`    | branch must be up to date before merge           |
-| `required_status_checks.contexts`  | see below | the 3 CI checks this repo runs today             |
+| `required_status_checks.contexts`  | see below | the 3 CI OS checks + CodeQL this repo runs today |
 | `enforce_admins`                   | `true`    | maintainer can't bypass either                   |
-| `required_pull_request_reviews`    | 0 reviews | PR required (blocks direct pushes); self-merge    |
+| `required_pull_request_reviews`    | 0 reviews | PR required (blocks direct pushes); self-merge   |
 | `restrictions`                     | `null`    | no actor restriction beyond protection           |
 | `required_linear_history`          | `true`    | squash-merge only, no merge commits              |
 | `allow_force_pushes`               | `false`   | no rewriting history on `main`                   |
@@ -45,12 +45,13 @@ as PR comments (see PR #95 for the pattern).
 
 Status check contexts (must all pass before merge):
 
-- `ubuntu-latest`, `macos-latest`, `windows-latest` — CI matrix (typecheck, tests, build)
+- `ubuntu-latest`, `macos-latest`, `windows-latest` — CI matrix (typecheck, tests, build);
+  the full matrix runs on every PR and push (the repo is public, so Actions minutes are free).
+- `Analyze (JS/TS)` — CodeQL code-scanning (`codeql.yml`).
 
-> CodeQL (`Analyze (JS/TS)`) is **not** a required check: code scanning needs GitHub
-> Advanced Security on a private repo, so it can't upload results here and fails every run.
-> The `codeql.yml` workflow was removed; re-add it (and this context) if the repo goes public
-> or gets GHAS.
+> CodeQL was dropped while the repo was private (code scanning needs GitHub Advanced Security
+> on private repos, so it couldn't upload results and failed every run). The repo is now
+> **public**, so `codeql.yml` is restored and `Analyze (JS/TS)` is a required check again.
 
 ## Apply / re-apply
 
