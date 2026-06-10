@@ -80,7 +80,13 @@ export function disableSync(): void {
 export function getPassphrase(cipher: PassphraseCipher): string | null {
   const enc = read(KEYS.passphraseEnc);
   if (enc === null) return null;
-  return cipher.decrypt(enc);
+  try {
+    return cipher.decrypt(enc);
+  } catch {
+    // Undecryptable (e.g. value written by another machine's keychain) —
+    // treat as unset rather than blowing up sync paths.
+    return null;
+  }
 }
 
 /** After a successful snapshot write: our own snapshot becomes the last seen one. */

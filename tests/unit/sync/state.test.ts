@@ -105,6 +105,18 @@ describe('sync state', () => {
     expect(getLastSeenSnapshotId()).toBeNull();
   });
 
+  it('getPassphrase returns null when the stored value cannot be decrypted', () => {
+    enableSync('/sync/folder', 'pw', fakeCipher);
+    const throwingCipher: PassphraseCipher = {
+      isAvailable: () => true,
+      encrypt: (plain) => plain,
+      decrypt: () => {
+        throw new Error('foreign keychain');
+      },
+    };
+    expect(getPassphrase(throwingCipher)).toBeNull();
+  });
+
   it('enableSync throws and persists nothing when the cipher is unavailable', () => {
     const deadCipher: PassphraseCipher = {
       isAvailable: () => false,

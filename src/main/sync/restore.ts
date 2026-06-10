@@ -49,6 +49,8 @@ export async function restoreFromFolder(
   }
 
   env.closeDb();
+  // .bak files accumulate by design in v1 — manual cleanup; they are the
+  // rollback story (see ADR-017).
   if (existsSync(env.dbPath)) {
     const stamp = new Date().toISOString().replaceAll(':', '-');
     copyFileSync(env.dbPath, `${env.dbPath}.bak-${stamp}`);

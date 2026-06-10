@@ -5,13 +5,19 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { runMigrations } from '../../../src/main/db/migrate';
-import { SNAPSHOT_FILENAME } from '../../../src/main/sync/snapshot';
+import { SNAPSHOT_FILENAME, writeSnapshot } from '../../../src/main/sync/snapshot';
 import type { PassphraseCipher } from '../../../src/main/sync/state';
 
 const dbHolder: { db: DatabaseSync | null } = { db: null };
 let dbPath: string;
 vi.mock('../../../src/main/db', () => ({
-  getDb: () => dbHolder.db,
+  getDb: () => {
+    if (!dbHolder.db) {
+      dbHolder.db = new DatabaseSync(dbPath);
+      runMigrations(dbHolder.db);
+    }
+    return dbHolder.db;
+  },
   getDbPath: () => dbPath,
   closeDb: () => {
     dbHolder.db?.close();
@@ -139,5 +145,40 @@ describe('SyncController', () => {
     vi.useRealTimers();
     await new Promise((r) => setTimeout(r, 300));
     expect(existsSync(join(folder, SNAPSHOT_FILENAME))).toBe(false);
+  });
+
+  it('restore rewrites local sync settings (passphrase re-encrypted locally)', async () => {
+    vi.useRealTimers();
+    // "Other machine" writes a snapshot into the shared folder with DIFFERENT
+    // local settings stored in its DB.
+    const otherDir = mkdtempSync(join(tmpdir(), 'fd-other-'));
+    const otherDbPath = join(otherDir, 'other.sqlite');
+    const other = new DatabaseSync(otherDbPath);
+    runMigrations(other);
+    other
+      .prepare(
+        "INSERT INTO app_settings (key, value) VALUES ('sync.passphraseEnc','foreign-cipher-blob'),('sync.folderPath','/somewhere/else'),('sync.enabled','1')",
+      )
+      .run();
+    await writeSnapshot(other, { folderPath: folder, passphrase: 'pw', machineName: 'other' });
+    other.close();
+    rmSync(otherDir, { recursive: true, force: true });
+
+    controller.enable(folder, 'pw');
+    const result = await controller.restore();
+    expect(result).toEqual({ ok: true });
+
+    // Local settings rewritten: folder is OUR folder, passphrase decryptable locally.
+    if (!dbHolder.db) throw new Error('db should be open after restore');
+    const db = dbHolder.db;
+    const folderRow = db
+      .prepare("SELECT value FROM app_settings WHERE key = 'sync.folderPath'")
+      .get() as { value: string };
+    expect(folderRow.value).toBe(folder);
+    const encRow = db
+      .prepare("SELECT value FROM app_settings WHERE key = 'sync.passphraseEnc'")
+      .get() as { value: string };
+    // fakeCipher encrypts via base64 — decode to confirm local re-encryption
+    expect(Buffer.from(encRow.value, 'base64').toString('utf8')).toBe('pw');
   });
 });

@@ -97,13 +97,20 @@ export class SyncController {
     const folderPath = state.getSyncFolder();
     const passphrase = state.getPassphrase(safeStorageCipher);
     if (folderPath === null || passphrase === null) return { ok: false, error: 'disabled' };
-    return restoreFromFolder(folderPath, passphrase, {
+    const result = await restoreFromFolder(folderPath, passphrase, {
       dbPath: getDbPath(),
       closeDb,
       reopenDb: () => {
         getDb();
       },
     });
+    if (result.ok) {
+      // The restored DB carries the sender's sync settings (their keychain-
+      // encrypted passphrase, their folder path). Rewrite them with this
+      // machine's values so the next snapshot write works here.
+      state.enableSync(folderPath, passphrase, safeStorageCipher);
+    }
+    return result;
   }
 
   needsQuitFlush(): boolean {
