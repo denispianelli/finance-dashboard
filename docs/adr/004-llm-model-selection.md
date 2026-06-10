@@ -51,7 +51,7 @@ terminology (`libelle`, `solde`).
 ## Update (2026-06-08) — hardware-tiered selection
 
 The single pinned model is superseded by a small **registry** with VRAM-based
-selection (see `docs/superpowers/specs/2026-06-08-hardware-tiered-model-design.md`):
+selection (see `docs/superpowers/specs/archive/2026-06-08-hardware-tiered-model-design.md`):
 
 - **Llama-3.2-3B** remains the universal fallback (CPU / no GPU / < 6 GB VRAM).
 - **Qwen2.5-7B-Instruct (Q4_K_M)** is auto-selected on GPUs with ≥ 6 GB total VRAM —

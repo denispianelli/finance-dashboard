@@ -136,3 +136,112 @@ describe('extractTransactions — Société Générale layout (slashes, SOLDE PR
     expect(r.transactions[0]).toMatchObject({ label: 'VIR RECU' });
   });
 });
+
+describe('extractTransactions — multi-line labels (continuation rows)', () => {
+  const LCL: ColumnMapping = {
+    date_col: 42,
+    label_col: 75,
+    debit_col: 433,
+    credit_col: 504,
+    balance_col: null,
+  };
+
+  it('appends continuation lines below a transaction to its label', () => {
+    const p = page([
+      it_('04.05', 42, 100),
+      it_('04.05.26', 366, 100),
+      it_('PRLV SEPA LOLIVIER ASSURANCE', 75, 100),
+      it_('47,36', 458, 100),
+      // continuation rows: indented in the label column, no date, no debit/credit
+      it_('ADMIRAL INTERMEDIARY SERVICES', 81, 88),
+      it_('REF.CLIENT:bc:34295010', 81, 76),
+      // next transaction ends the chain
+      it_('05.05', 42, 64),
+      it_('05.05.26', 366, 64),
+      it_('CB NETFLIX.COM', 75, 64),
+      it_('21,99', 458, 64),
+    ]);
+    const r = extractTransactions([p], LCL);
+    expect(r.transactions).toHaveLength(2);
+    expect(r.transactions[0]?.label).toBe(
+      'PRLV SEPA LOLIVIER ASSURANCE ADMIRAL INTERMEDIARY SERVICES',
+    );
+    expect(r.transactions[1]?.label).toBe('CB NETFLIX.COM');
+  });
+
+  it('keeps the amount intact when a continuation row carries mid-row figures', () => {
+    const p = page([
+      it_('04.05', 42, 100),
+      it_('04.05.26', 366, 100),
+      it_('CB UBER * EATS PE 30/04/26', 75, 100),
+      it_('7,77', 463, 100),
+      // city + original-currency figures sit left of the debit column
+      it_('AMSTERDAM', 81, 88),
+      it_('EUR', 145, 88),
+      it_('7,77', 182, 88),
+    ]);
+    const r = extractTransactions([p], LCL);
+    expect(r.transactions).toHaveLength(1);
+    expect(r.transactions[0]?.label).toBe('CB UBER * EATS PE 30/04/26 AMSTERDAM EUR 7,77');
+    expect(r.transactions[0]?.amount).toBeCloseTo(-7.77, 2);
+  });
+
+  it('does not append footer or full-width rows to the previous transaction', () => {
+    const p = page([
+      it_('07.05', 42, 100),
+      it_('07.05.26', 366, 100),
+      it_('CB SMYTHS TOYS FR 06/05/26', 75, 100),
+      it_('155,99', 453, 100),
+      // page footer: left of the label column / right of the debit column
+      it_('Credit Lyonnais-SA au capital de 2 037 713 591 euros', 36, 80),
+      it_('Page 1 / 4', 524, 60),
+    ]);
+    const r = extractTransactions([p], LCL);
+    expect(r.transactions).toHaveLength(1);
+    expect(r.transactions[0]?.label).toBe('CB SMYTHS TOYS FR 06/05/26');
+  });
+
+  it('does not attach text following a balance marker row', () => {
+    const p = page([
+      it_('30.04', 42, 100),
+      it_('ANCIEN SOLDE', 286, 100),
+      it_('4 934,82', 523, 100),
+      it_('Mention sous le solde', 81, 88),
+      it_('01.05', 42, 76),
+      it_('01.05.26', 366, 76),
+      it_('VIR.PERMANENT MR DUPONT', 75, 76),
+      it_('1 000,00', 445, 76),
+    ]);
+    const r = extractTransactions([p], LCL);
+    expect(r.transactions).toHaveLength(1);
+    expect(r.transactions[0]?.label).toBe('VIR.PERMANENT MR DUPONT');
+    expect(r.openingBalance).toBeCloseTo(4934.82, 2);
+  });
+});
+
+describe('extractTransactions — pure-reference continuation lines', () => {
+  const LCL: ColumnMapping = {
+    date_col: 42,
+    label_col: 75,
+    debit_col: 433,
+    credit_col: 504,
+    balance_col: null,
+  };
+
+  it('skips SEPA reference lines but keeps informative continuations', () => {
+    const p = page([
+      it_('04.05', 42, 100),
+      it_('04.05.26', 366, 100),
+      it_('PRLV SEPA LOLIVIER ASSURANCE', 75, 100),
+      it_('47,36', 458, 100),
+      it_('ADMIRAL INTERMEDIARY SERVICES', 81, 88),
+      it_('REF.CLIENT:bc:34295010', 81, 76),
+      it_('ID.CREANCIER:FR23ZZZ857BC4', 81, 64),
+      it_('REF.MANDAT: ADM1080509560-202007262318', 81, 52),
+    ]);
+    const r = extractTransactions([p], LCL);
+    expect(r.transactions[0]?.label).toBe(
+      'PRLV SEPA LOLIVIER ASSURANCE ADMIRAL INTERMEDIARY SERVICES',
+    );
+  });
+});
