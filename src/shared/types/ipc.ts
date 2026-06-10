@@ -102,7 +102,7 @@ export interface CategorizeBatchPayload {
 }
 
 export type CategorizeBatchResponse =
-  | { ok: true; applied: number }
+  | { ok: true; applied: number; residual: number }
   | { ok: false; error: 'model_unavailable' | 'inference_failed' };
 
 export interface IpcContract {

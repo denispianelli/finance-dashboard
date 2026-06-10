@@ -6,7 +6,7 @@ const dbHolder: { db: DatabaseSync | null } = { db: null };
 vi.mock('../../../src/main/db', () => ({ getDb: () => dbHolder.db }));
 vi.mock('../../../src/main/llm/modelsDir', () => ({ modelsDir: () => '/models' }));
 vi.mock('../../../src/main/llm/llm', () => ({
-  isModelAvailable: vi.fn(),
+  findBestPresentModel: vi.fn(),
   getModel: vi.fn(),
 }));
 vi.mock('../../../src/main/categorize/llm', () => ({ categorizeBatch: vi.fn() }));
@@ -15,8 +15,12 @@ import {
   handleCategorizePending,
   handleCategorizeBatch,
 } from '../../../src/main/ipc/handlers/categorize';
-import { isModelAvailable, getModel } from '../../../src/main/llm/llm';
+import { findBestPresentModel, getModel } from '../../../src/main/llm/llm';
+import type { ModelSpec } from '../../../src/main/llm/modelRegistry';
 import { categorizeBatch } from '../../../src/main/categorize/llm';
+
+const SPEC_3B = { id: 'llama-3.2-3b' } as unknown as ModelSpec;
+const SPEC_7B = { id: 'qwen2.5-7b' } as unknown as ModelSpec;
 
 function insertUncategorized(id: string, label: string): void {
   dbHolder.db
@@ -32,6 +36,7 @@ beforeEach(() => {
   runMigrations(db);
   dbHolder.db = db;
   vi.mocked(getModel).mockResolvedValue({} as never);
+  vi.mocked(findBestPresentModel).mockReturnValue(SPEC_3B);
 });
 
 afterEach(() => {
@@ -52,18 +57,47 @@ describe('handleCategorizePending', () => {
       ],
     });
   });
+
+  it('excludes keys already attempted by the active model', () => {
+    insertUncategorized('t1', 'MYSTERY');
+    insertUncategorized('t2', 'CARREFOUR');
+    dbHolder.db
+      ?.prepare(`INSERT INTO llm_attempts (label_key, model_id) VALUES ('MYSTERY', 'llama-3.2-3b')`)
+      .run();
+
+    expect(handleCategorizePending().groups.map((g) => g.key)).toEqual(['CARREFOUR']);
+  });
+
+  it('keeps attempted keys pending when a different (stronger) model is active', () => {
+    insertUncategorized('t1', 'MYSTERY');
+    dbHolder.db
+      ?.prepare(`INSERT INTO llm_attempts (label_key, model_id) VALUES ('MYSTERY', 'llama-3.2-3b')`)
+      .run();
+    vi.mocked(findBestPresentModel).mockReturnValue(SPEC_7B);
+
+    expect(handleCategorizePending().groups.map((g) => g.key)).toEqual(['MYSTERY']);
+  });
+
+  it('does not filter by attempts when no model is installed (banner needs the full count)', () => {
+    insertUncategorized('t1', 'MYSTERY');
+    dbHolder.db
+      ?.prepare(`INSERT INTO llm_attempts (label_key, model_id) VALUES ('MYSTERY', 'llama-3.2-3b')`)
+      .run();
+    vi.mocked(findBestPresentModel).mockReturnValue(null);
+
+    expect(handleCategorizePending().groups.map((g) => g.key)).toEqual(['MYSTERY']);
+  });
 });
 
 describe('handleCategorizeBatch', () => {
   it('returns model_unavailable without loading the model', async () => {
-    vi.mocked(isModelAvailable).mockReturnValue(false);
+    vi.mocked(findBestPresentModel).mockReturnValue(null);
     const res = await handleCategorizeBatch({ key: 'X', label: 'X' });
     expect(res).toEqual({ ok: false, error: 'model_unavailable' });
     expect(getModel).not.toHaveBeenCalled();
   });
 
   it('applies the suggestion to every row of the key and returns the count', async () => {
-    vi.mocked(isModelAvailable).mockReturnValue(true);
     insertUncategorized('t1', 'VIR PAYPAL 12/03/25');
     insertUncategorized('t2', 'VIR PAYPAL 14/05/25');
     vi.mocked(categorizeBatch).mockResolvedValue([
@@ -72,27 +106,36 @@ describe('handleCategorizeBatch', () => {
 
     const res = await handleCategorizeBatch({ key: 'VIR PAYPAL', label: 'VIR PAYPAL 12/03/25' });
 
-    expect(res).toEqual({ ok: true, applied: 2 });
+    expect(res).toEqual({ ok: true, applied: 2, residual: 0 });
     expect(
       dbHolder.db?.prepare('SELECT category_id FROM transactions WHERE id = ?').get('t2'),
     ).toMatchObject({ category_id: 'cat-alimentation' });
   });
 
-  it('applies nothing when the model returns AUCUNE (null)', async () => {
-    vi.mocked(isModelAvailable).mockReturnValue(true);
+  it('records an attempt and returns the residual when the model returns AUCUNE', async () => {
     insertUncategorized('t1', 'MYSTERY');
+    insertUncategorized('t2', 'MYSTERY 2'); // different key — not part of the residual
     vi.mocked(categorizeBatch).mockResolvedValue([{ id: 'MYSTERY', categoryId: null }]);
 
     const res = await handleCategorizeBatch({ key: 'MYSTERY', label: 'MYSTERY' });
 
-    expect(res).toEqual({ ok: true, applied: 0 });
+    expect(res).toEqual({ ok: true, applied: 0, residual: 1 });
     expect(
-      dbHolder.db?.prepare('SELECT category_id FROM transactions WHERE id = ?').get('t1'),
-    ).toMatchObject({ category_id: null });
+      dbHolder.db?.prepare('SELECT model_id FROM llm_attempts WHERE label_key = ?').get('MYSTERY'),
+    ).toMatchObject({ model_id: 'llama-3.2-3b' });
+  });
+
+  it('does not record an attempt when inference fails (transient — retried next pass)', async () => {
+    vi.mocked(categorizeBatch).mockRejectedValue(new Error('boom'));
+
+    await handleCategorizeBatch({ key: 'X', label: 'X' });
+
+    expect(dbHolder.db?.prepare('SELECT COUNT(*) AS n FROM llm_attempts').get()).toMatchObject({
+      n: 0,
+    });
   });
 
   it('returns inference_failed when the model throws', async () => {
-    vi.mocked(isModelAvailable).mockReturnValue(true);
     vi.mocked(categorizeBatch).mockRejectedValue(new Error('boom'));
     const res = await handleCategorizeBatch({ key: 'X', label: 'X' });
     expect(res).toEqual({ ok: false, error: 'inference_failed' });

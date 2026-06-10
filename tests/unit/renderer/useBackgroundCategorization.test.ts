@@ -39,7 +39,7 @@ describe('useBackgroundCategorization', () => {
   it('makes one call per distinct label, calls onApplied per applied label, ends idle', async () => {
     mockInvoke.mockImplementation((channel) => {
       if (channel === 'categorize:pending') return Promise.resolve({ groups: groups(3) });
-      return Promise.resolve({ ok: true as const, applied: 2 });
+      return Promise.resolve({ ok: true as const, applied: 2, residual: 0 });
     });
     const onApplied = vi.fn();
     const { result } = renderHook(() => useBackgroundCategorization({ onApplied }));
@@ -94,7 +94,7 @@ describe('useBackgroundCategorization', () => {
       call += 1;
       if (call === 1)
         return Promise.resolve({ ok: false as const, error: 'inference_failed' as const });
-      return Promise.resolve({ ok: true as const, applied: 1 });
+      return Promise.resolve({ ok: true as const, applied: 1, residual: 0 });
     });
     const onApplied = vi.fn();
     const { result } = renderHook(() => useBackgroundCategorization({ onApplied }));
@@ -110,7 +110,7 @@ describe('useBackgroundCategorization', () => {
   it('is idempotent: a concurrent second run() is a no-op', async () => {
     mockInvoke.mockImplementation((channel) => {
       if (channel === 'categorize:pending') return Promise.resolve({ groups: groups(3) });
-      return Promise.resolve({ ok: true as const, applied: 1 });
+      return Promise.resolve({ ok: true as const, applied: 1, residual: 0 });
     });
     const onApplied = vi.fn();
     const { result } = renderHook(() => useBackgroundCategorization({ onApplied }));
