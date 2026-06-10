@@ -114,7 +114,9 @@ describe('handleCategorizeBatch', () => {
 
   it('records an attempt and returns the residual when the model returns AUCUNE', async () => {
     insertUncategorized('t1', 'MYSTERY');
-    insertUncategorized('t2', 'MYSTERY 2'); // different key — not part of the residual
+    // Different stable key — not part of the residual. (No digits: since #205 the
+    // key drops every digit-bearing token, so 'MYSTERY 2' would collapse into 'MYSTERY'.)
+    insertUncategorized('t2', 'OTHER SHOP');
     vi.mocked(categorizeBatch).mockResolvedValue([{ id: 'MYSTERY', categoryId: null }]);
 
     const res = await handleCategorizeBatch({ key: 'MYSTERY', label: 'MYSTERY' });
