@@ -38,8 +38,8 @@ function categoryOf(db: DatabaseSync, id: string): string | null {
 describe('setTransactionCategory — propagation', () => {
   it('assigning Transfert flows to every similar label and saves a rule', () => {
     const db = freshDb();
-    const a = seed(db, 'VIREMENT M DENIS PIANELLI 12/03/25');
-    const b = seed(db, 'VIREMENT M DENIS PIANELLI 14/05/25');
+    const a = seed(db, 'VIREMENT M JEAN DUPONT 12/03/25');
+    const b = seed(db, 'VIREMENT M JEAN DUPONT 14/05/25');
     const other = seed(db, 'CB CARREFOUR 01/03/25');
 
     setTransactionCategory(db, { transactionId: a, categoryId: 'cat-transferts' });
@@ -50,17 +50,17 @@ describe('setTransactionCategory — propagation', () => {
 
     const rule = db
       .prepare(
-        "SELECT match_value AS v FROM categorization_rules WHERE category_id = 'cat-transferts' AND match_type = 'contains' AND match_value LIKE 'VIREMENT M DENIS%'",
+        "SELECT match_value AS v FROM categorization_rules WHERE category_id = 'cat-transferts' AND match_type = 'contains' AND match_value LIKE 'VIREMENT M JEAN%'",
       )
       .get() as { v: string } | undefined;
-    expect(rule?.v).toBe('VIREMENT M DENIS PIANELLI');
+    expect(rule?.v).toBe('VIREMENT M JEAN DUPONT');
     db.close();
   });
 
   it('does not override a transaction manually filed under another category', () => {
     const db = freshDb();
-    const a = seed(db, 'VIREMENT MLLE LAURA AMENDOLA 01/01/25');
-    const manual = seed(db, 'VIREMENT MLLE LAURA AMENDOLA 02/02/25', {
+    const a = seed(db, 'VIREMENT MLLE MARIE DURAND 01/01/25');
+    const manual = seed(db, 'VIREMENT MLLE MARIE DURAND 02/02/25', {
       categoryId: 'cat-revenus',
       locked: true,
     });
@@ -74,7 +74,7 @@ describe('setTransactionCategory — propagation', () => {
 
   it('reclassifies the clicked row even when it was manually filed elsewhere', () => {
     const db = freshDb();
-    const a = seed(db, 'VIREMENT M DENIS PIANELLI 03/03/25', {
+    const a = seed(db, 'VIREMENT M JEAN DUPONT 03/03/25', {
       categoryId: 'cat-abonnements',
       locked: true,
     });

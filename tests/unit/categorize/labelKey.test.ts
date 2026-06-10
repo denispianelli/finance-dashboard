@@ -3,8 +3,8 @@ import { stableLabelKey } from '../../../src/main/categorize/labelKey';
 
 describe('stableLabelKey', () => {
   it('strips a trailing date so dated variants share a key', () => {
-    expect(stableLabelKey('VIREMENT M DENIS PIANELLI 12/03/25')).toBe('VIREMENT M DENIS PIANELLI');
-    expect(stableLabelKey('VIREMENT M DENIS PIANELLI 14/05/25')).toBe('VIREMENT M DENIS PIANELLI');
+    expect(stableLabelKey('VIREMENT M JEAN DUPONT 12/03/25')).toBe('VIREMENT M JEAN DUPONT');
+    expect(stableLabelKey('VIREMENT M JEAN DUPONT 14/05/25')).toBe('VIREMENT M JEAN DUPONT');
   });
 
   it('strips LCL dot dates so dated variants share a key', () => {
@@ -23,7 +23,7 @@ describe('stableLabelKey', () => {
   });
 
   it('uppercases and collapses whitespace', () => {
-    expect(stableLabelKey('  Vir.Permanent   Amendola ')).toBe('VIR.PERMANENT AMENDOLA');
+    expect(stableLabelKey('  Vir.Permanent   Durand ')).toBe('VIR.PERMANENT DURAND');
   });
 
   it('falls back to the full label when stripping leaves no significant token', () => {

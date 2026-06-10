@@ -44,8 +44,8 @@ Assigning **Transfert or Remboursement** to a transaction (only these two — fo
 1. Derive a **stable label key** from `label_clean`: uppercase, strip trailing date tokens
    (`dd/mm/yy[yy]`) and long digit runs (transaction refs), collapse whitespace. Must retain a
    significant token (len ≥ 4, not in {VIREMENT, VIR, SEPA, PRLV, CB, INST, …}); else fall back
-   to the full cleaned label. Examples: `VIREMENT M DENIS PIANELLI 12/03/25` → `VIREMENT M DENIS
-PIANELLI`; `CB TICKETMASTER 13/10/25` → `CB TICKETMASTER`.
+   to the full cleaned label. Examples: `VIREMENT M JEAN DUPONT 12/03/25` → `VIREMENT M JEAN
+DUPONT`; `CB TICKETMASTER 13/10/25` → `CB TICKETMASTER`.
 2. **Bulk-apply** the category to every transaction whose `label_clean` contains the key, except
    rows already manually placed in a _different_ category (`user_modified = 1` AND a different
    `category_id`). Each touched row gets `user_modified = 1`.

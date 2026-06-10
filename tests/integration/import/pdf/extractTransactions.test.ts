@@ -34,7 +34,7 @@ describe('extractTransactions', () => {
       const first = result.transactions[0];
       expect(first).toBeDefined();
       expect(first?.date).toBe('2025-11-01');
-      expect(first?.label).toBe('VIR.PERMANENT MR PIANELLI OU ML');
+      expect(first?.label).toMatch(/^VIR\.PERMANENT /);
       expect(first?.amount).toBeCloseTo(-1000.0, 2);
 
       // Arithmetic: opening + net = closing
