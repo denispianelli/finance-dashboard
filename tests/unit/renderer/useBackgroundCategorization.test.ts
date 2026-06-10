@@ -171,4 +171,18 @@ describe('useBackgroundCategorization', () => {
 
     expect(vi.mocked(toast.success)).not.toHaveBeenCalled();
   });
+
+  it('shows no toast when every label fails inference (nothing to report)', async () => {
+    mockInvoke.mockImplementation((channel) => {
+      if (channel === 'categorize:pending') return Promise.resolve({ groups: groups(2) });
+      return Promise.resolve({ ok: false as const, error: 'inference_failed' as const });
+    });
+    const { result } = renderHook(() => useBackgroundCategorization({ onApplied: vi.fn() }));
+
+    await act(async () => {
+      await result.current.run();
+    });
+
+    expect(vi.mocked(toast.success)).not.toHaveBeenCalled();
+  });
 });
