@@ -8,6 +8,24 @@ From v0.1.0 onward this file is generated automatically by
 [Conventional Commits](https://www.conventionalcommits.org/). Do not edit
 released sections by hand.
 
+## [0.4.0](https://github.com/denispianelli/finance-dashboard/compare/v0.3.0...v0.4.0) (2026-06-10)
+
+
+### Features
+
+* **sidebar:** net worth anchor + manual collapse toggle ([#178](https://github.com/denispianelli/finance-dashboard/issues/178)) ([3a07c89](https://github.com/denispianelli/finance-dashboard/commit/3a07c890fec116d8c5464453e6cc0c84b916a926))
+
+
+### Bug Fixes
+
+* **import:** honour the OFX declared charset instead of forcing latin-1 ([#188](https://github.com/denispianelli/finance-dashboard/issues/188)) ([0ff47b2](https://github.com/denispianelli/finance-dashboard/commit/0ff47b2d45eabda33e19c93610ac646542d2d78a)), closes [#182](https://github.com/denispianelli/finance-dashboard/issues/182)
+* **import:** robust amount/date/balance parsing for non-LCL banks ([#187](https://github.com/denispianelli/finance-dashboard/issues/187)) ([ea5ff4c](https://github.com/denispianelli/finance-dashboard/commit/ea5ff4ca55e658833ac6ffd7926b49c816c4ed21))
+* **main:** backend correctness cleanup (label normalize, NaN, no-op, dates, logs) ([#190](https://github.com/denispianelli/finance-dashboard/issues/190)) ([cdf7ea3](https://github.com/denispianelli/finance-dashboard/commit/cdf7ea3e55e76b8f4dc6637ba805fe860edcafb6))
+* **nav:** sidebar import opens the modal; drop dead placeholders ([#176](https://github.com/denispianelli/finance-dashboard/issues/176)) ([e951808](https://github.com/denispianelli/finance-dashboard/commit/e951808a0dfb9fbde01f0d492afb300134d1137a))
+* **renderer:** consistent data invalidation and visible IPC read errors ([#192](https://github.com/denispianelli/finance-dashboard/issues/192)) ([0f2a35c](https://github.com/denispianelli/finance-dashboard/commit/0f2a35cdf08d775df42e86f272cbf65b88a00c76)), closes [#181](https://github.com/denispianelli/finance-dashboard/issues/181)
+* **security:** harden renderer against egress and arbitrary file reads ([#179](https://github.com/denispianelli/finance-dashboard/issues/179)) ([028b9f4](https://github.com/denispianelli/finance-dashboard/commit/028b9f4bd9e8904ac5829d88ac9d20bd1a19bd74))
+* **ui:** remove dead controls — chart range chips, CSV picker, silent categorize ([#189](https://github.com/denispianelli/finance-dashboard/issues/189)) ([4d54d90](https://github.com/denispianelli/finance-dashboard/commit/4d54d90afda28b940f587ec683c687667dd903c8)), closes [#183](https://github.com/denispianelli/finance-dashboard/issues/183)
+
 ## [0.3.0](https://github.com/denispianelli/finance-dashboard/compare/v0.2.0...v0.3.0) (2026-06-08)
 
 
