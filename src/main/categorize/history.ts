@@ -1,50 +1,97 @@
 import type { DatabaseSync } from 'node:sqlite';
+import { stableLabelKey } from './labelKey';
 
 /**
- * Cascade level 2 (design §7): if this label has been seen before and
- * categorized, reuse that category. A user-corrected categorization
- * (user_modified) wins over an auto-applied one; ties break on frequency.
- * This is how manual corrections propagate to future imports — no rules to manage.
+ * Cascade level 2 (design §7): if a similar label has been seen before and
+ * categorized, reuse that category. Lookups are keyed on `stableLabelKey`, not the
+ * exact `label_clean` — labels embedding a date or reference never repeat exactly,
+ * so exact matching let user corrections die with the one row they were made on
+ * (audit #184). A user-corrected categorization (user_modified) wins over an
+ * auto-applied one; ties break on frequency.
  *
- * `labelClean` must be the normalized label (see normalizeLabel).
+ * Built once per import pass (same point-in-time snapshot pattern as
+ * buildPassthroughDetector) and queried per transaction.
  */
-export function findHistoryCategory(db: DatabaseSync, labelClean: string): string | null {
-  const row = db
-    .prepare(
-      `SELECT category_id
-       FROM transactions
-       WHERE label_clean = ? AND category_id IS NOT NULL
-       GROUP BY category_id
-       ORDER BY MAX(user_modified) DESC, COUNT(*) DESC
-       LIMIT 1`,
-    )
-    .get(labelClean) as unknown as { category_id: string } | undefined;
-  return row?.category_id ?? null;
+export interface HistoryIndex {
+  /** Learned category for a label key, or null. */
+  byLabel(labelKey: string): string | null;
+  /** Learned category for a label key + exact amount (to the cent), or null.
+   *  For passthrough payees (PayPal…) the label is ambiguous but a recurring
+   *  amount is reliable: (PAYPAL, 17.20) -> Abonnements. */
+  byLabelAmount(labelKey: string, amount: number): string | null;
 }
 
-/**
- * Like findHistoryCategory but matched on label_clean AND the exact amount (to the
- * cent). For passthrough payees (PayPal…) the label is ambiguous but a recurring
- * amount is reliable: (PayPal, 17.20) -> Abonnements. user_modified wins; ties on
- * frequency. Cent-rounded comparison avoids float-equality pitfalls.
- */
-export function findAmountHistoryCategory(
-  db: DatabaseSync,
-  labelClean: string,
-  amount: number,
-): string | null {
-  const cents = Math.round(amount * 100);
-  const row = db
+interface CategoryStats {
+  userModified: number;
+  count: number;
+}
+
+function bump(
+  index: Map<string, Map<string, CategoryStats>>,
+  key: string,
+  categoryId: string,
+  userModified: number,
+): void {
+  let cats = index.get(key);
+  if (cats === undefined) {
+    cats = new Map<string, CategoryStats>();
+    index.set(key, cats);
+  }
+  const stats = cats.get(categoryId);
+  if (stats === undefined) {
+    cats.set(categoryId, { userModified, count: 1 });
+  } else {
+    stats.userModified = Math.max(stats.userModified, userModified);
+    stats.count += 1;
+  }
+}
+
+/** Highest (user_modified, count) wins — same ordering the previous SQL used. */
+function best(cats: Map<string, CategoryStats> | undefined): string | null {
+  if (cats === undefined) return null;
+  let bestId: string | null = null;
+  let bestStats: CategoryStats | null = null;
+  for (const [id, stats] of cats) {
+    if (
+      bestStats === null ||
+      stats.userModified > bestStats.userModified ||
+      (stats.userModified === bestStats.userModified && stats.count > bestStats.count)
+    ) {
+      bestId = id;
+      bestStats = stats;
+    }
+  }
+  return bestId;
+}
+
+function amountKey(labelKey: string, amount: number): string {
+  return `${labelKey} ${String(Math.round(amount * 100))}`;
+}
+
+export function buildHistoryIndex(db: DatabaseSync): HistoryIndex {
+  const rows = db
     .prepare(
-      `SELECT category_id
+      `SELECT label_clean, amount, category_id, user_modified
          FROM transactions
-        WHERE label_clean = ?
-          AND CAST(ROUND(amount * 100) AS INTEGER) = ?
-          AND category_id IS NOT NULL
-        GROUP BY category_id
-        ORDER BY MAX(user_modified) DESC, COUNT(*) DESC
-        LIMIT 1`,
+        WHERE category_id IS NOT NULL`,
     )
-    .get(labelClean, cents) as unknown as { category_id: string } | undefined;
-  return row?.category_id ?? null;
+    .all() as unknown as {
+    label_clean: string;
+    amount: number;
+    category_id: string;
+    user_modified: number;
+  }[];
+
+  const byLabel = new Map<string, Map<string, CategoryStats>>();
+  const byLabelAmount = new Map<string, Map<string, CategoryStats>>();
+  for (const r of rows) {
+    const key = stableLabelKey(r.label_clean);
+    bump(byLabel, key, r.category_id, r.user_modified);
+    bump(byLabelAmount, amountKey(key, r.amount), r.category_id, r.user_modified);
+  }
+
+  return {
+    byLabel: (labelKey) => best(byLabel.get(labelKey)),
+    byLabelAmount: (labelKey, amount) => best(byLabelAmount.get(amountKey(labelKey, amount))),
+  };
 }
