@@ -64,6 +64,7 @@ interface ReviewArgs {
   extraction: StatementExtraction;
   selected: Set<string>;
   acknowledgedCannotVerify: boolean;
+  acknowledgedArithmeticFailed?: boolean;
   autoRouted: boolean;
 }
 
@@ -80,6 +81,7 @@ function hookInReview(args: ReviewArgs): ReturnType<typeof useImport> {
         accountId: 'acc-a',
         selected: args.selected,
         acknowledgedCannotVerify: args.acknowledgedCannotVerify,
+        acknowledgedArithmeticFailed: args.acknowledgedArithmeticFailed ?? false,
         autoRouted: args.autoRouted,
       },
     },
@@ -90,6 +92,7 @@ function hookInReview(args: ReviewArgs): ReturnType<typeof useImport> {
     toggleTx: vi.fn(),
     toggleAll: vi.fn(),
     setAcknowledgedCannotVerify: vi.fn(),
+    setAcknowledgedArithmeticFailed: vi.fn(),
     confirm: vi.fn(),
     skipFile: vi.fn(),
     reset: vi.fn(),
@@ -127,7 +130,7 @@ describe('ImportModal — review gating + arithmetic badge', () => {
     expect(confirmButton().disabled).toBe(false);
   });
 
-  it('failed arithmetic shows the delta badge and disables confirm', () => {
+  it('failed arithmetic shows the delta badge + override checkbox and disables confirm', () => {
     const failed: ArithmeticCheckResult = {
       status: 'failed',
       openingBalance: 0,
@@ -145,7 +148,29 @@ describe('ImportModal — review gating + arithmetic badge', () => {
     );
     render(<ImportModal open onClose={vi.fn()} />);
     expect(screen.getByText(/Écart de/)).toBeTruthy();
+    expect(screen.getByText(/Importer quand même/)).toBeTruthy();
     expect(confirmButton().disabled).toBe(true);
+  });
+
+  it('failed arithmetic with the override acknowledged enables confirm', () => {
+    const failed: ArithmeticCheckResult = {
+      status: 'failed',
+      openingBalance: 0,
+      closingBalance: 10,
+      computedClosing: 5,
+      delta: -5,
+    };
+    mockedUseImport.mockReturnValue(
+      hookInReview({
+        extraction: makeExtraction(failed),
+        selected: new Set(['h1']),
+        acknowledgedCannotVerify: false,
+        acknowledgedArithmeticFailed: true,
+        autoRouted: false,
+      }),
+    );
+    render(<ImportModal open onClose={vi.fn()} />);
+    expect(confirmButton().disabled).toBe(false);
   });
 
   it('disables confirm when nothing is selected even with passed arithmetic', () => {

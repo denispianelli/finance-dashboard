@@ -11,7 +11,7 @@ export async function handleImportExtract(payload: ExtractPayload): Promise<Extr
     return { ok: true, extraction };
   } catch (e) {
     // Only parsing/file errors are reachable here; insert-phase codes
-    // (arithmetic_failed, cannot_verify_unacknowledged, already_imported)
+    // (arithmetic_failed_unacknowledged, cannot_verify_unacknowledged, already_imported)
     // are surfaced as fields by extractStatement and handled in confirm.
     if (
       e instanceof ImportError &&
