@@ -45,18 +45,20 @@ export async function handleCategorizeBatch(
     .prepare('SELECT id, name FROM categories WHERE deprecated_at IS NULL ORDER BY position')
     .all() as unknown as LlmCategory[];
 
+  let categoryId: string | null;
   try {
     const model = await getModel(dir);
     const results = await categorizeBatch(model, categories, [
       { id: payload.key, label: payload.label },
     ]);
-    const categoryId = results[0]?.categoryId ?? null;
-    if (categoryId === null) {
-      recordAttempt(db, payload.key, spec.id);
-      return { ok: true, applied: 0, residual: countPendingForKey(db, payload.key) };
-    }
-    return { ok: true, applied: applyCategoryToKey(db, payload.key, categoryId), residual: 0 };
+    categoryId = results[0]?.categoryId ?? null;
   } catch {
     return { ok: false, error: 'inference_failed' };
   }
+
+  if (categoryId === null) {
+    recordAttempt(db, payload.key, spec.id);
+    return { ok: true, applied: 0, residual: countPendingForKey(db, payload.key) };
+  }
+  return { ok: true, applied: applyCategoryToKey(db, payload.key, categoryId), residual: 0 };
 }
