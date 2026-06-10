@@ -251,9 +251,15 @@ export function SyncSettingsSection({ Row }: { Row: React.ComponentType<RowProps
   }
 
   async function disable() {
-    await ipc.invoke('sync:disable', {});
-    toast.info('Synchronisation désactivée.');
-    refresh();
+    if (syncing) return;
+    setSyncing(true);
+    try {
+      await ipc.invoke('sync:disable', {});
+      toast.info('Synchronisation désactivée.');
+      refresh();
+    } finally {
+      setSyncing(false);
+    }
   }
 
   const writeLabel = status.dirty
@@ -296,6 +302,7 @@ export function SyncSettingsSection({ Row }: { Row: React.ComponentType<RowProps
           <Button
             variant="destructive"
             size="sm"
+            disabled={syncing}
             onClick={() => {
               void disable();
             }}

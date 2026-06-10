@@ -23,6 +23,12 @@ const RESTORE_ERRORS: Record<string, string> = {
   schema_too_new: "Snapshot créé par une version plus récente de l'app.",
 };
 
+const KEEP_LOCAL_ERRORS: Record<string, string> = {
+  disabled: 'La synchronisation est désactivée.',
+  folder_unavailable: 'Dossier de synchronisation introuvable.',
+  write_failed: "Échec d'écriture du snapshot.",
+};
+
 function describeSnapshot(machineName: string, createdAt: string): string {
   const ts = format(new Date(createdAt), "d MMM yyyy 'à' HH:mm", { locale: fr });
   return `${machineName}, le ${ts}`;
@@ -95,6 +101,8 @@ export function SyncLaunchGate() {
     try {
       const result = await ipc.invoke('sync:restore', {});
       if (result.ok) {
+        // Full reload on purpose: the on-disk DB was swapped — every page
+        // must refetch; a React state refresh would be incomplete.
         window.location.reload();
       } else {
         toast.error(RESTORE_ERRORS[result.error] ?? result.error);
@@ -113,7 +121,7 @@ export function SyncLaunchGate() {
       if (result.ok) {
         toast.success('Snapshot du dossier remplacé par les données de cette machine.');
       } else {
-        toast.error(RESTORE_ERRORS[result.error] ?? result.error);
+        toast.error(KEEP_LOCAL_ERRORS[result.error] ?? result.error);
       }
     } catch {
       toast.error('Erreur inattendue.');
