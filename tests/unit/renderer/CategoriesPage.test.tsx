@@ -39,6 +39,7 @@ beforeEach(() => {
     if (channel === 'categories:create') return Promise.resolve({ category: CATEGORIES[0] });
     if (channel === 'categories:delete') return Promise.resolve({ uncategorizedCount: 0 });
     if (channel === 'categories:rename') return Promise.resolve({ categories: CATEGORIES });
+    if (channel === 'rules:list') return Promise.resolve({ rules: [] });
     return Promise.resolve({ ok: true });
   }) as typeof ipc.invoke);
 });
