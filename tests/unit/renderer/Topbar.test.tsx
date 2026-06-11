@@ -55,23 +55,6 @@ describe('Topbar page title + breadcrumb per route', () => {
   });
 });
 
-describe('Topbar categorization chip', () => {
-  it('shows the chip with the remaining count when categorizing', () => {
-    renderTopbar({ categorizing: true, categorizeRemaining: 7 });
-    expect(screen.getByText(/Catégorisation IA… \(7\)/)).toBeInTheDocument();
-  });
-
-  it('hides the chip when not categorizing', () => {
-    renderTopbar({ categorizing: false, categorizeRemaining: 0 });
-    expect(screen.queryByText(/Catégorisation IA…/)).not.toBeInTheDocument();
-  });
-
-  it('omits the chip by default', () => {
-    renderTopbar();
-    expect(screen.queryByText(/Catégorisation IA…/)).not.toBeInTheDocument();
-  });
-});
-
 describe('Topbar sidebar toggle', () => {
   it('renders the collapse trigger and calls onToggleSidebar on click', async () => {
     const onToggleSidebar = vi.fn();

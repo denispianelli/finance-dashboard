@@ -1,23 +1,14 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import type { BackgroundCategorization } from '@renderer/hooks/useBackgroundCategorization';
-import type { ModelStatusResponse } from '@shared/types/ipc';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { MemoryRouter, Route, Routes, useOutletContext } from 'react-router-dom';
+import type { AppOutletContext } from '@renderer/lib/outletContext';
 
-vi.mock('@renderer/ipc/client', () => ({ ipc: { invoke: vi.fn() } }));
-vi.mock('@renderer/hooks/useBackgroundCategorization', () => ({
-  useBackgroundCategorization: vi.fn(),
-}));
-vi.mock('@renderer/hooks/useModelStatus', () => ({ useModelStatus: vi.fn() }));
 vi.mock('@renderer/hooks/useNetWorthSummary', () => ({
   useNetWorthSummary: () => ({ netWorth: 0, monthDelta: null }),
 }));
 vi.mock('@renderer/components/Sidebar', () => ({ Sidebar: () => <div /> }));
-vi.mock('@renderer/components/model/ModelDownloadIndicator', () => ({
-  ModelDownloadIndicator: () => null,
-}));
 vi.mock('@renderer/components/accounts/CreateAccountModal', () => ({
   CreateAccountModal: () => null,
 }));
@@ -34,57 +25,37 @@ vi.mock('@renderer/components/ImportModal', () => ({
     ) : null,
 }));
 
-import { ipc } from '@renderer/ipc/client';
-import { useBackgroundCategorization } from '@renderer/hooks/useBackgroundCategorization';
-import { useModelStatus } from '@renderer/hooks/useModelStatus';
 import { AppShell } from '@renderer/components/AppShell';
-
-const runMock = vi.fn(() => Promise.resolve());
-
-const bg: BackgroundCategorization = {
-  running: false,
-  pending: 0,
-  remaining: 0,
-  refresh: vi.fn(() => Promise.resolve()),
-  run: runMock,
-};
-
-beforeEach(() => {
-  vi.mocked(useBackgroundCategorization).mockReturnValue(bg);
-  vi.mocked(useModelStatus).mockReturnValue({ state: 'absent' } satisfies ModelStatusResponse);
-  vi.mocked(ipc.invoke).mockImplementation(() => Promise.resolve({ value: false }));
-  runMock.mockClear();
-});
 
 afterEach(() => {
   cleanup();
 });
+
+function TokenProbe() {
+  const { refreshToken } = useOutletContext<AppOutletContext>();
+  return <div data-testid="token">{refreshToken}</div>;
+}
 
 function renderShell() {
   return render(
     <MemoryRouter initialEntries={['/']}>
       <Routes>
         <Route element={<AppShell />}>
-          <Route index element={<div />} />
+          <Route index element={<TokenProbe />} />
         </Route>
       </Routes>
     </MemoryRouter>,
   );
 }
 
-describe('AppShell post-import categorization', () => {
-  it('runs a background pass automatically after a successful import', async () => {
+describe('AppShell', () => {
+  it('bumps the refresh token after a successful import', async () => {
     renderShell();
+    expect(screen.getByTestId('token').textContent).toBe('0');
 
     await userEvent.click(screen.getByRole('button', { name: 'Importer un relevé' }));
     await userEvent.click(screen.getByRole('button', { name: 'simulate-import-success' }));
 
-    expect(runMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('does not run a pass on mount', () => {
-    renderShell();
-
-    expect(runMock).not.toHaveBeenCalled();
+    expect(screen.getByTestId('token').textContent).toBe('1');
   });
 });
