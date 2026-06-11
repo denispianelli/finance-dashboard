@@ -19,18 +19,19 @@ no analytics, no cloud, no bank connections. Renderer does no I/O — everything
 main. CSP stays `'self'`. See ADR-002.
 
 The rule is about _data_, not packets: the only outbound calls allowed are an opt-in version
-check (sends no data, receives a version number) and the initial LLM model download — both from
-the main process only, never the renderer. Anything that would transmit user/financial data is
-forbidden, full stop.
+check (sends no data, receives a version number) and — until the ADR-019 removal lands — the
+initial LLM model download, both from the main process only, never the renderer. Anything that
+would transmit user/financial data is forbidden, full stop.
 
 **Scope guard:** ADR-009 (as amended 2026-06-10) cut conversational AI, NL search, generative
 insights, multi-window, budgets, and market price feeds / position-level investment tracking.
 Do not re-propose them. **In scope** since Amendment 2: full patrimoine by cash flows +
 declared values — mortgage (deterministic amortization), declared assets (primary residence),
 allocation with targets, TRI/TTWROR from flows + declared balances, deterministic projections.
-The LLM is a
-background batch classifier only (column mapping + categorization) — it never converses or
-reasons over figures user-facing.
+**No LLM** (ADR-019,
+2026-06-11): the embedded model is being removed — categorization and bank mapping are
+deterministic (history/rules + a manual mapping assistant). Do not propose LLM-powered
+features; until the removal lands the existing classifier is frozen (no further investment).
 
 ## Code
 
