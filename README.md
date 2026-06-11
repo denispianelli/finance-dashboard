@@ -29,7 +29,7 @@ The app:
   balances;
 - **categorizes them** via deterministic rules and learned history — every correction you
   make becomes a rule, so the residual shrinks over time and every label stays
-  human-reviewable (the embedded LLM classifier is being removed — ADR-019);
+  human-reviewable (deterministic history + rules — the embedded LLM was removed, ADR-019);
 - **consolidates all accounts** (current, joint, savings, PEA, AV) by cash flows plus
   user-declared balances — internal transfers are neutralized, never counted as income or
   expense;
@@ -43,13 +43,12 @@ The app:
 natural-language search, generative insights, budgets, market price feeds and position-level
 investment tracking. Patrimoine is tracked from your own statements and declared values —
 mortgage amortization, asset allocation, money-weighted returns (TRI), deterministic
-projections — all computed locally, no network. The LLM classifies in the background; it
-never converses.
+projections — all computed locally, no network.
 
 ## Stack
 
 Electron · TypeScript · React · shadcn/ui · Tailwind · Recharts · `pdfjs-dist` ·
-`node:sqlite` (`node-llama-cpp` on its way out — ADR-019).
+`node:sqlite`.
 
 > Persistence engine and the no-LLM stance are deliberate decisions, not casual choices — the
 > **[Architecture Decision Records](docs/adr/)** are authoritative (notably ADR-002 privacy,

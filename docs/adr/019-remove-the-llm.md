@@ -1,6 +1,9 @@
 # ADR-019 — Remove the embedded LLM
 
 - **Status** : Accepted
+- **Executed** : 2026-06-11 — phase 1a #212 (rules), phase 1b #214 (mapping
+  assistant), phase 2 (classifier + model download removal, migration 019,
+  startup model cleanup) in this PR.
 - **Date** : 2026-06-11
 - **Category** : LLM, Product, Architecture
 - **Supersedes** : ADR-004 (model selection), ADR-013 (LLM batch categorization)

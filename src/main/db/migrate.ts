@@ -17,6 +17,7 @@ import sql015 from './migrations/015_app_settings.sql?raw';
 import sql016 from './migrations/016_index_label_amount.sql?raw';
 import sql017 from './migrations/017_llm_attempts.sql?raw';
 import sql018 from './migrations/018_imports_allow_reimport.sql?raw';
+import sql019 from './migrations/019_drop_llm_attempts.sql?raw';
 
 interface Migration {
   version: number;
@@ -46,6 +47,7 @@ const MIGRATIONS: Migration[] = [
   { version: 16, sql: sql016 },
   { version: 17, sql: sql017 },
   { version: 18, sql: sql018, rebuildsTables: true },
+  { version: 19, sql: sql019 },
 ];
 
 export function runMigrations(db: DatabaseSync): void {

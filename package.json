@@ -28,7 +28,6 @@
     "test:all": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write src",
-    "setup:cuda": "python3 scripts/setup-cuda-libs.py",
     "test:e2e": "npm run build && playwright test",
     "prepare": "husky"
   },
@@ -89,7 +88,6 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "lucide-react": "^1.17.0",
-    "node-llama-cpp": "^3.18.1",
     "pdfjs-dist": "^5.7.284",
     "react": "^19.2.7",
     "react-day-picker": "^10.0.1",
