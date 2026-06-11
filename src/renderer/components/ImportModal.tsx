@@ -649,6 +649,20 @@ function ReviewView({
         </div>
       )}
 
+      {extraction.alreadyImported && (
+        <div
+          className="rounded-md border p-3 text-sm"
+          style={{
+            background: 'hsl(var(--flag-soft))',
+            color: 'hsl(var(--flag))',
+            borderColor: 'hsl(var(--flag))',
+          }}
+        >
+          Ce fichier a déjà été importé — les lignes déjà en base sont marquées comme doublons ;
+          seules les transactions sélectionnées seront ajoutées.
+        </div>
+      )}
+
       <TransactionReviewTable
         transactions={extraction.transactions}
         selected={selected}

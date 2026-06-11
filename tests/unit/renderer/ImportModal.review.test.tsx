@@ -266,4 +266,32 @@ describe('ImportModal — review gating + arithmetic badge', () => {
     expect(screen.getByText(/chevauche un import existant/)).toBeTruthy();
     expect(screen.getByText(/2026-01-05/)).toBeTruthy();
   });
+
+  it('renders an informative banner when the file was already imported', () => {
+    mockedUseImport.mockReturnValue(
+      hookInReview({
+        extraction: makeExtraction(PASSED, { alreadyImported: true }),
+        selected: new Set(['h1']),
+        acknowledgedCannotVerify: false,
+        autoRouted: false,
+      }),
+    );
+    render(<ImportModal open onClose={vi.fn()} />);
+    expect(screen.getByText(/fichier a déjà été importé/)).toBeTruthy();
+    // Still importable: the selection drives the confirm, not the file-level flag.
+    expect(confirmButton().disabled).toBe(false);
+  });
+
+  it('shows no already-imported banner for a fresh file', () => {
+    mockedUseImport.mockReturnValue(
+      hookInReview({
+        extraction: makeExtraction(PASSED),
+        selected: new Set(['h1']),
+        acknowledgedCannotVerify: false,
+        autoRouted: false,
+      }),
+    );
+    render(<ImportModal open onClose={vi.fn()} />);
+    expect(screen.queryByText(/fichier a déjà été importé/)).toBeNull();
+  });
 });

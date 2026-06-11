@@ -72,7 +72,6 @@ const ERROR_MESSAGES: Partial<Record<string, string>> = {
   arithmetic_failed_unacknowledged:
     'Le solde ne correspond pas aux transactions. Import non confirmé.',
   cannot_verify_unacknowledged: 'Vérification du solde non confirmée.',
-  already_imported: 'Déjà importé — rien de nouveau.',
   model_unavailable: "Modèle IA non installé — impossible d'analyser une nouvelle banque.",
   inference_failed: "L'IA n'a pas réussi à lire la structure de ce relevé.",
 };
@@ -365,15 +364,6 @@ export function useImport(): UseImport {
           accountId,
           insertedCount: res.insertedCount,
           autoRouted,
-        },
-      ]);
-    } else if (res.error === 'already_imported') {
-      await advance(cur.files, cur.index, [
-        ...cur.results,
-        {
-          fileName: file.fileName,
-          status: 'skipped',
-          reason: ERROR_MESSAGES.already_imported ?? '',
         },
       ]);
     } else {
