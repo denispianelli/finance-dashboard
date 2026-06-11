@@ -18,10 +18,9 @@ here.
 no analytics, no cloud, no bank connections. Renderer does no I/O — everything via typed IPC to
 main. CSP stays `'self'`. See ADR-002.
 
-The rule is about _data_, not packets: the only outbound calls allowed are an opt-in version
-check (sends no data, receives a version number) and — until the ADR-019 removal lands — the
-initial LLM model download, both from the main process only, never the renderer. Anything that
-would transmit user/financial data is forbidden, full stop.
+The rule is about _data_, not packets: the only outbound call allowed is an opt-in version
+check (sends no data, receives a version number), from the main process only, never the
+renderer. Anything that would transmit user/financial data is forbidden, full stop.
 
 **Scope guard:** ADR-009 (as amended 2026-06-10) cut conversational AI, NL search, generative
 insights, multi-window, budgets, and market price feeds / position-level investment tracking.
@@ -29,9 +28,9 @@ Do not re-propose them. **In scope** since Amendment 2: full patrimoine by cash 
 declared values — mortgage (deterministic amortization), declared assets (primary residence),
 allocation with targets, TRI/TTWROR from flows + declared balances, deterministic projections.
 **No LLM** (ADR-019,
-2026-06-11): the embedded model is being removed — categorization and bank mapping are
-deterministic (history/rules + a manual mapping assistant). Do not propose LLM-powered
-features; until the removal lands the existing classifier is frozen (no further investment).
+2026-06-11): the embedded model was removed (phases #212/#214 + this PR) — categorization and
+bank mapping are deterministic (history/rules + a manual mapping assistant). Do not propose
+LLM-powered features.
 
 ## Working loop (single maintainer)
 
@@ -96,9 +95,8 @@ one-liner ("go for the mortgage module") — these rules fill in the rest.
   the lifecycle (this avoids cutting your own session's working directory out from under it).
   The legacy hand-managed `.worktrees/` path stays gitignored if you ever need it, but the tool
   is the default.
-- `spike-fixtures/` and `models/` are gitignored (real bank data + the ~1.9 GB model) —
-  **never commit them**. A worktree that needs them gets a symlink, e.g.
-  `ln -sfn <repo>/spike-fixtures <worktree>/spike-fixtures` (same for `models`).
+- `spike-fixtures/` is gitignored (real bank data) — **never commit it**. A worktree that
+  needs it gets a symlink, e.g. `ln -sfn <repo>/spike-fixtures <worktree>/spike-fixtures`.
 
 ## Definition of done
 
