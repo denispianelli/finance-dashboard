@@ -59,9 +59,7 @@ function validate(db: DatabaseSync, input: RuleInput): string {
   }
   if (input.matchType === 'regex') {
     try {
-      // Validate the regex compiles — result intentionally discarded
-      const _ = new RegExp(value);
-      void _;
+      new RegExp(value);
     } catch {
       throw new InvalidRuleError('regex does not compile');
     }
