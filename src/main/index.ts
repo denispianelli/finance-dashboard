@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { registerAllHandlers } from './ipc/register';
 import { getDb, closeDb } from './db';
 import { detectTransfers } from './transfers/detect';
+import { removeDownloadedModels } from './cleanup/removeDownloadedModels';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -55,6 +56,13 @@ void app.whenReady().then(() => {
     // best-effort — never block startup on this; log so a persistent failure
     // (e.g. a SQL regression) leaves a trail instead of silently stale flags.
     console.error('startup: transfer detection failed', e);
+  }
+  // ADR-019: reclaim the disk space of previously downloaded LLM models.
+  try {
+    removeDownloadedModels(app.getPath('userData'));
+  } catch (e) {
+    // best-effort — a locked file must never block startup.
+    console.error('startup: model cleanup failed', e);
   }
   registerAllHandlers();
   createWindow();
