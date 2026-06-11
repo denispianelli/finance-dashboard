@@ -118,7 +118,6 @@ describe('toTxRow', () => {
       catName: 'Non catégorisé',
       catColor: '#6E6E78',
       amountKind: 'expense',
-      uncategorized: true,
     });
   });
   it('uses the category fields when present', () => {

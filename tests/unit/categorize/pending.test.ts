@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { runMigrations } from '../../../src/main/db/migrate';
-import { listPendingGroups, applyCategoryToKey } from '../../../src/main/categorize/pending';
+import {
+  listPendingGroups,
+  applyCategoryToKey,
+  countPendingForKey,
+} from '../../../src/main/categorize/pending';
 
 let db: DatabaseSync;
 
@@ -63,6 +67,15 @@ describe('listPendingGroups', () => {
 
     expect(listPendingGroups(db).map((g) => g.key)).toEqual(['CARREFOUR MARKET']);
   });
+
+  it('excludes keys in excludeKeys (labels the active model already failed on)', () => {
+    insertTx({ id: 't1', label: 'MYSTERY SHOP' });
+    insertTx({ id: 't2', label: 'CARREFOUR MARKET' });
+
+    const keys = listPendingGroups(db, new Set(['MYSTERY SHOP'])).map((g) => g.key);
+
+    expect(keys).toEqual(['CARREFOUR MARKET']);
+  });
 });
 
 describe('applyCategoryToKey', () => {
@@ -97,5 +110,23 @@ describe('applyCategoryToKey', () => {
         category_id: 'cat-loisirs',
       },
     );
+  });
+});
+
+describe('countPendingForKey', () => {
+  it('counts only still-uncategorized rows sharing the stable key', () => {
+    insertTx({ id: 't1', label: 'VIR LOYER 12/03/25' });
+    insertTx({ id: 't2', label: 'VIR LOYER 14/05/25' });
+    insertTx({ id: 't3', label: 'VIR LOYER 15/05/25', categoryId: 'cat-logement' });
+    insertTx({ id: 't4', label: 'CARREFOUR' });
+
+    expect(countPendingForKey(db, 'VIR LOYER')).toBe(2);
+  });
+
+  it('ignores internal transfers', () => {
+    insertTx({ id: 't1', label: 'VIR LOYER 12/03/25' });
+    insertTx({ id: 't2', label: 'VIR LOYER 14/05/25', internal: true });
+
+    expect(countPendingForKey(db, 'VIR LOYER')).toBe(1);
   });
 });

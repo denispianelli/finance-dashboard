@@ -5,7 +5,7 @@ import { ipc } from '@renderer/ipc/client';
 export interface BackgroundCategorization {
   /** True while a categorization pass is in flight. */
   running: boolean;
-  /** Count of uncategorized transactions (Σ group counts) — drives the Topbar trigger. */
+  /** Count of uncategorized transactions (Σ group counts) — drives the install banner. */
   pending: number;
   /** Distinct labels still to process in the active pass — drives the running count. */
   remaining: number;
@@ -16,10 +16,12 @@ export interface BackgroundCategorization {
 }
 
 /**
- * Background classifier for the residual. The heavy LLM pass is user-triggered (the
- * Topbar button). Each *distinct* label is classified in its own call (no batch
- * anchoring) and the result fans out to all rows sharing it (see applyCategoryToKey),
- * with `onApplied` fired per label so the views refetch progressively.
+ * Background classifier for the residual. The pass runs automatically (after an
+ * import, or when the model install finishes) — never user-triggered. Each
+ * *distinct* label is classified in its own call (no batch anchoring) and the
+ * result fans out to all rows sharing it (see applyCategoryToKey), with
+ * `onApplied` fired per label so the views refetch progressively. One summary
+ * toast reports what was applied and what is left to do manually.
  */
 export function useBackgroundCategorization(opts: {
   onApplied: () => void;
@@ -40,6 +42,8 @@ export function useBackgroundCategorization(opts: {
     if (runningRef.current) return;
     runningRef.current = true;
 
+    let applied = 0;
+    let residual = 0;
     try {
       const { groups } = await ipc.invoke('categorize:pending', {});
       if (groups.length === 0) {
@@ -53,14 +57,15 @@ export function useBackgroundCategorization(opts: {
       for (const group of groups) {
         const res = await ipc.invoke('categorize:batch', { key: group.key, label: group.label });
 
-        // The model isn't installed: nothing will ever succeed, so stop the pass
-        // and tell the user why (otherwise the button just flashes and resets).
-        if (!res.ok && res.error === 'model_unavailable') {
-          toast.error('Modèle IA non installé — installez-le dans Paramètres pour catégoriser.');
-          break;
-        }
+        // No model (e.g. removed in Settings mid-pass): stop silently — the
+        // install banner is the call to action, not an error toast.
+        if (!res.ok && res.error === 'model_unavailable') break;
         // On `inference_failed` we just skip this label and carry on.
-        if (res.ok && res.applied > 0) onApplied();
+        if (res.ok) {
+          applied += res.applied;
+          residual += res.residual;
+          if (res.applied > 0) onApplied();
+        }
 
         setRemaining((r) => Math.max(0, r - 1));
       }
@@ -69,6 +74,12 @@ export function useBackgroundCategorization(opts: {
       setRunning(false);
       setRemaining(0);
       await refresh();
+    }
+    if (applied > 0 || residual > 0) {
+      const s = applied > 1 ? 's' : '';
+      toast.success(
+        `Catégorisation terminée — ${String(applied)} transaction${s} catégorisée${s}, ${String(residual)} à classer manuellement`,
+      );
     }
   }, [onApplied, refresh]);
 

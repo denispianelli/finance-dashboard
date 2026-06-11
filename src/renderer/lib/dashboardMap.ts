@@ -65,7 +65,6 @@ export function toTxRow(tx: DashboardTransaction): TxRow {
     sub: tx.labelRaw,
     catColor: tx.categoryColor ?? NEUTRAL_CAT_COLOR,
     catName: tx.categoryName ?? 'Non catégorisé',
-    uncategorized: tx.categoryId === null,
     amount: tx.amount,
     amountKind: txKind(tx),
     edited: tx.editedAt !== null,

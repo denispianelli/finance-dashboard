@@ -72,36 +72,6 @@ describe('Topbar categorization chip', () => {
   });
 });
 
-describe('Topbar categorize trigger button', () => {
-  it('shows a "Catégoriser (N)" button when there is a residual and no pass is running', () => {
-    renderTopbar({ pendingCount: 4, onCategorize: () => undefined });
-    expect(screen.getByRole('button', { name: /Catégoriser 4 transactions/i })).toBeInTheDocument();
-  });
-
-  it('runs the pass on click', async () => {
-    const onCategorize = vi.fn();
-    renderTopbar({ pendingCount: 4, onCategorize });
-    await userEvent.click(screen.getByRole('button', { name: /Catégoriser 4 transactions/i }));
-    expect(onCategorize).toHaveBeenCalledTimes(1);
-  });
-
-  it('hides the button when nothing is pending', () => {
-    renderTopbar({ pendingCount: 0, onCategorize: () => undefined });
-    expect(screen.queryByText(/Catégoriser \(/)).not.toBeInTheDocument();
-  });
-
-  it('shows the running chip (not the button) while a pass is in flight', () => {
-    renderTopbar({
-      categorizing: true,
-      categorizeRemaining: 3,
-      pendingCount: 3,
-      onCategorize: () => undefined,
-    });
-    expect(screen.getByText(/Catégorisation IA… \(3\)/)).toBeInTheDocument();
-    expect(screen.queryByText(/Catégoriser \(/)).not.toBeInTheDocument();
-  });
-});
-
 describe('Topbar sidebar toggle', () => {
   it('renders the collapse trigger and calls onToggleSidebar on click', async () => {
     const onToggleSidebar = vi.fn();

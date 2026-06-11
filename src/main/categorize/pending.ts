@@ -3,14 +3,28 @@ import type { PendingGroup } from '@shared/types/import';
 import { stableLabelKey } from './labelKey';
 import { buildPassthroughDetector } from './passthrough';
 
+/** Fetch all still-uncategorized, non-internal rows for local grouping/filtering. */
+function fetchUncategorizedRows(db: DatabaseSync): { id: string; label_clean: string }[] {
+  return db
+    .prepare(
+      `SELECT id, label_clean FROM transactions
+        WHERE category_id IS NULL AND is_internal_transfer = 0`,
+    )
+    .all() as unknown as { id: string; label_clean: string }[];
+}
+
 /**
  * Pending transactions grouped by their stable label key (see stableLabelKey).
  * Each distinct label is one group, so the LLM classifies it once and the result
  * fans out to all rows sharing it — killing the per-row inconsistency we measured.
  * Oldest-first: the representative `label` is the oldest row's faithful label_raw.
  * Passthrough payees (PayPal…) are excluded — they are categorized by amount, not label.
+ * Keys in excludeKeys (already attempted by the active model) are excluded too.
  */
-export function listPendingGroups(db: DatabaseSync): PendingGroup[] {
+export function listPendingGroups(
+  db: DatabaseSync,
+  excludeKeys: ReadonlySet<string> = new Set(),
+): PendingGroup[] {
   const rows = db
     .prepare(
       `SELECT id, label_raw, label_clean
@@ -28,7 +42,7 @@ export function listPendingGroups(db: DatabaseSync): PendingGroup[] {
     else groups.set(key, { key, label: r.label_raw, count: 1 });
   }
   const isPassthrough = buildPassthroughDetector(db);
-  return [...groups.values()].filter((g) => !isPassthrough(g.key));
+  return [...groups.values()].filter((g) => !isPassthrough(g.key) && !excludeKeys.has(g.key));
 }
 
 /**
@@ -38,12 +52,7 @@ export function listPendingGroups(db: DatabaseSync): PendingGroup[] {
  * history tier reuses it on the next import; no rule is created. Returns the count.
  */
 export function applyCategoryToKey(db: DatabaseSync, key: string, categoryId: string): number {
-  const rows = db
-    .prepare(
-      `SELECT id, label_clean FROM transactions
-        WHERE category_id IS NULL AND is_internal_transfer = 0`,
-    )
-    .all() as unknown as { id: string; label_clean: string }[];
+  const rows = fetchUncategorizedRows(db);
 
   const ids = rows.filter((r) => stableLabelKey(r.label_clean) === key).map((r) => r.id);
   if (ids.length === 0) return 0;
@@ -56,4 +65,9 @@ export function applyCategoryToKey(db: DatabaseSync, key: string, categoryId: st
     )
     .run(categoryId, ...ids);
   return Number(res.changes);
+}
+
+/** Still-uncategorized transactions sharing this stable key (feeds the residual toast). */
+export function countPendingForKey(db: DatabaseSync, key: string): number {
+  return fetchUncategorizedRows(db).filter((r) => stableLabelKey(r.label_clean) === key).length;
 }
