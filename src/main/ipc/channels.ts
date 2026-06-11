@@ -36,4 +36,8 @@ export const CHANNELS = {
   modelDetectSelection: 'model:selection:detect',
   settingsGetCategorizeOptOut: 'settings:getCategorizeOptOut',
   settingsSetCategorizeOptOut: 'settings:setCategorizeOptOut',
+  rulesList: 'rules:list',
+  rulesCreate: 'rules:create',
+  rulesUpdate: 'rules:update',
+  rulesDelete: 'rules:delete',
 } as const satisfies Record<string, IpcChannel>;
