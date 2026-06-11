@@ -23,9 +23,14 @@ check (sends no data, receives a version number) and the initial LLM model downl
 the main process only, never the renderer. Anything that would transmit user/financial data is
 forbidden, full stop.
 
-**Scope guard:** ADR-009 cut conversational AI, NL search, generative insights, investments
-tracking, multi-window. Do not re-propose them. The LLM is a background batch classifier only
-(column mapping + categorization) — it never converses or reasons over figures user-facing.
+**Scope guard:** ADR-009 (as amended 2026-06-10) cut conversational AI, NL search, generative
+insights, multi-window, budgets, and market price feeds / position-level investment tracking.
+Do not re-propose them. **In scope** since Amendment 2: full patrimoine by cash flows +
+declared values — mortgage (deterministic amortization), declared assets (primary residence),
+allocation with targets, TRI/TTWROR from flows + declared balances, deterministic projections.
+The LLM is a
+background batch classifier only (column mapping + categorization) — it never converses or
+reasons over figures user-facing.
 
 ## Code
 
