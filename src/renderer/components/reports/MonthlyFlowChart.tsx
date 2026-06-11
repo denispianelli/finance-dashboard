@@ -1,4 +1,6 @@
+import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 import { Overline } from '../ui/overline';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '../ui/chart';
 import { formatEuro } from '../../lib/euro';
 import type { MonthlyFlow } from '../../lib/reports';
 
@@ -7,13 +9,15 @@ export interface MonthlyFlowChartProps {
   title: string;
 }
 
-const HEIGHT = 200;
-const PLOT = HEIGHT - 28; // room for the labels under each column
+const SERIES = {
+  income: { label: 'Entrées', color: 'hsl(var(--sage))' },
+  expense: { label: 'Sorties', color: 'hsl(var(--coral))' },
+} satisfies ChartConfig;
 
 /** Paired income/expense bars per bucket (month or day) — the kit's centrepiece
- *  "Entrées et sorties" chart: sage in, coral out, scaled to a shared maximum. */
+ *  "Entrées et sorties" chart: sage in, coral out, scaled to a shared maximum.
+ *  Same recharts + kit-tooltip pattern as the dashboard's ChartCard. */
 export function MonthlyFlowChart({ data, title }: MonthlyFlowChartProps) {
-  const max = Math.max(1, ...data.flatMap((d) => [d.income, d.expense]));
   const hasData = data.some((d) => d.income > 0 || d.expense > 0);
 
   return (
@@ -35,39 +39,56 @@ export function MonthlyFlowChart({ data, title }: MonthlyFlowChartProps) {
         </div>
       </div>
       {hasData ? (
-        <div className="flex w-full items-end" style={{ height: HEIGHT }}>
-          {data.map((d, i) => {
-            const grow = {
-              transformOrigin: 'bottom',
-              animation: `bar-grow 0.6s cubic-bezier(0.4, 0, 0.2, 1) both`,
-              animationDelay: `${String(i * 45)}ms`,
-            } as const;
-            return (
-              <div key={i} className="flex h-full flex-1 flex-col items-center">
-                <div className="flex w-full flex-1 items-end justify-center gap-[3px]">
-                  <div
-                    data-chart-bar
-                    title={`Entrées ${formatEuro(d.income)}`}
-                    className="w-[32%] max-w-[14px] rounded-t-[2px] bg-sage/85"
-                    style={{ height: (d.income / max) * PLOT, ...grow }}
-                  />
-                  <div
-                    data-chart-bar
-                    title={`Sorties ${formatEuro(d.expense)}`}
-                    className="w-[32%] max-w-[14px] rounded-t-[2px] bg-coral/85"
-                    style={{ height: (d.expense / max) * PLOT, ...grow }}
-                  />
-                </div>
-                <span className="mt-2 font-mono text-[10px] text-paper-dim">{d.label}</span>
-              </div>
-            );
-          })}
-        </div>
+        <ChartContainer config={SERIES} className="h-[200px] w-full">
+          <BarChart data={data} margin={{ top: 4, right: 0, bottom: 0, left: 0 }} barGap={3}>
+            <CartesianGrid vertical={false} stroke="var(--line-1)" />
+            <XAxis
+              dataKey="label"
+              axisLine={false}
+              tickLine={false}
+              interval={0}
+              tickMargin={8}
+              tick={{ fill: 'var(--paper-dim)', fontSize: 10, fontFamily: 'var(--font-mono)' }}
+            />
+            <ChartTooltip
+              cursor={{ fill: 'var(--ink-3)', opacity: 0.5 }}
+              content={
+                <ChartTooltipContent
+                  className="border-line-2 bg-ink-2"
+                  formatter={(value, name) => {
+                    const series = SERIES[name as keyof typeof SERIES];
+                    return (
+                      <div className="flex w-full items-center gap-2">
+                        <span
+                          className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
+                          style={{ background: series.color }}
+                        />
+                        <span className="text-paper-mute">{series.label}</span>
+                        <span className="ml-auto font-mono tabular-nums text-paper">
+                          {formatEuro(Number(value))}
+                        </span>
+                      </div>
+                    );
+                  }}
+                />
+              }
+            />
+            <Bar
+              dataKey="income"
+              fill="hsl(var(--sage) / 0.85)"
+              barSize={14}
+              radius={[2, 2, 0, 0]}
+            />
+            <Bar
+              dataKey="expense"
+              fill="hsl(var(--coral) / 0.85)"
+              barSize={14}
+              radius={[2, 2, 0, 0]}
+            />
+          </BarChart>
+        </ChartContainer>
       ) : (
-        <div
-          className="flex w-full items-center justify-center text-sm text-paper-mute"
-          style={{ height: HEIGHT }}
-        >
+        <div className="flex h-[200px] w-full items-center justify-center text-sm text-paper-mute">
           Pas de données sur cette période.
         </div>
       )}
