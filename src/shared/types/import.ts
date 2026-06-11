@@ -50,18 +50,6 @@ export interface StatementExtraction {
   sourceType: ImportFileType;
 }
 
-/** One uncategorized transaction sent to the LLM tier, keyed by its DB id. */
-export interface CategorizeItem {
-  id: string; // transaction id
-  label: string;
-}
-
-/** The LLM's suggestion for one transaction (categoryId null = none fit). */
-export interface CategorizeResult {
-  id: string;
-  categoryId: string | null;
-}
-
 export interface NormalizedTx {
   date: string; // ISO yyyy-mm-dd
   label: string;
