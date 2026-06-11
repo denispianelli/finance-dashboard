@@ -4,7 +4,14 @@ import type { CategoryDTO } from '@shared/types/category';
 import type { RuleMatchType } from '@shared/types/rules';
 import { suggestRuleToken } from '@shared/categorize/labelKey';
 import { ipc } from '@renderer/ipc/client';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 import { Button } from '../ui/button';
 
 /** What the reassign toast hands over: the corrected label + chosen category. */
@@ -14,7 +21,7 @@ export interface RuleProposal {
 }
 
 const FIELD =
-  'h-9 w-full rounded-md border border-line-2 bg-ink-3 px-2.5 text-[13px] text-paper focus:outline-none focus:ring-1 focus:ring-brass';
+  'h-9 w-full rounded-md border border-line-2 bg-ink-3 px-2.5 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
 
 /**
  * Inner form — receives stable initial values and manages its own local state.
@@ -65,6 +72,9 @@ function RuleForm({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Créer une règle</DialogTitle>
+          <DialogDescription className="sr-only">
+            Transformez cette correction en règle de catégorisation : type, valeur, catégorie.
+          </DialogDescription>
         </DialogHeader>
         <p className="font-mono text-[11px] text-paper-dim">{proposal.labelClean}</p>
         <div className="flex flex-col gap-3">
@@ -152,7 +162,7 @@ export function RuleDialog({
 
   return (
     <RuleForm
-      key={proposal.labelClean}
+      key={`${proposal.labelClean}:${proposal.categoryId}`}
       proposal={proposal}
       initialMatchType={suggestion.matchType}
       initialMatchValue={suggestion.value}
