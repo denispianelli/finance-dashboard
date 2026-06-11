@@ -29,6 +29,7 @@ export const CHANNELS = {
   transactionsRestore: 'transactions:restore',
   transactionsSetTransfer: 'transactions:setTransfer',
   banksLearn: 'banks:learn',
+  banksPrepareMapping: 'banks:prepareMapping',
   modelStatus: 'model:status',
   modelDownloadStart: 'model:download:start',
   modelDownloadCancel: 'model:download:cancel',

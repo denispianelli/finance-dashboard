@@ -1,19 +1,8 @@
-import {
-  AlertTriangle,
-  CheckCircle,
-  Plus,
-  Sparkles,
-  Upload,
-  X,
-  XCircle,
-  SkipForward,
-} from 'lucide-react';
+import { AlertTriangle, CheckCircle, Plus, Upload, X, XCircle, SkipForward } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ipc } from '@renderer/ipc/client';
 import { useImport, type FileResult, type SubState } from '../hooks/useImport';
-import { useModelStatus } from '@renderer/hooks/useModelStatus';
-import { PdfModelRequiredDialog } from '@renderer/components/model/PdfModelRequiredDialog';
 import { TransactionReviewTable } from './TransactionReviewTable';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
@@ -27,11 +16,52 @@ import {
 } from './ui/dialog';
 import type { StatementExtraction } from '@shared/types/import';
 import type { AccountSummary, CreateAccountInput } from '@shared/types/dashboard';
+import type { ColumnOrder } from '@shared/types/bank';
 import { formatEuro } from '@renderer/lib/euro';
-import { formatModelSize } from '@renderer/lib/modelFormat';
 
 const FIELD =
   'h-9 w-full rounded-md border border-line-2 bg-ink-3 px-2.5 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
+
+const COLUMN_LABELS: { value: keyof ColumnOrder; label: string }[] = [
+  { value: 'date', label: 'Date' },
+  { value: 'valeur', label: 'Date valeur' },
+  { value: 'label', label: 'Libellé' },
+  { value: 'debit', label: 'Débit' },
+  { value: 'credit', label: 'Crédit' },
+  { value: 'balance', label: 'Solde' },
+];
+
+/** Slot values: '' = absent, otherwise a canonical column key. */
+type SlotValue = '' | keyof ColumnOrder;
+
+function slotsFromOrder(order: ColumnOrder | null): SlotValue[] {
+  const slots: SlotValue[] = ['', '', '', '', '', ''];
+  if (order === null) return slots;
+  for (const { value } of COLUMN_LABELS) {
+    const pos = order[value];
+    if (pos !== null && pos >= 1 && pos <= 6) slots[pos - 1] = value;
+  }
+  return slots;
+}
+
+function orderFromSlots(slots: SlotValue[]): ColumnOrder | null {
+  const order: ColumnOrder = {
+    date: 0,
+    valeur: null,
+    label: 0,
+    debit: null,
+    credit: null,
+    balance: null,
+  };
+  const picked = slots.filter((v) => v !== '');
+  if (new Set(picked).size !== picked.length) return null;
+  slots.forEach((v, i) => {
+    if (v !== '') order[v] = i + 1;
+  });
+  if (order.date < 1 || order.label < 1) return null;
+  if (order.debit === null && order.credit === null) return null;
+  return order;
+}
 
 interface ImportModalProps {
   open: boolean;
@@ -65,8 +95,6 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
   const [overlapDismissed, setOverlapDismissed] = useState(false);
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [dragOver, setDragOver] = useState(false);
-
-  const modelStatus = useModelStatus();
 
   // Reopening always starts fresh: closing mid-queue must not resume on stale
   // sub-state (or show a summary for work the user abandoned).
@@ -113,27 +141,6 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
     }
   }, [state, reset]);
 
-  // Auto-resume: when the model becomes ready while paused at modelRequired,
-  // replay the learn call so the import continues without user interaction.
-  const prevModelStateRef = useRef<string | null>(null);
-  useEffect(() => {
-    const prev = prevModelStateRef.current;
-    const cur = modelStatus.state;
-    prevModelStateRef.current = cur;
-    // Only act on a transition TO ready (not the initial seed that lands on ready).
-    if (prev !== null && prev !== 'ready' && cur === 'ready') {
-      if (state.step === 'queue' && state.sub.step === 'modelRequired') {
-        void learnBank(state.sub.bankName);
-      }
-    }
-  }, [modelStatus.state, state, learnBank]);
-
-  // Lazy hardware detection: trigger when the PDF-required dialog becomes visible.
-  const pdfModelRequired = state.step === 'queue' && state.sub.step === 'modelRequired';
-  useEffect(() => {
-    if (pdfModelRequired) void ipc.invoke('model:selection:detect', {});
-  }, [pdfModelRequired]);
-
   function handleClose() {
     reset();
     setOverlapDismissed(false);
@@ -158,136 +165,118 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
     state.step === 'queue' ? ` (${String(state.index + 1)}/${String(state.files.length)})` : '';
 
   return (
-    <>
-      <PdfModelRequiredDialog
-        open={sub?.step === 'modelRequired'}
-        sizeLabel={
-          modelStatus.target ? `~${formatModelSize(modelStatus.target.sizeBytes)}` : '~2,0 Go'
-        }
-        onInstall={() => {
-          void ipc.invoke('model:download:start', {});
-        }}
-        onClose={skipFile}
-      />
-      <Dialog
-        open={open && sub?.step !== 'modelRequired'}
-        onOpenChange={(o) => {
-          if (!o) handleClose();
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Importer des relevés{progress}</DialogTitle>
-            <DialogDescription className="sr-only">
-              Sélectionnez ou déposez des fichiers OFX ou PDF, vérifiez les transactions, confirmez.
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) handleClose();
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Importer des relevés{progress}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Sélectionnez ou déposez des fichiers OFX ou PDF, vérifiez les transactions, confirmez.
+          </DialogDescription>
+        </DialogHeader>
 
-          {state.step === 'idle' && (
-            <DropPickView
-              dragOver={dragOver}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragOver(true);
-              }}
-              onDragLeave={() => {
-                setDragOver(false);
-              }}
-              onDrop={onDrop}
-              onPick={() => {
-                void pickFiles();
-              }}
-            />
-          )}
+        {state.step === 'idle' && (
+          <DropPickView
+            dragOver={dragOver}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => {
+              setDragOver(false);
+            }}
+            onDrop={onDrop}
+            onPick={() => {
+              void pickFiles();
+            }}
+          />
+        )}
 
-          {(sub?.step === 'resolving' || sub?.step === 'extracting') && (
-            <div className="flex items-center justify-center py-8">
-              <p className="text-sm text-muted-foreground">
-                {sub.step === 'resolving' ? 'Analyse du compte…' : 'Extraction du relevé…'}
-              </p>
-            </div>
-          )}
+        {(sub?.step === 'resolving' || sub?.step === 'extracting') && (
+          <div className="flex items-center justify-center py-8">
+            <p className="text-sm text-muted-foreground">
+              {sub.step === 'resolving' ? 'Analyse du compte…' : 'Extraction du relevé…'}
+            </p>
+          </div>
+        )}
 
-          {sub?.step === 'chooseAccount' && (
-            <ChooseAccountView
-              fileName={state.step === 'queue' ? (state.files[state.index]?.fileName ?? '') : ''}
-              detectedBank={sub.detectedBank}
-              accounts={accounts}
-              onChoose={(id) => {
-                void chooseAccount(id);
-              }}
-              onCreateAccount={createAccountInline}
-              onSkip={skipFile}
-            />
-          )}
+        {sub?.step === 'chooseAccount' && (
+          <ChooseAccountView
+            fileName={state.step === 'queue' ? (state.files[state.index]?.fileName ?? '') : ''}
+            detectedBank={sub.detectedBank}
+            accounts={accounts}
+            onChoose={(id) => {
+              void chooseAccount(id);
+            }}
+            onCreateAccount={createAccountInline}
+            onSkip={skipFile}
+          />
+        )}
 
-          {sub?.step === 'unknownBank' && (
-            <LearnBankView
-              onLearn={(name) => {
-                void learnBank(name);
-              }}
-              onCancel={skipFile}
-            />
-          )}
+        {sub?.step === 'unknownBank' && (
+          <MappingAssistantView
+            suggested={sub.suggested}
+            headerTokens={sub.headerTokens}
+            mappingError={sub.mappingError}
+            onLearn={(name, order) => {
+              void learnBank(name, order);
+            }}
+            onCancel={skipFile}
+          />
+        )}
 
-          {sub?.step === 'learning' && (
-            <div className="flex flex-col items-center gap-2 py-8">
-              <p className="text-sm text-paper">Analyse de la banque par l'IA…</p>
-              <p className="text-xs text-paper-mute">
-                Environ une minute, une seule fois par banque.
-              </p>
-            </div>
-          )}
+        {sub?.step === 'review' && (
+          <ReviewView
+            extraction={sub.extraction}
+            fileName={state.step === 'queue' ? (state.files[state.index]?.fileName ?? '') : ''}
+            accountLabel={accountName(sub.accountId)}
+            autoRouted={sub.autoRouted}
+            selected={sub.selected}
+            acknowledgedCannotVerify={sub.acknowledgedCannotVerify}
+            acknowledgedArithmeticFailed={sub.acknowledgedArithmeticFailed}
+            overlapDismissed={overlapDismissed}
+            onDismissOverlap={() => {
+              setOverlapDismissed(true);
+            }}
+            onToggleTx={toggleTx}
+            onToggleAll={toggleAll}
+            onAcknowledge={setAcknowledgedCannotVerify}
+            onAcknowledgeFailed={setAcknowledgedArithmeticFailed}
+            onSkip={skipFile}
+            onConfirm={() => {
+              void confirm();
+            }}
+            confirmDisabled={!canConfirm(sub)}
+          />
+        )}
 
-          {sub?.step === 'review' && (
-            <ReviewView
-              extraction={sub.extraction}
-              fileName={state.step === 'queue' ? (state.files[state.index]?.fileName ?? '') : ''}
-              accountLabel={accountName(sub.accountId)}
-              autoRouted={sub.autoRouted}
-              selected={sub.selected}
-              acknowledgedCannotVerify={sub.acknowledgedCannotVerify}
-              acknowledgedArithmeticFailed={sub.acknowledgedArithmeticFailed}
-              overlapDismissed={overlapDismissed}
-              onDismissOverlap={() => {
-                setOverlapDismissed(true);
-              }}
-              onToggleTx={toggleTx}
-              onToggleAll={toggleAll}
-              onAcknowledge={setAcknowledgedCannotVerify}
-              onAcknowledgeFailed={setAcknowledgedArithmeticFailed}
-              onSkip={skipFile}
-              onConfirm={() => {
-                void confirm();
-              }}
-              confirmDisabled={!canConfirm(sub)}
-            />
-          )}
+        {sub?.step === 'confirming' && (
+          <div className="flex items-center justify-center py-8">
+            <p className="text-sm text-muted-foreground">Import en cours…</p>
+          </div>
+        )}
 
-          {sub?.step === 'confirming' && (
-            <div className="flex items-center justify-center py-8">
-              <p className="text-sm text-muted-foreground">Import en cours…</p>
-            </div>
-          )}
+        {sub?.step === 'fileError' && (
+          <div className="flex flex-col gap-4 py-4">
+            <p className="text-sm text-destructive">{sub.message}</p>
+            <DialogFooter>
+              <Button variant="outline" onClick={skipFile}>
+                <SkipForward size={14} strokeWidth={1.8} />
+                Ignorer ce fichier
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
 
-          {sub?.step === 'fileError' && (
-            <div className="flex flex-col gap-4 py-4">
-              <p className="text-sm text-destructive">{sub.message}</p>
-              <DialogFooter>
-                <Button variant="outline" onClick={skipFile}>
-                  <SkipForward size={14} strokeWidth={1.8} />
-                  Ignorer ce fichier
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
-
-          {state.step === 'summary' && (
-            <SummaryView results={state.results} accountName={accountName} onClose={handleClose} />
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+        {state.step === 'summary' && (
+          <SummaryView results={state.results} accountName={accountName} onClose={handleClose} />
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -509,22 +498,47 @@ function SummaryView({
   );
 }
 
-function LearnBankView({
+/**
+ * ADR-019 1b: the manual mapping assistant. The deterministic header suggestion
+ * pre-fills the slots; the user confirms or composes, no model involved. The
+ * review screen's arithmetic check remains the real validation of the mapping.
+ */
+export function MappingAssistantView({
+  suggested,
+  headerTokens,
+  mappingError,
   onLearn,
   onCancel,
 }: {
-  onLearn: (bankName: string) => void;
+  suggested: ColumnOrder | null;
+  headerTokens: string[];
+  mappingError: boolean;
+  onLearn: (bankName: string, order: ColumnOrder) => void;
   onCancel: () => void;
 }) {
   const [name, setName] = useState('');
+  const [slots, setSlots] = useState<SlotValue[]>(() => slotsFromOrder(suggested));
+  const [localError, setLocalError] = useState(false);
+
+  const submit = (): void => {
+    const order = orderFromSlots(slots);
+    if (order === null) {
+      setLocalError(true);
+      return;
+    }
+    onLearn(name.trim(), order);
+  };
+
   return (
     <div className="flex flex-col gap-4 py-4">
-      <div className="flex items-start gap-2 rounded-md border border-line-2 bg-ink-2/60 p-3 text-sm">
-        <Sparkles size={16} strokeWidth={1.6} className="mt-0.5 shrink-0 text-brass" />
-        <span className="text-paper-soft">
-          Banque non reconnue. L'IA peut analyser ce relevé pour apprendre sa mise en page — une
-          seule fois (~1 min, en local). Les imports suivants de cette banque seront instantanés.
-        </span>
+      <div className="rounded-md border border-line-2 bg-ink-2/60 p-3 text-sm text-paper-soft">
+        Banque non reconnue. Indique l'ordre des colonnes de ce relevé — une seule fois ; les
+        imports suivants de cette banque seront automatiques.
+        {headerTokens.length > 0 && (
+          <p className="mt-2 font-mono text-[11px] text-paper-mute">
+            En-tête détecté : {headerTokens.join(' · ')}
+          </p>
+        )}
       </div>
       <input
         autoFocus
@@ -533,24 +547,54 @@ function LearnBankView({
         onChange={(e) => {
           setName(e.target.value);
         }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && name.trim() !== '') onLearn(name.trim());
-        }}
         className={FIELD}
       />
+      <div className="grid grid-cols-3 gap-2">
+        {slots.map((slot, i) => (
+          <label
+            key={`col-${String(i)}`}
+            className="flex flex-col gap-1 text-[11px] text-paper-mute"
+          >
+            Colonne {i + 1}
+            <select
+              aria-label={`Colonne ${String(i + 1)}`}
+              className={FIELD}
+              value={slot}
+              onChange={(e) => {
+                setSlots((prev) =>
+                  prev.map((s, j) => (j === i ? (e.target.value as SlotValue) : s)),
+                );
+                setLocalError(false);
+              }}
+            >
+              <option value="">—</option>
+              {COLUMN_LABELS.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ))}
+      </div>
+      {localError && (
+        <p className="text-[12px] text-flag">
+          Il faut au minimum une date, un libellé et au moins un montant (débit ou crédit), sans
+          doublon.
+        </p>
+      )}
+      {mappingError && (
+        <p className="text-[12px] text-flag">
+          Colonnes introuvables avec ce mapping — vérifie l'ordre et réessaie.
+        </p>
+      )}
       <DialogFooter>
         <Button variant="outline" onClick={onCancel}>
           <SkipForward size={14} strokeWidth={1.8} />
           Ignorer ce fichier
         </Button>
-        <Button
-          disabled={name.trim() === ''}
-          onClick={() => {
-            onLearn(name.trim());
-          }}
-        >
-          <Sparkles size={14} strokeWidth={1.8} />
-          Analyser avec l'IA (~1 min)
+        <Button disabled={name.trim() === ''} onClick={submit}>
+          Enregistrer cette banque
         </Button>
       </DialogFooter>
     </div>

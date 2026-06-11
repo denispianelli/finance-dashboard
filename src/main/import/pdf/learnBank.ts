@@ -1,7 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { PdfPage } from './extract';
 import type { ColumnMapping } from './extractTransactions';
-import type { ColumnOrder } from './inferColumns';
+import type { ColumnOrder } from '@shared/types/bank';
 import { deriveColumnMapping } from './deriveMapping';
 import { tableRegionItems } from './extractTransactions';
 
@@ -24,17 +24,15 @@ export function slugifyBank(name: string): string {
 }
 
 /**
- * Learn a bank's column mapping from a sample statement, via the LLM. The
- * inference is injected so this is unit-testable without the model. Returns null
- * if the columns can't be identified or located (the caller surfaces that).
+ * Derive a bank's x-threshold mapping from a sample statement and the
+ * user-confirmed column order (deterministic — the LLM inference is gone,
+ * ADR-019 phase 1b). Returns null if the columns can't be located in the
+ * table region (the caller surfaces that as invalid_mapping).
  */
-export async function learnBankMapping(
+export function learnBankMapping(
   pages: readonly PdfPage[],
-  infer: (statementText: string) => Promise<ColumnOrder | null>,
-): Promise<ColumnMapping | null> {
-  const text = pages.flatMap((p) => p.items.map((i) => i.str)).join(' ');
-  const order = await infer(text);
-  if (order === null) return null;
+  order: ColumnOrder,
+): ColumnMapping | null {
   // Derive thresholds from the table region only (excludes header/footer noise).
   return deriveColumnMapping(order, tableRegionItems(pages));
 }
