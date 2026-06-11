@@ -5,6 +5,7 @@ import type {
   PrepareMappingResponse,
 } from '@shared/types/bank';
 import { getDb } from '../../db';
+import { detectBank } from '../../import/detectBank';
 import { extractPdfText } from '../../import/pdf/extract';
 import type { PdfPage } from '../../import/pdf/extract';
 import { suggestColumnOrder, validateColumnOrder } from '../../import/pdf/suggestColumns';
@@ -63,12 +64,28 @@ export async function handleBanksLearn(payload: LearnBankInput): Promise<LearnBa
   const mapping = learnBankMapping(guard.pages, payload.order);
   if (mapping === null) return { ok: false, error: 'invalid_mapping' };
 
+  const db = getDb();
   const bankId = slugifyBank(payload.bankName);
-  persistLearnedBank(getDb(), {
+  persistLearnedBank(db, {
     bankId,
     name: payload.bankName,
     signature: payload.bankName,
     mapping,
   });
+  // The typed name may not be printed anywhere (bank names are often logo
+  // images): if detection can't find the bank we just saved, every re-import
+  // would loop back to the assistant. Fall back to the table-header text, which
+  // the document is guaranteed to carry.
+  if (detectBank(db, guard.pages) === null) {
+    const header = suggestColumnOrder(guard.pages);
+    if (header !== null) {
+      persistLearnedBank(db, {
+        bankId,
+        name: payload.bankName,
+        signature: header.headerTokens.join(' '),
+        mapping,
+      });
+    }
+  }
   return { ok: true, bankId };
 }

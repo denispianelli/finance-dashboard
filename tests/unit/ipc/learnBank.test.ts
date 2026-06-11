@@ -20,6 +20,7 @@ import {
   handleBanksLearn,
   handleBanksPrepareMapping,
 } from '../../../src/main/ipc/handlers/learnBank';
+import { detectBank } from '../../../src/main/import/detectBank';
 
 function headerPages(): PdfPage[] {
   return [
@@ -96,5 +97,22 @@ describe('handleBanksLearn', () => {
     expect(
       dbHolder.db?.prepare('SELECT 1 FROM banks WHERE id = ?').get('bad-bank'),
     ).toBeUndefined();
+  });
+
+  it('is re-detectable right after learning, even when the typed name is not printed', async () => {
+    // The fixture's masthead does NOT contain "Ma Banque Mystère" (the bank name
+    // is a logo image in real statements): the stored signature must fall back to
+    // something the document actually carries, or every re-import loops back to
+    // the assistant forever.
+    const res = await handleBanksLearn({
+      path: '/x/releve.pdf',
+      bankName: 'Ma Banque Mystère',
+      order: { date: 1, valeur: null, label: 2, debit: 3, credit: 4, balance: null },
+    });
+    expect(res).toEqual({ ok: true, bankId: 'ma-banque-mystere' });
+
+    const db = dbHolder.db;
+    if (db === null) throw new Error('db not initialized');
+    expect(detectBank(db, headerPages())?.bankId).toBe('ma-banque-mystere');
   });
 });
