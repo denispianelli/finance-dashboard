@@ -33,6 +33,28 @@ allocation with targets, TRI/TTWROR from flows + declared balances, deterministi
 deterministic (history/rules + a manual mapping assistant). Do not propose LLM-powered
 features; until the removal lands the existing classifier is frozen (no further investment).
 
+## Working loop (single maintainer)
+
+How to run a build session for this project's one real user. A brick request may be a
+one-liner ("go for the mortgage module") — these rules fill in the rest.
+
+- **Challenge before you comply.** If a request contradicts an ADR, over-extrapolates a
+  constraint, or adds complexity the real usage doesn't justify (one user, passive DCA
+  investor, monthly balance updates), say so and propose simpler **before** coding. The repo
+  (ADRs, this file) outranks the day's phrasing. Symmetrically: if mid-work the agreed scope
+  turns out wrong or incomplete, stop and say it — never route around it silently.
+- **Every displayed figure needs a visible verification path** — against a statement, a loan
+  offer, a formula the user can recompute, to the cent. A brick that shows a number the user
+  can't check is not done, even with CI green (north star, ADR-009).
+- **Hard-to-reverse decisions get a design doc first** (data model, accounting treatment, DB
+  schema) and maintainer validation before code; everything else gets a short plan. Don't ask
+  validation for the obvious.
+- **End every brick with a validation script:** what to check in the app, with which data,
+  expecting what result. Visual/UI changes: the maintainer validates in-app **before** merge;
+  backend/docs PRs may self-merge once CI is green.
+- **Docs move with the code:** README / ADR / CLAUDE.md updates land in the same PR as the
+  change that makes them true. Doc/reality drift is this project's known failure mode.
+
 ## Code
 
 - TypeScript strict. `@typescript-eslint/no-explicit-any` and the `no-unsafe-*` family are
