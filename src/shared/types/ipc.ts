@@ -28,6 +28,7 @@ import type {
 import type { LearnBankInput, LearnBankResponse } from './bank';
 import type { RecurringReport } from './recurring';
 import type { UpdateTransactionInput, DeletedTransactionSnapshot } from './transaction';
+import type { RuleDTO, RuleInput } from './rules';
 
 export interface PingPayload {
   now: number;
@@ -104,6 +105,10 @@ export type CategorizeBatchResponse =
   | { ok: true; applied: number; residual: number }
   | { ok: false; error: 'model_unavailable' | 'inference_failed' };
 
+export type RulesMutationResponse =
+  | { ok: true; rule: RuleDTO; applied: number }
+  | { ok: false; error: 'invalid_rule' };
+
 export interface IpcContract {
   'app:ping': { payload: PingPayload; response: PingResponse };
   'import:pickFile': { payload: PickFilePayload; response: PickFileResponse };
@@ -112,6 +117,10 @@ export interface IpcContract {
   'import:confirm': { payload: ConfirmPayload; response: ConfirmResponse };
   'categorize:pending': { payload: Record<string, never>; response: CategorizePendingResponse };
   'categorize:batch': { payload: CategorizeBatchPayload; response: CategorizeBatchResponse };
+  'rules:list': { payload: Record<string, never>; response: { rules: RuleDTO[] } };
+  'rules:create': { payload: RuleInput; response: RulesMutationResponse };
+  'rules:update': { payload: RuleInput & { id: string }; response: RulesMutationResponse };
+  'rules:delete': { payload: { id: string }; response: { ok: true } };
   'dashboard:getAccounts': {
     payload: Record<string, never>;
     response: { accounts: AccountSummary[] };

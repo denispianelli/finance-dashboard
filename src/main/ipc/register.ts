@@ -43,6 +43,12 @@ import {
   handleGetCategorizeOptOut,
   handleSetCategorizeOptOut,
 } from './handlers/model';
+import {
+  handleRulesList,
+  handleRulesCreate,
+  handleRulesUpdate,
+  handleRulesDelete,
+} from './handlers/rules';
 
 type Handler<C extends IpcChannel> = (
   payload: IpcPayload<C>,
@@ -101,4 +107,8 @@ export function registerAllHandlers(): void {
   register(CHANNELS.modelDetectSelection, () => handleModelDetectSelection());
   register(CHANNELS.settingsGetCategorizeOptOut, () => handleGetCategorizeOptOut());
   register(CHANNELS.settingsSetCategorizeOptOut, handleSetCategorizeOptOut);
+  register(CHANNELS.rulesList, () => handleRulesList());
+  register(CHANNELS.rulesCreate, handleRulesCreate);
+  register(CHANNELS.rulesUpdate, handleRulesUpdate);
+  register(CHANNELS.rulesDelete, handleRulesDelete);
 }
