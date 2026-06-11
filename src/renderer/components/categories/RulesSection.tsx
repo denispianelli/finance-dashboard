@@ -130,6 +130,7 @@ function RuleRow({
           className={ICON_BTN}
           onClick={() => {
             setEditing(false);
+            setConfirming(false);
             setMatchType(rule.matchType);
             setMatchValue(rule.matchValue);
             setCategoryId(rule.categoryId);
@@ -169,6 +170,7 @@ function RuleRow({
           className={ICON_BTN}
           onClick={() => {
             setEditing(true);
+            setConfirming(false);
           }}
         >
           <Pencil size={14} strokeWidth={1.8} />

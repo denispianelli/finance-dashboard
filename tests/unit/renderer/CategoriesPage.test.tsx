@@ -63,10 +63,10 @@ describe('CategoriesPage', () => {
     expect(screen.getByText('Logement')).toBeInTheDocument();
   });
 
-  it('does not show any rule-management surface', async () => {
+  it('shows the rules audit section (ADR-019: rules are the engine)', async () => {
     renderPage();
     await screen.findByText('Alimentation');
-    expect(screen.queryByText(/Règles de catégorisation/i)).not.toBeInTheDocument();
+    expect(screen.getByText('Règles')).toBeInTheDocument();
   });
 
   it('creates a category from the form', async () => {
