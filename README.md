@@ -1,6 +1,6 @@
 # Finance Dashboard
 
-> **Privacy-first desktop finance dashboard with an embedded local LLM.**
+> **Privacy-first desktop finance dashboard. 100% local, 100% deterministic.**
 > Your bank statements stay on your machine. No login, no bank connection, no cloud, no telemetry.
 
 ## North star
@@ -25,11 +25,11 @@ continuously (see [Changelog](CHANGELOG.md)). It is not yet a polished general-a
 You import your bank statements (**OFX** primary, **PDF** for multi-year historical backfill).
 The app:
 
-- **extracts transactions deterministically** — the LLM never touches numbers, and arithmetic
-  is verified against statement balances;
-- **categorizes them** via an embedded local LLM running as a background batch classifier,
-  with deterministic rules and learned history doing most of the work — every label is
-  human-reviewable;
+- **extracts transactions deterministically** — arithmetic is verified against statement
+  balances;
+- **categorizes them** via deterministic rules and learned history — every correction you
+  make becomes a rule, so the residual shrinks over time and every label stays
+  human-reviewable (the embedded LLM classifier is being removed — ADR-019);
 - **consolidates all accounts** (current, joint, savings, PEA, AV) by cash flows plus
   user-declared balances — internal transfers are neutralized, never counted as income or
   expense;
@@ -49,9 +49,9 @@ never converses.
 ## Stack
 
 Electron · TypeScript · React · shadcn/ui · Tailwind · Recharts · `pdfjs-dist` ·
-`node-llama-cpp` · `node:sqlite`.
+`node:sqlite` (`node-llama-cpp` on its way out — ADR-019).
 
-> Persistence engine and the embedded LLM are deliberate decisions, not casual choices — the
+> Persistence engine and the no-LLM stance are deliberate decisions, not casual choices — the
 > **[Architecture Decision Records](docs/adr/)** are authoritative (notably ADR-002 privacy,
 > ADR-003 deterministic extraction, ADR-009 product scope). This line is a high-level overview
 > only; don't restate ADR specifics here.
