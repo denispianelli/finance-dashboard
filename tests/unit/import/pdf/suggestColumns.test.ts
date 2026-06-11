@@ -62,6 +62,42 @@ describe('suggestColumnOrder', () => {
 
     expect(suggestColumnOrder(pages)).toBeNull();
   });
+
+  it('matches multi-word header cells on their first word (« Nature de l’opération »)', () => {
+    // Real-world case: pdfjs emits the whole header cell as one token.
+    const pages = page([
+      item('Date', 43, 336),
+      item('Valeur', 89, 336),
+      item('Nature de l’opération', 230, 336),
+      item('Débit', 452, 336),
+      item('Crédit', 519, 336),
+    ]);
+
+    expect(suggestColumnOrder(pages)).toEqual({
+      order: { date: 1, valeur: 2, label: 3, debit: 4, credit: 5, balance: null },
+      headerTokens: ['Date', 'Valeur', 'Nature de l’opération', 'Débit', 'Crédit'],
+    });
+  });
+
+  it('never first-word-matches a token carrying digits (dates/amounts are data)', () => {
+    const pages = page([
+      item('Date du relevé : 02/07/2025', 40, 700),
+      item('Solde au 01/07/2025', 300, 700),
+      item('Crédit 12345', 500, 700),
+    ]);
+
+    expect(suggestColumnOrder(pages)).toBeNull();
+  });
+
+  it('never first-word-matches an over-long sentence token', () => {
+    const pages = page([
+      item('Date à laquelle votre banque traite vos opérations courantes', 40, 700),
+      item('Valeur', 300, 700),
+      item('Débit', 500, 700),
+    ]);
+
+    expect(suggestColumnOrder(pages)).toBeNull();
+  });
 });
 
 describe('validateColumnOrder', () => {

@@ -29,6 +29,24 @@ function normalizeKey(k: string): string {
 /** Same-line grouping tolerance: pdfjs y jitters by fractions of a point. */
 const Y_TOLERANCE = 2;
 
+/** A header cell longer than this is prose, not a column title. */
+const MAX_HEADER_CELL = 30;
+
+/**
+ * Canonical key for a header token. Exact alias first; then multi-word cells
+ * (pdfjs emits « Nature de l'opération » as ONE token) match on their first
+ * word — but only when the cell is digit-free (dates/amounts are data, not
+ * header vocabulary) and short enough to be a column title.
+ */
+function matchHeaderKey(str: string): keyof ColumnOrder | undefined {
+  const n = normalizeKey(str);
+  const exact = KEY_ALIASES[n];
+  if (exact !== undefined) return exact;
+  if (/\d/.test(n) || n.length > MAX_HEADER_CELL) return undefined;
+  const first = n.split(/\s+/)[0];
+  return first === undefined ? undefined : KEY_ALIASES[first];
+}
+
 export interface ColumnSuggestion {
   readonly order: ColumnOrder;
   readonly headerTokens: string[];
@@ -47,7 +65,7 @@ export function suggestColumnOrder(pages: readonly PdfPage[]): ColumnSuggestion 
     for (const line of lines) {
       const matches: { key: keyof ColumnOrder; token: PdfTextItem }[] = [];
       for (const token of line) {
-        const key = KEY_ALIASES[normalizeKey(token.str)];
+        const key = matchHeaderKey(token.str);
         if (key !== undefined && !matches.some((m) => m.key === key)) {
           matches.push({ key, token });
         }
