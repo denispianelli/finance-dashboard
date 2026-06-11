@@ -70,6 +70,13 @@ afterEach(() => {
   cleanup();
 });
 
+/** First element, narrowed for noUncheckedIndexedAccess (getAllByRole throws when empty). */
+function first(elements: HTMLElement[]): HTMLElement {
+  const el = elements[0];
+  if (el === undefined) throw new Error('expected at least one element');
+  return el;
+}
+
 describe('RulesSection', () => {
   it('lists rules with value, category, hit count and creation date', async () => {
     render(<RulesSection categories={CATEGORIES} />);
@@ -84,8 +91,7 @@ describe('RulesSection', () => {
     render(<RulesSection categories={CATEGORIES} />);
     await screen.findByText('NETFLIX');
 
-    const deleteButtons = screen.getAllByRole('button', { name: 'Supprimer la règle' });
-    await userEvent.click(deleteButtons[0] ?? deleteButtons[deleteButtons.length - 1]);
+    await userEvent.click(first(screen.getAllByRole('button', { name: 'Supprimer la règle' })));
     await userEvent.click(screen.getByRole('button', { name: 'Confirmer la suppression' }));
 
     expect(mockInvoke).toHaveBeenCalledWith('rules:delete', { id: 'cr-001' });
@@ -95,8 +101,7 @@ describe('RulesSection', () => {
     render(<RulesSection categories={CATEGORIES} />);
     await screen.findByText('NETFLIX');
 
-    const editButtons = screen.getAllByRole('button', { name: 'Modifier la règle' });
-    await userEvent.click(editButtons[0] ?? editButtons[editButtons.length - 1]);
+    await userEvent.click(first(screen.getAllByRole('button', { name: 'Modifier la règle' })));
     const valueInput = screen.getByLabelText('Valeur de la règle');
     await userEvent.clear(valueInput);
     await userEvent.type(valueInput, 'NETFLIX FR');
