@@ -1,6 +1,6 @@
 {
   "name": "finance-dashboard",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Privacy-first desktop finance dashboard with local LLM",
   "main": "out/main/index.js",
   "license": "AGPL-3.0-only",
@@ -28,7 +28,6 @@
     "test:all": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write src",
-    "setup:cuda": "python3 scripts/setup-cuda-libs.py",
     "test:e2e": "npm run build && playwright test",
     "prepare": "husky"
   },
@@ -91,7 +90,6 @@
     "date-fns": "^4.4.0",
     "libsodium-wrappers-sumo": "^0.8.4",
     "lucide-react": "^1.17.0",
-    "node-llama-cpp": "^3.18.1",
     "pdfjs-dist": "^5.7.284",
     "react": "^19.2.7",
     "react-day-picker": "^10.0.1",

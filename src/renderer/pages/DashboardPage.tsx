@@ -10,6 +10,7 @@ import { Kpi } from '../components/dashboard/Kpi';
 import { ChartCard } from '../components/dashboard/ChartCard';
 import { Insight, Quote, QuoteNum } from '../components/dashboard/Insight';
 import { TxTable } from '../components/dashboard/TxTable';
+import { RuleDialog, type RuleProposal } from '../components/categories/RuleDialog';
 import { useDashboard } from '../hooks/useDashboard';
 import { useBalanceSeries } from '../hooks/useBalanceSeries';
 import { toAccount, toTxRow } from '../lib/dashboardMap';
@@ -30,6 +31,7 @@ const RECENT_LIMIT = 10;
 export function DashboardPage() {
   const { refreshToken, openCreateAccount } = useOutletContext<AppOutletContext>();
   const navigate = useNavigate();
+  const [ruleProposal, setRuleProposal] = useState<RuleProposal | null>(null);
   const {
     accounts,
     transactions,
@@ -37,8 +39,9 @@ export function DashboardPage() {
     categories,
     selectedAccountId,
     reassign,
+    refresh,
     createCategory,
-  } = useDashboard(refreshToken);
+  } = useDashboard(refreshToken, { onProposeRule: setRuleProposal });
 
   const { series, balance } = metrics;
   const last = series.at(-1);
@@ -164,7 +167,8 @@ export function DashboardPage() {
             rows={transactions.slice(0, RECENT_LIMIT).map(toTxRow)}
             categories={categories}
             onReassign={(txId, catId) => {
-              void reassign(txId, catId);
+              const t = transactions.find((tx) => tx.id === txId);
+              void reassign(txId, catId, t?.labelClean);
             }}
             onCreateCategory={createCategory}
           />
@@ -174,6 +178,16 @@ export function DashboardPage() {
           </p>
         )}
       </Card>
+      <RuleDialog
+        proposal={ruleProposal}
+        categories={categories}
+        onClose={() => {
+          setRuleProposal(null);
+        }}
+        onCreated={() => {
+          refresh();
+        }}
+      />
     </>
   );
 }

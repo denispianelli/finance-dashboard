@@ -1,15 +1,12 @@
-import { useEffect, type ComponentType, type ReactNode } from 'react';
-import { Cpu, Database, FolderSync, Palette } from 'lucide-react';
+import { type ComponentType, type ReactNode } from 'react';
+import { Database, FolderSync, Palette } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Chip } from '../components/ui/chip';
 import { Overline } from '../components/ui/overline';
 import { cn } from '../lib/utils';
-import { useModelStatus } from '../hooks/useModelStatus';
-import { ModelSettingsSection } from '../components/model/ModelSettingsSection';
 import { SyncSettingsSection } from '../components/sync/SyncSettingsSection';
-import { ipc } from '../ipc/client';
 
 // First draft per docs/superpowers/specs/archive/2026-06-03-settings-view-content-design.md.
 // Content/structure only — nothing is wired to IPC yet. Values shown as static placeholders
@@ -20,7 +17,6 @@ const SOON = 'Bientôt disponible';
 export function SettingsPage() {
   return (
     <div className="flex max-w-[680px] flex-col gap-4">
-      <ModelSection />
       <DataSection />
       <SyncSection />
       <AppearanceSection />
@@ -32,47 +28,6 @@ function SyncSection() {
   return (
     <Section icon={FolderSync} overline="— Multi-machines" title="Synchronisation">
       <SyncSettingsSection Row={Row} />
-    </Section>
-  );
-}
-
-function ModelSection() {
-  const status = useModelStatus();
-
-  useEffect(() => {
-    void ipc.invoke('model:selection:detect', {});
-  }, []);
-
-  const modelName = status.active?.label ?? status.target?.label ?? '—';
-
-  return (
-    <Section icon={Cpu} overline="— Local" title="Modèle LLM">
-      <p className="pb-1 font-sans text-[12px] leading-relaxed text-paper-mute">
-        Classifie en arrière-plan : mapping de colonnes + catégorisation. Ne dialogue jamais, ne
-        raisonne jamais sur tes chiffres.
-      </p>
-
-      <Row label="Modèle">
-        <div className="flex items-center gap-2.5">
-          <span className="font-mono text-[12px] text-paper-soft">{modelName}</span>
-          <ModelSettingsSection
-            status={status}
-            onDownload={() => void ipc.invoke('model:download:start', {})}
-            onRemove={() => void ipc.invoke('model:remove', {})}
-          />
-        </div>
-      </Row>
-
-      <Row label="Emplacement du fichier">
-        <span className="font-mono text-[12px] text-paper-dim">{PLACEHOLDER}</span>
-      </Row>
-
-      <Row label="Catégorisation" hint="Rejoue le classifieur sur l'historique existant.">
-        <Button variant="secondary" size="sm" disabled>
-          Relancer la catégorisation
-          <SoonBadge />
-        </Button>
-      </Row>
     </Section>
   );
 }

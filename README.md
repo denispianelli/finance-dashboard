@@ -1,6 +1,6 @@
 # Finance Dashboard
 
-> **Privacy-first desktop finance dashboard with an embedded local LLM.**
+> **Privacy-first desktop finance dashboard. 100% local, 100% deterministic.**
 > Your bank statements stay on your machine. No login, no bank connection, no cloud, no telemetry.
 
 ## North star
@@ -25,11 +25,11 @@ continuously (see [Changelog](CHANGELOG.md)). It is not yet a polished general-a
 You import your bank statements (**OFX** primary, **PDF** for multi-year historical backfill).
 The app:
 
-- **extracts transactions deterministically** — the LLM never touches numbers, and arithmetic
-  is verified against statement balances;
-- **categorizes them** via an embedded local LLM running as a background batch classifier,
-  with deterministic rules and learned history doing most of the work — every label is
-  human-reviewable;
+- **extracts transactions deterministically** — arithmetic is verified against statement
+  balances;
+- **categorizes them** via deterministic rules and learned history — every correction you
+  make becomes a rule, so the residual shrinks over time and every label stays
+  human-reviewable (deterministic history + rules — the embedded LLM was removed, ADR-019);
 - **consolidates all accounts** (current, joint, savings, PEA, AV) by cash flows plus
   user-declared balances — internal transfers are neutralized, never counted as income or
   expense;
@@ -40,16 +40,17 @@ The app:
 **All on your machine. Source code is public so the privacy promise is verifiable.**
 
 **Deliberately out of scope** (ADR-009 — identity, not backlog): conversational chat,
-natural-language search, generative insights, market valuation / investment performance
-tracking (price feeds = network calls = breaks the local promise). The LLM classifies in the
-background; it never converses.
+natural-language search, generative insights, budgets, market price feeds and position-level
+investment tracking. Patrimoine is tracked from your own statements and declared values —
+mortgage amortization, asset allocation, money-weighted returns (TRI), deterministic
+projections — all computed locally, no network.
 
 ## Stack
 
 Electron · TypeScript · React · shadcn/ui · Tailwind · Recharts · `pdfjs-dist` ·
-`node-llama-cpp` · `node:sqlite`.
+`node:sqlite`.
 
-> Persistence engine and the embedded LLM are deliberate decisions, not casual choices — the
+> Persistence engine and the no-LLM stance are deliberate decisions, not casual choices — the
 > **[Architecture Decision Records](docs/adr/)** are authoritative (notably ADR-002 privacy,
 > ADR-003 deterministic extraction, ADR-009 product scope). This line is a high-level overview
 > only; don't restate ADR specifics here.
@@ -70,8 +71,9 @@ Specs and plans for shipped work are archived under
 ## Roadmap
 
 The MVP (import → categorization → consolidated dashboard → Reports → recurring detection) is
-**done**. Current work is post-MVP hardening: categorization quality, desktop packaging,
-cross-machine sync. Any future feature is tested against the north star sentence — if it does
+**done**. Current work: extending the model to the full patrimoine — mortgage, primary
+residence, allocation, returns (ADR-009 Amendment 2) — plus post-MVP hardening
+(categorization quality, desktop packaging, cross-machine sync). Any future feature is tested against the north star sentence — if it does
 not serve it, it is cut, not parked (ADR-009). During MVP mode work is tracked on a
 lightweight TODO, not a public board.
 

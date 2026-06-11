@@ -18,14 +18,41 @@ here.
 no analytics, no cloud, no bank connections. Renderer does no I/O — everything via typed IPC to
 main. CSP stays `'self'`. See ADR-002.
 
-The rule is about _data_, not packets: the only outbound calls allowed are an opt-in version
-check (sends no data, receives a version number) and the initial LLM model download — both from
-the main process only, never the renderer. Anything that would transmit user/financial data is
-forbidden, full stop.
+The rule is about _data_, not packets: the only outbound call allowed is an opt-in version
+check (sends no data, receives a version number), from the main process only, never the
+renderer. Anything that would transmit user/financial data is forbidden, full stop.
 
-**Scope guard:** ADR-009 cut conversational AI, NL search, generative insights, investments
-tracking, multi-window. Do not re-propose them. The LLM is a background batch classifier only
-(column mapping + categorization) — it never converses or reasons over figures user-facing.
+**Scope guard:** ADR-009 (as amended 2026-06-10) cut conversational AI, NL search, generative
+insights, multi-window, budgets, and market price feeds / position-level investment tracking.
+Do not re-propose them. **In scope** since Amendment 2: full patrimoine by cash flows +
+declared values — mortgage (deterministic amortization), declared assets (primary residence),
+allocation with targets, TRI/TTWROR from flows + declared balances, deterministic projections.
+**No LLM** (ADR-019,
+2026-06-11): the embedded model was removed (phases #212/#214 + this PR) — categorization and
+bank mapping are deterministic (history/rules + a manual mapping assistant). Do not propose
+LLM-powered features.
+
+## Working loop (single maintainer)
+
+How to run a build session for this project's one real user. A brick request may be a
+one-liner ("go for the mortgage module") — these rules fill in the rest.
+
+- **Challenge before you comply.** If a request contradicts an ADR, over-extrapolates a
+  constraint, or adds complexity the real usage doesn't justify (one user, passive DCA
+  investor, monthly balance updates), say so and propose simpler **before** coding. The repo
+  (ADRs, this file) outranks the day's phrasing. Symmetrically: if mid-work the agreed scope
+  turns out wrong or incomplete, stop and say it — never route around it silently.
+- **Every displayed figure needs a visible verification path** — against a statement, a loan
+  offer, a formula the user can recompute, to the cent. A brick that shows a number the user
+  can't check is not done, even with CI green (north star, ADR-009).
+- **Hard-to-reverse decisions get a design doc first** (data model, accounting treatment, DB
+  schema) and maintainer validation before code; everything else gets a short plan. Don't ask
+  validation for the obvious.
+- **End every brick with a validation script:** what to check in the app, with which data,
+  expecting what result. Visual/UI changes: the maintainer validates in-app **before** merge;
+  backend/docs PRs may self-merge once CI is green.
+- **Docs move with the code:** README / ADR / CLAUDE.md updates land in the same PR as the
+  change that makes them true. Doc/reality drift is this project's known failure mode.
 
 ## Code
 
@@ -68,9 +95,8 @@ tracking, multi-window. Do not re-propose them. The LLM is a background batch cl
   the lifecycle (this avoids cutting your own session's working directory out from under it).
   The legacy hand-managed `.worktrees/` path stays gitignored if you ever need it, but the tool
   is the default.
-- `spike-fixtures/` and `models/` are gitignored (real bank data + the ~1.9 GB model) —
-  **never commit them**. A worktree that needs them gets a symlink, e.g.
-  `ln -sfn <repo>/spike-fixtures <worktree>/spike-fixtures` (same for `models`).
+- `spike-fixtures/` is gitignored (real bank data) — **never commit it**. A worktree that
+  needs it gets a symlink, e.g. `ln -sfn <repo>/spike-fixtures <worktree>/spike-fixtures`.
 
 ## Definition of done
 

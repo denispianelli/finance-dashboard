@@ -8,6 +8,7 @@ import type {
 import type { CategoryDTO, CreateCategoryInput } from '@shared/types/category';
 import type { UpdateTransactionInput } from '@shared/types/transaction';
 import { ipc } from '@renderer/ipc/client';
+import type { RuleProposal } from '@renderer/components/categories/RuleDialog';
 
 const EMPTY_METRICS: DashboardMetrics = { balance: 0, series: [] };
 
@@ -22,8 +23,12 @@ export interface UseDashboard {
   categories: CategoryDTO[];
   selectedAccountId: string | null;
   selectAccount: (id: string) => void;
-  /** Reassign a transaction to a category and refresh the view. */
-  reassign: (transactionId: string, categoryId: string) => Promise<void>;
+  /** Reassign a transaction to a category and refresh the view. When `labelClean`
+   *  is provided (and the page handles proposals), the success toast offers to
+   *  turn the correction into a rule. */
+  reassign: (transactionId: string, categoryId: string, labelClean?: string) => Promise<void>;
+  /** Force a refetch (e.g. after a rule creation retroactively categorized rows). */
+  refresh: () => void;
   /** Create a category on the fly; returns it so callers can assign it. */
   createCategory: (input: CreateCategoryInput) => Promise<CategoryDTO>;
   /** Edit a transaction's date / label / amount and refresh. */
@@ -40,6 +45,8 @@ export interface UseDashboardOptions {
    * filtering.
    */
   readonly transactionLimit?: number;
+  /** When set, the reassign toast offers a "Créer une règle" action. */
+  readonly onProposeRule?: (proposal: RuleProposal) => void;
 }
 
 /**
@@ -51,7 +58,7 @@ export function useDashboard(
   refreshToken: number,
   options: UseDashboardOptions = {},
 ): UseDashboard {
-  const { transactionLimit } = options;
+  const { transactionLimit, onProposeRule } = options;
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
   const [transactions, setTransactions] = useState<DashboardTransaction[]>([]);
   const [metrics, setMetrics] = useState<DashboardMetrics>(EMPTY_METRICS);
@@ -138,14 +145,32 @@ export function useDashboard(
     setSelectedAccountId(id);
   }, []);
 
-  const reassign = useCallback(async (transactionId: string, categoryId: string) => {
-    try {
-      await ipc.invoke('transactions:setCategory', { transactionId, categoryId });
-      setTick((t) => t + 1);
-      toast.success('Transaction reclassée');
-    } catch (e) {
-      toast.error(`Reclassement impossible : ${errMessage(e)}`);
-    }
+  const reassign = useCallback(
+    async (transactionId: string, categoryId: string, labelClean?: string) => {
+      try {
+        await ipc.invoke('transactions:setCategory', { transactionId, categoryId });
+        setTick((t) => t + 1);
+        if (labelClean !== undefined && onProposeRule !== undefined) {
+          toast.success('Transaction reclassée', {
+            action: {
+              label: 'Créer une règle',
+              onClick: () => {
+                onProposeRule({ labelClean, categoryId });
+              },
+            },
+          });
+        } else {
+          toast.success('Transaction reclassée');
+        }
+      } catch (e) {
+        toast.error(`Reclassement impossible : ${errMessage(e)}`);
+      }
+    },
+    [onProposeRule],
+  );
+
+  const refresh = useCallback(() => {
+    setTick((t) => t + 1);
   }, []);
 
   const updateTransaction = useCallback(async (input: UpdateTransactionInput) => {
@@ -197,6 +222,7 @@ export function useDashboard(
     selectedAccountId,
     selectAccount,
     reassign,
+    refresh,
     createCategory,
     updateTransaction,
     deleteTransaction,

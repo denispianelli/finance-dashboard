@@ -6,7 +6,6 @@ import { handlePing } from './handlers/ping';
 import { handlePickFile } from './handlers/importPickFile';
 import { handleImportExtract } from './handlers/importExtract';
 import { handleImportConfirm } from './handlers/importConfirm';
-import { handleCategorizePending, handleCategorizeBatch } from './handlers/categorize';
 import { handleDashboardGetAccounts } from './handlers/dashboardGetAccounts';
 import { handleDashboardGetTransactions } from './handlers/dashboardGetTransactions';
 import { handleDashboardMetrics } from './handlers/dashboardMetrics';
@@ -25,7 +24,7 @@ import {
   handleCategoriesDelete,
   handleTransactionsSetCategory,
 } from './handlers/categories';
-import { handleBanksLearn } from './handlers/learnBank';
+import { handleBanksLearn, handleBanksPrepareMapping } from './handlers/learnBank';
 import { handleRecurringList } from './handlers/recurringList';
 import { handleImportResolveAccount } from './handlers/importResolveAccount';
 import {
@@ -34,15 +33,6 @@ import {
   handleTransactionsRestore,
 } from './handlers/transactions';
 import { handleTransactionsSetTransfer } from './handlers/transactionsSetTransfer';
-import {
-  handleModelStatus,
-  handleModelDownloadStart,
-  handleModelDownloadCancel,
-  handleModelRemove,
-  handleModelDetectSelection,
-  handleGetCategorizeOptOut,
-  handleSetCategorizeOptOut,
-} from './handlers/model';
 import {
   handleSyncGetStatus,
   handleSyncPickFolder,
@@ -54,6 +44,12 @@ import {
   handleSyncKeepLocal,
 } from './handlers/sync';
 import { syncController } from '../sync/controller';
+import {
+  handleRulesList,
+  handleRulesCreate,
+  handleRulesUpdate,
+  handleRulesDelete,
+} from './handlers/rules';
 
 type Handler<C extends IpcChannel> = (
   payload: IpcPayload<C>,
@@ -83,7 +79,6 @@ function isDomainFailure(result: unknown): boolean {
 // metadata, not user financial data.
 const MUTATING_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'import:confirm',
-  'categorize:batch',
   'accounts:create',
   'accounts:update',
   'accounts:delete',
@@ -97,7 +92,10 @@ const MUTATING_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'transactions:restore',
   'transactions:setTransfer',
   'banks:learn',
-  'settings:setCategorizeOptOut',
+  // Rules mutations re-categorize existing transactions (retroactive apply).
+  'rules:create',
+  'rules:update',
+  'rules:delete',
 ]);
 
 function register<C extends IpcChannel>(channel: C, handler: Handler<C>): void {
@@ -116,8 +114,6 @@ export function registerAllHandlers(): void {
   register(CHANNELS.importPickFile, () => handlePickFile());
   register(CHANNELS.importExtract, handleImportExtract);
   register(CHANNELS.importConfirm, handleImportConfirm);
-  register(CHANNELS.categorizePending, () => handleCategorizePending());
-  register(CHANNELS.categorizeBatch, handleCategorizeBatch);
   register(CHANNELS.dashboardGetAccounts, () => handleDashboardGetAccounts());
   register(CHANNELS.dashboardGetTransactions, handleDashboardGetTransactions);
   register(CHANNELS.dashboardMetrics, handleDashboardMetrics);
@@ -138,15 +134,9 @@ export function registerAllHandlers(): void {
   register(CHANNELS.transactionsRestore, handleTransactionsRestore);
   register(CHANNELS.transactionsSetTransfer, handleTransactionsSetTransfer);
   register(CHANNELS.banksLearn, handleBanksLearn);
+  register(CHANNELS.banksPrepareMapping, handleBanksPrepareMapping);
   register(CHANNELS.recurringList, () => handleRecurringList());
   register(CHANNELS.importResolveAccount, handleImportResolveAccount);
-  register(CHANNELS.modelStatus, () => handleModelStatus());
-  register(CHANNELS.modelDownloadStart, () => handleModelDownloadStart());
-  register(CHANNELS.modelDownloadCancel, () => handleModelDownloadCancel());
-  register(CHANNELS.modelRemove, () => handleModelRemove());
-  register(CHANNELS.modelDetectSelection, () => handleModelDetectSelection());
-  register(CHANNELS.settingsGetCategorizeOptOut, () => handleGetCategorizeOptOut());
-  register(CHANNELS.settingsSetCategorizeOptOut, handleSetCategorizeOptOut);
   register(CHANNELS.syncGetStatus, () => handleSyncGetStatus());
   register(CHANNELS.syncPickFolder, () => handleSyncPickFolder());
   register(CHANNELS.syncEnable, handleSyncEnable);
@@ -155,4 +145,8 @@ export function registerAllHandlers(): void {
   register(CHANNELS.syncLaunchCheck, () => handleSyncLaunchCheck());
   register(CHANNELS.syncRestore, () => handleSyncRestore());
   register(CHANNELS.syncKeepLocal, () => handleSyncKeepLocal());
+  register(CHANNELS.rulesList, () => handleRulesList());
+  register(CHANNELS.rulesCreate, handleRulesCreate);
+  register(CHANNELS.rulesUpdate, handleRulesUpdate);
+  register(CHANNELS.rulesDelete, handleRulesDelete);
 }

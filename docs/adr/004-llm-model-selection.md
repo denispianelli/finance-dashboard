@@ -1,6 +1,6 @@
 # ADR-004 — LLM model selection
 
-- **Status** : Accepted
+- **Status** : Superseded by ADR-019 (the LLM is removed from the product)
 - **Date** : 2026-05-15
 - **Category** : LLM, Performance
 

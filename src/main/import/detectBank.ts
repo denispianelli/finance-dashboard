@@ -9,22 +9,29 @@ export interface DetectedBank {
 }
 
 function fold(s: string): string {
+  // Whitespace collapsed on both sides of the match: pdfjs interleaves empty and
+  // space-only items, so the joined masthead carries multi-space runs.
   return s
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
-/** Text of the first-page masthead — items above the transaction-table header,
- *  or the whole first page when no header is found (layouts without one, e.g.
- *  LCL). Matching the bank signature here instead of the whole document stops a
- *  transaction label that happens to contain another bank's name (e.g. "VIR
- *  CREDIT LYONNAIS …") from misidentifying the bank. */
+/** Text of the first-page masthead — items above the transaction table,
+ *  INCLUDING the header row itself (a learned bank whose printed name is a logo
+ *  image gets the header text as its signature), or the whole first page when no
+ *  header is found (layouts without one, e.g. LCL). Matching the bank signature
+ *  here instead of the whole document stops a transaction label that happens to
+ *  contain another bank's name (e.g. "VIR CREDIT LYONNAIS …") from
+ *  misidentifying the bank. The 5pt tolerance mirrors findHeaderY's row test. */
 function mastheadText(pages: PdfPage[]): string {
   const firstPage = pages[0];
   if (firstPage === undefined) return '';
   const headerY = findHeaderY(firstPage.items);
-  const items = headerY === null ? firstPage.items : firstPage.items.filter((i) => i.y > headerY);
+  const items =
+    headerY === null ? firstPage.items : firstPage.items.filter((i) => i.y >= headerY - 5);
   return fold(items.map((i) => i.str).join(' '));
 }
 

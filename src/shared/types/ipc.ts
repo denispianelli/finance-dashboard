@@ -1,10 +1,4 @@
-import type { ModelStatus } from './model';
-export type { ModelState } from './model';
-
-/** Alias kept for the IPC response naming convention. */
-export type ModelStatusResponse = ModelStatus;
-
-import type { StatementExtraction, PendingGroup } from './import';
+import type { StatementExtraction } from './import';
 import type {
   SyncStatusView,
   SyncLaunchCheck,
@@ -32,9 +26,15 @@ import type {
   CreateCategoryInput,
   SetTransactionCategoryInput,
 } from './category';
-import type { LearnBankInput, LearnBankResponse } from './bank';
+import type {
+  LearnBankInput,
+  LearnBankResponse,
+  PrepareMappingInput,
+  PrepareMappingResponse,
+} from './bank';
 import type { RecurringReport } from './recurring';
 import type { UpdateTransactionInput, DeletedTransactionSnapshot } from './transaction';
+import type { RuleDTO, RuleInput } from './rules';
 
 export interface PingPayload {
   now: number;
@@ -91,7 +91,6 @@ export type ConfirmResponse =
       error:
         | 'arithmetic_failed_unacknowledged'
         | 'cannot_verify_unacknowledged'
-        | 'already_imported'
         | 'unknown_bank'
         | 'no_text'
         | 'not_pdf'
@@ -99,18 +98,9 @@ export type ConfirmResponse =
         | 'malformed_ofx';
     };
 
-export interface CategorizePendingResponse {
-  groups: PendingGroup[];
-}
-
-export interface CategorizeBatchPayload {
-  key: string;
-  label: string;
-}
-
-export type CategorizeBatchResponse =
-  | { ok: true; applied: number }
-  | { ok: false; error: 'model_unavailable' | 'inference_failed' };
+export type RulesMutationResponse =
+  | { ok: true; rule: RuleDTO; applied: number }
+  | { ok: false; error: 'invalid_rule' };
 
 export interface IpcContract {
   'app:ping': { payload: PingPayload; response: PingResponse };
@@ -118,8 +108,10 @@ export interface IpcContract {
   'import:extract': { payload: ExtractPayload; response: ExtractResponse };
   'import:resolveAccount': { payload: ResolveAccountPayload; response: ResolveAccountResponse };
   'import:confirm': { payload: ConfirmPayload; response: ConfirmResponse };
-  'categorize:pending': { payload: Record<string, never>; response: CategorizePendingResponse };
-  'categorize:batch': { payload: CategorizeBatchPayload; response: CategorizeBatchResponse };
+  'rules:list': { payload: Record<string, never>; response: { rules: RuleDTO[] } };
+  'rules:create': { payload: RuleInput; response: RulesMutationResponse };
+  'rules:update': { payload: RuleInput & { id: string }; response: RulesMutationResponse };
+  'rules:delete': { payload: { id: string }; response: { ok: true } };
   'dashboard:getAccounts': {
     payload: Record<string, never>;
     response: { accounts: AccountSummary[] };
@@ -164,14 +156,8 @@ export interface IpcContract {
     response: { ok: true };
   };
   'banks:learn': { payload: LearnBankInput; response: LearnBankResponse };
+  'banks:prepareMapping': { payload: PrepareMappingInput; response: PrepareMappingResponse };
   'recurring:list': { payload: Record<string, never>; response: RecurringReport };
-  'model:status': { payload: Record<string, never>; response: ModelStatusResponse };
-  'model:download:start': { payload: Record<string, never>; response: { ok: true } };
-  'model:download:cancel': { payload: Record<string, never>; response: { ok: true } };
-  'model:remove': { payload: Record<string, never>; response: { ok: true } };
-  'model:selection:detect': { payload: Record<string, never>; response: { ok: true } };
-  'settings:getCategorizeOptOut': { payload: Record<string, never>; response: { value: boolean } };
-  'settings:setCategorizeOptOut': { payload: { value: boolean }; response: { ok: true } };
   'sync:getStatus': { payload: Record<string, never>; response: SyncStatusView };
   'sync:pickFolder': {
     payload: Record<string, never>;
@@ -195,5 +181,4 @@ export type IpcResponse<C extends IpcChannel> = IpcContract[C]['response'];
 export interface ElectronAPI {
   invoke: <C extends IpcChannel>(channel: C, payload: IpcPayload<C>) => Promise<IpcResponse<C>>;
   getDroppedPaths: (files: File[]) => string[];
-  onModelProgress: (cb: (status: ModelStatusResponse) => void) => () => void;
 }

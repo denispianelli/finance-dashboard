@@ -1,6 +1,8 @@
 import type { DatabaseSync } from 'node:sqlite';
 
-export type MatchType = 'contains' | 'exact' | 'regex';
+import type { RuleMatchType } from '@shared/types/rules';
+
+export type MatchType = RuleMatchType;
 
 export interface CategorizationRule {
   readonly id: string;

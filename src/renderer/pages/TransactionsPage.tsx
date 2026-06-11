@@ -6,6 +6,7 @@ import { Overline } from '../components/ui/overline';
 import { AccountTabs } from '../components/dashboard/AccountTabs';
 import { TxTableHeader, TxTableRow } from '../components/dashboard/TxTable';
 import { PeriodFilter, type DateRangeValue } from '../components/dashboard/PeriodFilter';
+import { RuleDialog, type RuleProposal } from '../components/categories/RuleDialog';
 import { useDashboard } from '../hooks/useDashboard';
 import { toAccount, toTxRow } from '../lib/dashboardMap';
 import {
@@ -67,7 +68,8 @@ function Segmented<T extends string>({
 }
 
 export function TransactionsPage() {
-  const { refreshToken, categorizing } = useOutletContext<AppOutletContext>();
+  const { refreshToken } = useOutletContext<AppOutletContext>();
+  const [ruleProposal, setRuleProposal] = useState<RuleProposal | null>(null);
   const {
     accounts,
     transactions,
@@ -75,10 +77,14 @@ export function TransactionsPage() {
     selectedAccountId,
     selectAccount,
     reassign,
+    refresh,
     createCategory,
     updateTransaction,
     deleteTransaction,
-  } = useDashboard(refreshToken, { transactionLimit: FULL_HISTORY_LIMIT });
+  } = useDashboard(refreshToken, {
+    transactionLimit: FULL_HISTORY_LIMIT,
+    onProposeRule: setRuleProposal,
+  });
 
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -224,9 +230,8 @@ export function TransactionsPage() {
                     <TxTableRow
                       row={toTxRow(t)}
                       categories={categories}
-                      categorizing={categorizing}
                       onReassign={(txId, catId) => {
-                        void reassign(txId, catId);
+                        void reassign(txId, catId, t.labelClean);
                       }}
                       onCreateCategory={createCategory}
                       editing={editingId === t.id}
@@ -256,6 +261,16 @@ export function TransactionsPage() {
           </div>
         )}
       </Card>
+      <RuleDialog
+        proposal={ruleProposal}
+        categories={categories}
+        onClose={() => {
+          setRuleProposal(null);
+        }}
+        onCreated={() => {
+          refresh();
+        }}
+      />
     </div>
   );
 }

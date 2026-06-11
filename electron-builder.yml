@@ -10,30 +10,10 @@ directories:
 files:
   - out/**
   - package.json
-  # Safety: never bundle the ~1.9 GB GGUF model — it lives in userData/models
-  # and downloads on demand (PR #163).
+  # Safety: never bundle leftover GGUF models (the LLM was removed — ADR-019;
+  # the dirs may still exist on dev machines).
   - '!models'
   - '!models/**'
-  # Keep the Windows CUDA backend (win-x64-cuda + its -ext cuBLAS DLLs) for GPU
-  # offload on NVIDIA machines — ~10x faster categorization (design:
-  # docs/superpowers/specs/2026-06-08-llm-gpu-acceleration). node-llama-cpp still
-  # falls back to CPU when no NVIDIA GPU is present. Drop Vulkan (broken/unused)
-  # and the non-Windows CUDA backends to limit artifact size.
-  - '!**/node_modules/@node-llama-cpp/*-vulkan*'
-  - '!**/node_modules/@node-llama-cpp/*-vulkan*/**'
-  - '!**/node_modules/@node-llama-cpp/linux-x64-cuda*'
-  - '!**/node_modules/@node-llama-cpp/linux-x64-cuda*/**'
-  - '!**/node_modules/@node-llama-cpp/mac-*-cuda*'
-  - '!**/node_modules/@node-llama-cpp/mac-*-cuda*/**'
-
-# node-llama-cpp ships per-platform native binaries that must run from disk,
-# not from inside the asar archive.
-# Globs sourced from the official node-llama-cpp electron scaffold template:
-# https://github.com/withcatai/node-llama-cpp/blob/master/templates/electron-typescript-react/electron-builder.ts
-asarUnpack:
-  - node_modules/node-llama-cpp/bins
-  - node_modules/node-llama-cpp/llama/localBuilds
-  - node_modules/@node-llama-cpp/*
 
 mac:
   target: dmg

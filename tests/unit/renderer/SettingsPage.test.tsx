@@ -3,41 +3,29 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 
 vi.mock('sonner', () => ({ toast: { info: vi.fn() } }));
-vi.mock('@renderer/ipc/client', () => ({
-  ipc: {
-    invoke: vi.fn(() => Promise.resolve({ state: 'absent' })),
-    onModelProgress: vi.fn(() => () => undefined),
-  },
+// The sync body talks IPC on mount and has its own test file — stub it here so
+// this test stays about the page structure.
+vi.mock('@renderer/components/sync/SyncSettingsSection', () => ({
+  SyncSettingsSection: () => null,
 }));
 
 import { SettingsPage } from '@renderer/pages/SettingsPage';
-import { ipc } from '@renderer/ipc/client';
 
 afterEach(() => {
   cleanup();
 });
 
 describe('SettingsPage', () => {
-  it('renders the three content sections', () => {
+  it('renders the three content sections and no model section', () => {
     render(<SettingsPage />);
-    expect(screen.getByText('Modèle LLM')).toBeInTheDocument();
+    expect(screen.getByText('Synchronisation')).toBeInTheDocument();
     expect(screen.getByText('Données & Sauvegarde')).toBeInTheDocument();
     expect(screen.getByText('Apparence & divers')).toBeInTheDocument();
+    expect(screen.queryByText('Modèle LLM')).not.toBeInTheDocument();
   });
 
-  it('shows the dynamic model name and role copy', async () => {
-    vi.mocked(ipc.invoke).mockResolvedValueOnce({
-      state: 'ready',
-      active: { id: 'qwen2.5-7b', label: 'Qwen2.5 7B', sizeBytes: 4683074240 },
-    });
+  it('disables the "à venir" actions (restore, reset)', () => {
     render(<SettingsPage />);
-    expect(await screen.findByText('Qwen2.5 7B')).toBeInTheDocument();
-    expect(screen.getByText(/Ne dialogue jamais/)).toBeInTheDocument();
-  });
-
-  it('disables the "à venir" actions (recategorize, restore, reset)', () => {
-    render(<SettingsPage />);
-    expect(screen.getByRole('button', { name: /Relancer la catégorisation/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Restaurer/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Tout réinitialiser/ })).toBeDisabled();
   });

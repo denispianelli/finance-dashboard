@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { Overline } from '../components/ui/overline';
 import { CategoryIcon } from '../lib/categoryIcon';
 import { CategoryForm } from '../components/categories/CategoryForm';
+import { RulesSection } from '../components/categories/RulesSection';
 import { useCategories } from '../hooks/useCategories';
 import { cn } from '../lib/utils';
 
@@ -17,53 +18,56 @@ export function CategoriesPage() {
   const [adding, setAdding] = useState(false);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-3.5">
-          <Overline>— I</Overline>
-          <CardTitle>Catégories</CardTitle>
-        </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            setAdding((a) => !a);
-          }}
-        >
-          <Plus size={14} strokeWidth={1.8} />
-          Nouvelle catégorie
-        </Button>
-      </CardHeader>
-
-      <p className="pb-1 font-sans text-[11px] text-paper-dim">
-        La catégorisation est automatique : règles intégrées à l'import, puis apprentissage de tes
-        corrections. Ici tu gères seulement tes catégories.
-      </p>
-
-      {adding && (
-        <div className="mb-2 rounded-md border border-line-2 bg-ink-2/60 p-3">
-          <CategoryForm
-            autoFocus
-            submitLabel="Créer la catégorie"
-            onSubmit={(input) => {
-              void createCategory(input);
-              setAdding(false);
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3.5">
+            <Overline>— I</Overline>
+            <CardTitle>Catégories</CardTitle>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setAdding((a) => !a);
             }}
-          />
-        </div>
-      )}
+          >
+            <Plus size={14} strokeWidth={1.8} />
+            Nouvelle catégorie
+          </Button>
+        </CardHeader>
 
-      <div className="flex flex-col">
-        {categories.map((c) => (
-          <CategoryRow
-            key={c.id}
-            category={c}
-            onRename={renameCategory}
-            onDelete={deleteCategory}
-          />
-        ))}
-      </div>
-    </Card>
+        <p className="pb-1 font-sans text-[11px] text-paper-dim">
+          La catégorisation est déterministe : tes règles à l'import, puis l'apprentissage de tes
+          corrections. Les règles se gèrent dans la section ci-dessous.
+        </p>
+
+        {adding && (
+          <div className="mb-2 rounded-md border border-line-2 bg-ink-2/60 p-3">
+            <CategoryForm
+              autoFocus
+              submitLabel="Créer la catégorie"
+              onSubmit={(input) => {
+                void createCategory(input);
+                setAdding(false);
+              }}
+            />
+          </div>
+        )}
+
+        <div className="flex flex-col">
+          {categories.map((c) => (
+            <CategoryRow
+              key={c.id}
+              category={c}
+              onRename={renameCategory}
+              onDelete={deleteCategory}
+            />
+          ))}
+        </div>
+      </Card>
+      <RulesSection categories={categories} />
+    </>
   );
 }
 

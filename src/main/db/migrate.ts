@@ -15,10 +15,17 @@ import sql013 from './migrations/013_transaction_refund.sql?raw';
 import sql014 from './migrations/014_refund_category.sql?raw';
 import sql015 from './migrations/015_app_settings.sql?raw';
 import sql016 from './migrations/016_index_label_amount.sql?raw';
+import sql017 from './migrations/017_llm_attempts.sql?raw';
+import sql018 from './migrations/018_imports_allow_reimport.sql?raw';
+import sql019 from './migrations/019_drop_llm_attempts.sql?raw';
 
 interface Migration {
   version: number;
   sql: string;
+  /** Drops/renames a table other tables reference: run with foreign_keys OFF
+   *  (a DROP would otherwise trip the children's references), then verify with
+   *  foreign_key_check before re-enabling. */
+  rebuildsTables?: boolean;
 }
 
 const MIGRATIONS: Migration[] = [
@@ -38,6 +45,9 @@ const MIGRATIONS: Migration[] = [
   { version: 14, sql: sql014 },
   { version: 15, sql: sql015 },
   { version: 16, sql: sql016 },
+  { version: 17, sql: sql017 },
+  { version: 18, sql: sql018, rebuildsTables: true },
+  { version: 19, sql: sql019 },
 ];
 
 /** Highest migration version this build knows — embedded in snapshot headers. */
@@ -55,8 +65,14 @@ export function runMigrations(db: DatabaseSync): void {
     ).map((r) => r.version),
   );
   const insertVersion = db.prepare('INSERT INTO schema_migrations(version) VALUES (?)');
+  const fkOn = (): boolean =>
+    (db.prepare('PRAGMA foreign_keys').get() as { foreign_keys: number }).foreign_keys === 1;
   for (const migration of MIGRATIONS) {
     if (applied.has(migration.version)) continue;
+    // PRAGMA foreign_keys is a no-op inside a transaction, so toggle it before BEGIN
+    // and only when the connection actually enforces FKs (tests usually don't).
+    const suspendFk = migration.rebuildsTables === true && fkOn();
+    if (suspendFk) db.exec('PRAGMA foreign_keys = OFF');
     db.exec('BEGIN');
     try {
       db.exec(migration.sql);
@@ -65,6 +81,11 @@ export function runMigrations(db: DatabaseSync): void {
     } catch (err) {
       db.exec('ROLLBACK');
       throw err;
+    } finally {
+      if (suspendFk) db.exec('PRAGMA foreign_keys = ON');
+    }
+    if (suspendFk && db.prepare('PRAGMA foreign_key_check').all().length > 0) {
+      throw new Error(`migration ${String(migration.version)} left broken foreign keys`);
     }
   }
 }

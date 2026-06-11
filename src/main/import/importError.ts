@@ -4,7 +4,6 @@ export type ImportErrorCode =
   | 'not_pdf'
   | 'arithmetic_failed_unacknowledged'
   | 'cannot_verify_unacknowledged'
-  | 'already_imported'
   | 'unsupported_format'
   | 'malformed_ofx';
 

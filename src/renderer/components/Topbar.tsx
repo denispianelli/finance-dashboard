@@ -1,4 +1,4 @@
-import { PanelLeft, Sparkles } from 'lucide-react';
+import { PanelLeft } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
@@ -27,18 +27,10 @@ export function Topbar({
   onImport,
   onToggleSidebar,
   sidebarCollapsed = false,
-  categorizing = false,
-  categorizeRemaining = 0,
-  pendingCount = 0,
-  onCategorize,
 }: {
   onImport: () => void;
   onToggleSidebar?: () => void;
   sidebarCollapsed?: boolean;
-  categorizing?: boolean;
-  categorizeRemaining?: number;
-  pendingCount?: number;
-  onCategorize?: () => void;
 }) {
   const { pathname } = useLocation();
   const meta = PAGE_META[pathname] ?? { title: 'Finance Dashboard', breadcrumb: [] };
@@ -86,25 +78,6 @@ export function Topbar({
         </h1>
       </div>
       <span className="flex-1" />
-      {categorizing ? (
-        <span
-          aria-live="polite"
-          className="inline-flex h-6 shrink-0 items-center gap-1.5 rounded-sm border border-line-2 bg-ink-3 px-[9px] font-sans text-[11px] font-medium text-paper-soft"
-        >
-          <Sparkles size={12} strokeWidth={1.6} className="shrink-0 text-brass" />
-          <span>Catégorisation IA… ({categorizeRemaining})</span>
-        </span>
-      ) : pendingCount > 0 && onCategorize ? (
-        <button
-          type="button"
-          onClick={onCategorize}
-          aria-label={`Catégoriser ${String(pendingCount)} transactions avec l'IA`}
-          className="inline-flex h-6 shrink-0 items-center gap-1.5 rounded-sm border border-line-2 bg-ink-3 px-[9px] font-sans text-[11px] font-medium text-paper-soft transition-colors hover:border-brass hover:text-paper"
-        >
-          <Sparkles size={12} strokeWidth={1.6} className="shrink-0 text-brass" />
-          <span>Catégoriser ({pendingCount})</span>
-        </button>
-      ) : null}
       <Button onClick={onImport} className="shrink-0">
         Importer un relevé
       </Button>
