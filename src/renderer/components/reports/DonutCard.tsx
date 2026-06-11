@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Overline } from '../ui/overline';
 import { formatCompact, formatEuro } from '../../lib/euro';
 
@@ -16,7 +16,15 @@ const R = (SIZE - THICKNESS) / 2;
 const CX = SIZE / 2;
 const CIRC = 2 * Math.PI * R;
 
-/** The kit's stroke-dasharray ring with a two-line centre (overline + serif total). */
+interface HoverState {
+  key: string;
+  x: number;
+  y: number;
+}
+
+/** The kit's stroke-dasharray ring with a two-line centre (overline + serif total).
+ *  Hovering a slice raises it slightly and shows a kit-style tooltip (label,
+ *  amount, share) — same visual language as the recharts ChartTooltipContent. */
 function Donut({
   segments,
   centerTop,
@@ -44,8 +52,18 @@ function Donut({
       cancelAnimationFrame(id);
     };
   }, []);
+
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState<HoverState | null>(null);
+  const hovered = hover === null ? undefined : segments.find((s) => s.key === hover.key);
+  const track = (key: string) => (e: React.MouseEvent) => {
+    const rect = wrapRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setHover({ key, x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
   return (
-    <div className="relative shrink-0" style={{ width: SIZE, height: SIZE }}>
+    <div ref={wrapRef} className="relative shrink-0" style={{ width: SIZE, height: SIZE }}>
       <svg
         width={SIZE}
         height={SIZE}
@@ -61,15 +79,19 @@ function Donut({
             r={R}
             fill="none"
             stroke={a.color}
-            strokeWidth={THICKNESS}
+            strokeWidth={hover?.key === a.key ? THICKNESS + 3 : THICKNESS}
             strokeDasharray={`${String(shown ? a.dash : 0)} ${String(CIRC)}`}
             strokeDashoffset={-a.offset}
             strokeLinecap="butt"
             style={{ transition: 'stroke-dasharray 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}
+            onMouseMove={track(a.key)}
+            onMouseLeave={() => {
+              setHover(null);
+            }}
           />
         ))}
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-0.5">
         <span className="font-sans text-[9px] font-semibold uppercase tracking-[0.14em] text-paper-mute">
           {centerTop}
         </span>
@@ -77,6 +99,20 @@ function Donut({
           {centerMain}
         </span>
       </div>
+      {hover !== null && hovered !== undefined && (
+        <div
+          role="tooltip"
+          className="pointer-events-none absolute z-10 flex items-center gap-2 whitespace-nowrap rounded-md border border-line-2 bg-ink-2 px-2.5 py-1.5 font-sans text-[11px] shadow-md"
+          style={{ left: hover.x + 12, top: hover.y - 8 }}
+        >
+          <span className="h-2 w-2 shrink-0 rounded-[2px]" style={{ background: hovered.color }} />
+          <span className="text-paper-soft">{hovered.label}</span>
+          <span className="font-mono tabular-nums text-paper">{formatEuro(hovered.value)}</span>
+          <span className="font-mono tabular-nums text-paper-dim">
+            {String(Math.round((Math.abs(hovered.value) / total) * 100))}%
+          </span>
+        </div>
+      )}
     </div>
   );
 }
