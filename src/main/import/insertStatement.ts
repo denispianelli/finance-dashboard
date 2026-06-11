@@ -26,7 +26,10 @@ export async function insertStatement(
 ): Promise<InsertResult> {
   const extraction = await extractStatement(db, accountId, content);
 
-  if (extraction.alreadyImported) throw new ImportError('already_imported');
+  // A known file (alreadyImported) is NOT a blocker: duplicate protection is
+  // per-transaction (the isDuplicate flags below), so a partially-imported
+  // statement can deliver its remaining rows. The review surfaces the file-level
+  // info; the old hard reject here silently discarded the user's selection.
   if (extraction.arithmetic.status === 'failed' && opts.acknowledgedArithmeticFailed !== true) {
     throw new ImportError('arithmetic_failed_unacknowledged');
   }

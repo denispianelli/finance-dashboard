@@ -84,7 +84,6 @@ export type ConfirmResponse =
       error:
         | 'arithmetic_failed_unacknowledged'
         | 'cannot_verify_unacknowledged'
-        | 'already_imported'
         | 'unknown_bank'
         | 'no_text'
         | 'not_pdf'
