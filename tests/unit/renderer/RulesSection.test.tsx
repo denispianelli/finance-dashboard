@@ -81,7 +81,8 @@ describe('RulesSection', () => {
   it('lists rules with value, category, hit count and creation date', async () => {
     render(<RulesSection categories={CATEGORIES} />);
     expect(await screen.findByText('NETFLIX')).toBeTruthy();
-    expect(screen.getByText('Loisirs')).toBeTruthy();
+    // 'Loisirs' shows both as the row's category and as a filter <option>.
+    expect(screen.getAllByText('Loisirs')).toHaveLength(2);
     expect(screen.getByText('12 ×')).toBeTruthy();
     expect(screen.getByText('ZZZ EXACT')).toBeTruthy();
     expect(screen.getByText('2026-05-15')).toBeTruthy();
@@ -113,5 +114,37 @@ describe('RulesSection', () => {
       matchValue: 'NETFLIX FR',
       categoryId: 'cat-loisirs',
     });
+  });
+
+  it('filters rules by value text and shows the filtered count', async () => {
+    render(<RulesSection categories={CATEGORIES} />);
+    await screen.findByText('NETFLIX');
+
+    await userEvent.type(screen.getByLabelText('Rechercher une règle'), 'netf');
+
+    expect(screen.getByText('NETFLIX')).toBeTruthy();
+    expect(screen.queryByText('ZZZ EXACT')).toBeNull();
+    expect(screen.getByText('1 / 2 règles')).toBeTruthy();
+  });
+
+  it('filters rules by category', async () => {
+    render(<RulesSection categories={CATEGORIES} />);
+    await screen.findByText('NETFLIX');
+
+    await userEvent.selectOptions(
+      screen.getByLabelText('Filtrer par catégorie'),
+      'cat-alimentation',
+    );
+
+    expect(screen.getByText('ZZZ EXACT')).toBeTruthy();
+    expect(screen.queryByText('NETFLIX')).toBeNull();
+  });
+
+  it('shows no count and the full list without an active filter', async () => {
+    render(<RulesSection categories={CATEGORIES} />);
+    await screen.findByText('NETFLIX');
+
+    expect(screen.getByText('ZZZ EXACT')).toBeTruthy();
+    expect(screen.queryByText(/\/ 2 règles/)).toBeNull();
   });
 });

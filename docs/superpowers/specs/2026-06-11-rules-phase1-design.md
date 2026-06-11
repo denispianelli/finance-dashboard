@@ -69,6 +69,10 @@ A « Règles » section appended to the existing Categories page:
 - Inline edit: match value, match type, category. Delete with a confirmation step.
 - Seed rules are ordinary rows: editable and deletable like user rules (full
   transparency — this is the user's engine now).
+- **Filters** (added during validation, 2026-06-11): a text search on the match value
+  and a category selector (« Toutes les catégories »), plus a « N / M règles » count
+  while a filter is active. Filters only narrow the list — the relative order always
+  stays the matching order (first match wins); no sorting, ever, in this view.
 
 ### 4. IPC + backend
 

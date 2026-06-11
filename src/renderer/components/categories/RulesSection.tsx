@@ -24,6 +24,18 @@ const TYPE_LABEL: Record<RuleMatchType, string> = {
  */
 export function RulesSection({ categories }: { categories: CategoryDTO[] }) {
   const { rules, updateRule, deleteRule } = useRules();
+  const [query, setQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+
+  // Filters only narrow the list — the relative order always stays the matching
+  // order (first rule wins), which is information, not presentation.
+  const needle = query.trim().toUpperCase();
+  const filtered = rules.filter(
+    (r) =>
+      (needle === '' || r.matchValue.toUpperCase().includes(needle)) &&
+      (categoryFilter === '' || r.categoryId === categoryFilter),
+  );
+  const filterActive = needle !== '' || categoryFilter !== '';
 
   return (
     <Card>
@@ -37,8 +49,39 @@ export function RulesSection({ categories }: { categories: CategoryDTO[] }) {
         Appliquées dans l'ordre à l'import (première règle qui matche). Crée une règle depuis une
         correction : reclasse une transaction, puis « Créer une règle » dans la notification.
       </p>
+      <div className="flex items-center gap-2 pb-2">
+        <input
+          aria-label="Rechercher une règle"
+          placeholder="Rechercher une valeur…"
+          className={cn(FIELD, 'min-w-0 flex-1')}
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+          }}
+        />
+        <select
+          aria-label="Filtrer par catégorie"
+          className={FIELD}
+          value={categoryFilter}
+          onChange={(e) => {
+            setCategoryFilter(e.target.value);
+          }}
+        >
+          <option value="">Toutes les catégories</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        {filterActive && (
+          <span className="shrink-0 font-mono text-[11px] tabular-nums text-paper-dim">
+            {filtered.length} / {rules.length} règles
+          </span>
+        )}
+      </div>
       <div className="flex flex-col">
-        {rules.map((r) => (
+        {filtered.map((r) => (
           <RuleRow
             key={r.id}
             rule={r}
