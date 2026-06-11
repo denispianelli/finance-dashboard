@@ -302,4 +302,61 @@ describe('useImport — queue', () => {
     // State must still be 'queue' (no summary / file failure)
     expect(result.current.state.step).toBe('queue');
   });
+
+  it('learnBank never leaves unknownBank while awaiting banks:learn (no learning interstitial)', async () => {
+    // Regression: the old code transitioned to a 'learning' sub-state before the
+    // IPC call resolved, which unmounted MappingAssistantView and discarded the
+    // user's typed bank name and column slots. The fix removes that transition
+    // entirely — every render snapshot must show sub.step === 'unknownBank'.
+    mockInvoke
+      .mockResolvedValueOnce({
+        ok: true,
+        identifier: 'pdf:abc',
+        matchedAccountId: null,
+        sourceType: 'pdf',
+        detectedBank: null,
+      }) // resolve → no match
+      .mockResolvedValueOnce({ ok: false, error: 'unknown_bank' }) // extract → unknown_bank
+      .mockResolvedValueOnce({ ok: true, suggested: null, headerTokens: [] }) // banks:prepareMapping
+      .mockResolvedValueOnce({ ok: false, error: 'invalid_mapping' }); // banks:learn → invalid mapping
+
+    const subStepSnapshots: string[] = [];
+
+    const { result, rerender } = renderHook(() => {
+      const hook = useImport();
+      // Capture every render's sub step while we're in the queue.
+      if (hook.state.step === 'queue') {
+        subStepSnapshots.push(hook.state.sub.step);
+      }
+      return hook;
+    });
+
+    await act(async () => {
+      await result.current.startFromPaths(['/x/releve.pdf']);
+    });
+    await act(async () => {
+      await result.current.chooseAccount('acc-a');
+    });
+    // Reset snapshots to only capture what happens during learnBank.
+    subStepSnapshots.length = 0;
+    await act(async () => {
+      await result.current.learnBank('Crédit Agricole', {
+        date: 1,
+        valeur: null,
+        label: 2,
+        debit: 3,
+        credit: null,
+        balance: null,
+      });
+    });
+    rerender();
+
+    // Every render during / after learnBank must have been 'unknownBank' — the
+    // 'learning' sub-step must never appear.
+    expect(subStepSnapshots.every((s) => s === 'unknownBank')).toBe(true);
+    expect(result.current.state).toMatchObject({
+      step: 'queue',
+      sub: { step: 'unknownBank', mappingError: true },
+    });
+  });
 });

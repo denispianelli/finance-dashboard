@@ -37,7 +37,6 @@ export type SubState =
       headerTokens: string[];
       mappingError: boolean;
     }
-  | { step: 'learning'; accountId: string }
   | {
       step: 'review';
       extraction: StatementExtraction;
@@ -285,7 +284,6 @@ export function useImport(): UseImport {
     const { accountId, suggested, headerTokens } = cur.sub;
     const file = cur.files[cur.index];
     if (file === undefined) return;
-    setS({ ...cur, sub: { step: 'learning', accountId } });
     const res = await safeInvoke(ipc.invoke('banks:learn', { path: file.path, bankName, order }));
     if (res?.ok) {
       await runExtract(cur.files, cur.index, cur.results, accountId, false);

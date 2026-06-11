@@ -229,12 +229,6 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
           />
         )}
 
-        {sub?.step === 'learning' && (
-          <div className="flex flex-col items-center gap-2 py-8">
-            <p className="text-sm text-paper">Enregistrement de la banque…</p>
-          </div>
-        )}
-
         {sub?.step === 'review' && (
           <ReviewView
             extraction={sub.extraction}
