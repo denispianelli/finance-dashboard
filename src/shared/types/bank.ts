@@ -11,11 +11,21 @@ export interface ColumnOrder {
 export interface LearnBankInput {
   readonly path: string;
   readonly bankName: string;
+  readonly order: ColumnOrder;
 }
 
 export type LearnBankResponse =
   | { readonly ok: true; readonly bankId: string }
+  | { readonly ok: false; readonly error: 'not_pdf' | 'no_text' | 'invalid_mapping' };
+
+export interface PrepareMappingInput {
+  readonly path: string;
+}
+
+export type PrepareMappingResponse =
   | {
-      readonly ok: false;
-      readonly error: 'model_unavailable' | 'not_pdf' | 'no_text' | 'inference_failed';
-    };
+      readonly ok: true;
+      readonly suggested: ColumnOrder | null;
+      readonly headerTokens: string[];
+    }
+  | { readonly ok: false; readonly error: 'not_pdf' | 'no_text' };

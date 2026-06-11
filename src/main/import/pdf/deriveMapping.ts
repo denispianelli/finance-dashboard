@@ -1,5 +1,5 @@
 import type { ColumnMapping } from './extractTransactions';
-import type { ColumnOrder } from './inferColumns';
+import type { ColumnOrder } from '@shared/types/bank';
 
 /** Minimal positioned token (PdfTextItem is structurally compatible). */
 export interface PositionedToken {

@@ -25,7 +25,7 @@ import {
   handleCategoriesDelete,
   handleTransactionsSetCategory,
 } from './handlers/categories';
-import { handleBanksLearn } from './handlers/learnBank';
+import { handleBanksLearn, handleBanksPrepareMapping } from './handlers/learnBank';
 import { handleRecurringList } from './handlers/recurringList';
 import { handleImportResolveAccount } from './handlers/importResolveAccount';
 import {
@@ -98,6 +98,7 @@ export function registerAllHandlers(): void {
   register(CHANNELS.transactionsRestore, handleTransactionsRestore);
   register(CHANNELS.transactionsSetTransfer, handleTransactionsSetTransfer);
   register(CHANNELS.banksLearn, handleBanksLearn);
+  register(CHANNELS.banksPrepareMapping, handleBanksPrepareMapping);
   register(CHANNELS.recurringList, () => handleRecurringList());
   register(CHANNELS.importResolveAccount, handleImportResolveAccount);
   register(CHANNELS.modelStatus, () => handleModelStatus());

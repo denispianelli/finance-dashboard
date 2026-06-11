@@ -25,7 +25,12 @@ import type {
   CreateCategoryInput,
   SetTransactionCategoryInput,
 } from './category';
-import type { LearnBankInput, LearnBankResponse } from './bank';
+import type {
+  LearnBankInput,
+  LearnBankResponse,
+  PrepareMappingInput,
+  PrepareMappingResponse,
+} from './bank';
 import type { RecurringReport } from './recurring';
 import type { UpdateTransactionInput, DeletedTransactionSnapshot } from './transaction';
 import type { RuleDTO, RuleInput } from './rules';
@@ -165,6 +170,7 @@ export interface IpcContract {
     response: { ok: true };
   };
   'banks:learn': { payload: LearnBankInput; response: LearnBankResponse };
+  'banks:prepareMapping': { payload: PrepareMappingInput; response: PrepareMappingResponse };
   'recurring:list': { payload: Record<string, never>; response: RecurringReport };
   'model:status': { payload: Record<string, never>; response: ModelStatusResponse };
   'model:download:start': { payload: Record<string, never>; response: { ok: true } };
