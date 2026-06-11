@@ -251,7 +251,7 @@ describe('useImport — queue', () => {
     });
   });
 
-  it('transitions to modelRequired (not failure) when banks:learn returns model_unavailable', async () => {
+  it('returns to the assistant with mappingError when banks:learn rejects the mapping', async () => {
     mockInvoke
       .mockResolvedValueOnce({
         ok: true,
@@ -261,7 +261,8 @@ describe('useImport — queue', () => {
         detectedBank: null,
       }) // resolve → no match
       .mockResolvedValueOnce({ ok: false, error: 'unknown_bank' }) // extract → unknown_bank
-      .mockResolvedValueOnce({ ok: false, error: 'model_unavailable' }); // banks:learn → model unavailable
+      .mockResolvedValueOnce({ ok: true, suggested: null, headerTokens: [] }) // banks:prepareMapping
+      .mockResolvedValueOnce({ ok: false, error: 'invalid_mapping' }); // banks:learn → invalid mapping
 
     const { result } = renderHook(() => useImport());
 
@@ -274,22 +275,29 @@ describe('useImport — queue', () => {
       sub: { step: 'chooseAccount' },
     });
 
-    // chooseAccount → extract → unknownBank
+    // chooseAccount → extract → prepareMapping → unknownBank
     await act(async () => {
       await result.current.chooseAccount('acc-a');
     });
     expect(result.current.state).toMatchObject({
       step: 'queue',
-      sub: { step: 'unknownBank', accountId: 'acc-a' },
+      sub: { step: 'unknownBank', accountId: 'acc-a', mappingError: false },
     });
 
-    // learnBank with model_unavailable → must land on modelRequired, NOT failure
+    // learnBank with invalid_mapping → must return to unknownBank with mappingError: true
     await act(async () => {
-      await result.current.learnBank('Crédit Agricole');
+      await result.current.learnBank('Crédit Agricole', {
+        date: 1,
+        valeur: null,
+        label: 2,
+        debit: 3,
+        credit: null,
+        balance: null,
+      });
     });
     expect(result.current.state).toMatchObject({
       step: 'queue',
-      sub: { step: 'modelRequired', accountId: 'acc-a', bankName: 'Crédit Agricole' },
+      sub: { step: 'unknownBank', accountId: 'acc-a', mappingError: true },
     });
     // State must still be 'queue' (no summary / file failure)
     expect(result.current.state.step).toBe('queue');
