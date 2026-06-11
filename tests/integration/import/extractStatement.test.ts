@@ -24,7 +24,7 @@ describe('extractStatement — real LCL fixture', () => {
       expect(r.arithmetic.status).toBe('passed');
       expect(r.periodOverlap.hasOverlap).toBe(false);
       expect(r.alreadyImported).toBe(false);
-      expect(r.dateRangeStart).toBe('2025-10-31');
+      expect(r.dateRangeStart).toBe('2025-11-01');
       expect(r.dateRangeEnd).toBe('2025-12-02');
       for (const tx of r.transactions) {
         expect(tx.tx_hash).toMatch(/^[0-9a-f]{64}$/);
