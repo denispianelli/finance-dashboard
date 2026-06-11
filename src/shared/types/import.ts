@@ -56,14 +56,6 @@ export interface CategorizeItem {
   label: string;
 }
 
-/** A distinct pending label (grouped by stableLabelKey): classified once by the
- *  LLM, then applied to every transaction sharing it. */
-export interface PendingGroup {
-  key: string; // stableLabelKey of the group
-  label: string; // representative label_raw (the group's oldest row) — the LLM reads this
-  count: number; // how many pending transactions share the key
-}
-
 /** The LLM's suggestion for one transaction (categoryId null = none fit). */
 export interface CategorizeResult {
   id: string;

@@ -6,7 +6,6 @@ import { handlePing } from './handlers/ping';
 import { handlePickFile } from './handlers/importPickFile';
 import { handleImportExtract } from './handlers/importExtract';
 import { handleImportConfirm } from './handlers/importConfirm';
-import { handleCategorizePending, handleCategorizeBatch } from './handlers/categorize';
 import { handleDashboardGetAccounts } from './handlers/dashboardGetAccounts';
 import { handleDashboardGetTransactions } from './handlers/dashboardGetTransactions';
 import { handleDashboardMetrics } from './handlers/dashboardMetrics';
@@ -34,15 +33,6 @@ import {
   handleTransactionsRestore,
 } from './handlers/transactions';
 import { handleTransactionsSetTransfer } from './handlers/transactionsSetTransfer';
-import {
-  handleModelStatus,
-  handleModelDownloadStart,
-  handleModelDownloadCancel,
-  handleModelRemove,
-  handleModelDetectSelection,
-  handleGetCategorizeOptOut,
-  handleSetCategorizeOptOut,
-} from './handlers/model';
 import {
   handleRulesList,
   handleRulesCreate,
@@ -76,8 +66,6 @@ export function registerAllHandlers(): void {
   register(CHANNELS.importPickFile, () => handlePickFile());
   register(CHANNELS.importExtract, handleImportExtract);
   register(CHANNELS.importConfirm, handleImportConfirm);
-  register(CHANNELS.categorizePending, () => handleCategorizePending());
-  register(CHANNELS.categorizeBatch, handleCategorizeBatch);
   register(CHANNELS.dashboardGetAccounts, () => handleDashboardGetAccounts());
   register(CHANNELS.dashboardGetTransactions, handleDashboardGetTransactions);
   register(CHANNELS.dashboardMetrics, handleDashboardMetrics);
@@ -101,13 +89,6 @@ export function registerAllHandlers(): void {
   register(CHANNELS.banksPrepareMapping, handleBanksPrepareMapping);
   register(CHANNELS.recurringList, () => handleRecurringList());
   register(CHANNELS.importResolveAccount, handleImportResolveAccount);
-  register(CHANNELS.modelStatus, () => handleModelStatus());
-  register(CHANNELS.modelDownloadStart, () => handleModelDownloadStart());
-  register(CHANNELS.modelDownloadCancel, () => handleModelDownloadCancel());
-  register(CHANNELS.modelRemove, () => handleModelRemove());
-  register(CHANNELS.modelDetectSelection, () => handleModelDetectSelection());
-  register(CHANNELS.settingsGetCategorizeOptOut, () => handleGetCategorizeOptOut());
-  register(CHANNELS.settingsSetCategorizeOptOut, handleSetCategorizeOptOut);
   register(CHANNELS.rulesList, () => handleRulesList());
   register(CHANNELS.rulesCreate, handleRulesCreate);
   register(CHANNELS.rulesUpdate, handleRulesUpdate);
