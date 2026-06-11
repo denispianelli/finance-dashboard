@@ -98,3 +98,87 @@ We re-anchor on a sharper execution target without changing the north star.
    `docs/superpowers/specs/2026-06-06-mvp-personal-finance-design.md`.
 
 The north star sentence and the privacy invariant (ADR-002) are unchanged and still govern.
+
+## Amendment 2 (2026-06-10) — personal patrimoine tool; assets & liabilities in scope
+
+### Context
+
+Two premises of this ADR no longer hold as stated.
+
+**The competitive argument has dissolved.** §Context cut patrimoine tracking partly because
+"on that field the product loses: incumbents (Finary, Linxo, Bankin') have PSD2, cloud and
+teams." That argument presumes a market to win. The maintainer has explicitly dropped the
+ambition of targeting users: the product is **a personal patrimoine tool for the maintainer**
+— a private, free equivalent of what cloud apps charge for. With one deliberate user there is
+no field to lose on. The remaining scope guard is **effort focus and the north star**, not
+market positioning. The maintainer's real patrimoine — current and joint accounts, Livret A,
+PEA, AV, primary residence, an amortizing mortgage — is the scope. Without the residence and
+the mortgage, the displayed "net worth" is wrong by omission.
+
+**The privacy invariant was being over-applied.** ADR-002 defines the invariant over _data_
+("no user data ever leaves the machine"), yet §3 cut valuation with a _packets_ reading
+("price feeds = network calls = contradicts the 100%-local promise"). The rhetoric hardened
+to "no network, ever". This amendment corrects the wording; it does not weaken the invariant.
+
+### Decision
+
+1. **Product identity: personal patrimoine tool.** The north star sentence is unchanged and
+   now reads over the whole patrimoine, not just bank accounts. Multi-user remains a non-goal
+   (Amendment 1) — indefinitely, not just "for now".
+
+2. **Net worth = accounts + declared assets − liabilities.** Two object classes enter the
+   model:
+   - **Declared-value assets** (primary residence): user-declared valuation with a revision
+     history; revalued manually (e.g. yearly). No automatic estimation, no address lookup.
+   - **Liabilities** (amortizing mortgage): declared once (rate, duration, payment, start
+     date), then fully deterministic — amortization schedule, outstanding principal at any
+     date, capital/interest split per installment, interest paid per year, total remaining
+     cost, payoff date. Verifiable against the loan offer to the cent.
+
+3. **§3 is narrowed, not reversed.** What stays out is **market valuation via price feeds**.
+   What enters is patrimoine by cash flows and declared values — including performance for
+   PEA/AV: **money-weighted return (TRI)** computed from imported deposits/withdrawals plus
+   the declared current balance, and **time-weighted return (TTWROR)** chained from the
+   declared-balance revision history (a monthly update habit is enough). Zero network,
+   deterministic, verifiable — the same two metrics Portfolio Performance reports.
+   Position-level PEA tracking is **not** network-gated: the sanctioned growth path
+   ("level 2") is importing PEA/securities **statements** through the existing PDF pipeline —
+   quantities, dividends, fees and statement-date valuations are read from the statement
+   itself, 100% local. Deferred: the maintainer is a passive DCA investor on 1–3 ETFs, so
+   level 1 (TRI/TTWROR) suffices; revisit only if it proves insufficient in use. Only
+   **price feeds** (daily valuation, benchmark series) require the network-policy ADR (§5).
+
+4. **Deterministic projections are in scope** (compound-interest scenarios with explicit,
+   user-set assumptions; goal tracking). The §2 cut targeted _generative_ insights — an LLM
+   reasoning over figures — not arithmetic. The distinction is the engine: formulas the user
+   can check, never model output.
+
+5. **Privacy wording corrected: the invariant is about data, not packets.** Restated:
+   _no third party ever learns anything about the user's finances._ Offline-by-default stays —
+   the app is fully functional with no network, and the network only ever adds convenience.
+   The existing allowed calls (opt-in version check, model download) are unchanged. Any new
+   class of network call (e.g. bulk price files for PEA valuation, benchmark series) requires
+   its own ADR (reserved: ADR-018 "network policy" — ADR-017 is taken by the user-managed
+   encrypted sync folder) and must be opt-in, main-process only, and structurally unable to
+   reveal user data (bulk fetch, never per-asset queries). Nothing in this amendment requires
+   network.
+
+6. **Execution shortlist (ordered):** full mortgage module → declared primary residence →
+   patrimoine allocation view with user-set targets and drift → TRI + TTWROR for PEA/AV →
+   deterministic projections → AV fee cost (user-entered contract rates). Later:
+   recurring-charge change alerts, monthly replay, level-2 PEA statement import (§3).
+   **Still out, unchanged:** budgets/envelopes, price feeds and benchmark comparison (level 3,
+   only via the network-policy ADR), automatic property estimation, crypto, multi-currency,
+   multi-user, PSD2, conversational AI.
+
+### Consequences
+
+- **Spirit references:** Portfolio Performance (open source, local) for computational rigor —
+  and as the UI anti-reference: we pair its rigor with this product's design system. Finary
+  for the value bar of paid features we replicate deterministically (TRI, projections, fees).
+- CLAUDE.md scope guard and README out-of-scope wording updated to match (same change).
+- The next execution spec (patrimoine phase) supersedes the MVP spec as day-to-day target;
+  the MVP spec remains the record of the shipped MVP.
+- "Gained/lost" (cash flow) and net worth (balances + assets − liabilities) remain distinct
+  figures; the mortgage installment splits into interest (expense) and principal (transfer to
+  equity, not an expense) — the accounting treatment gets its own design doc before build.

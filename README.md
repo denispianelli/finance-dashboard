@@ -40,9 +40,11 @@ The app:
 **All on your machine. Source code is public so the privacy promise is verifiable.**
 
 **Deliberately out of scope** (ADR-009 — identity, not backlog): conversational chat,
-natural-language search, generative insights, market valuation / investment performance
-tracking (price feeds = network calls = breaks the local promise). The LLM classifies in the
-background; it never converses.
+natural-language search, generative insights, budgets, market price feeds and position-level
+investment tracking. Patrimoine is tracked from your own statements and declared values —
+mortgage amortization, asset allocation, money-weighted returns (TRI), deterministic
+projections — all computed locally, no network. The LLM classifies in the background; it
+never converses.
 
 ## Stack
 
@@ -70,8 +72,9 @@ Specs and plans for shipped work are archived under
 ## Roadmap
 
 The MVP (import → categorization → consolidated dashboard → Reports → recurring detection) is
-**done**. Current work is post-MVP hardening: categorization quality, desktop packaging,
-cross-machine sync. Any future feature is tested against the north star sentence — if it does
+**done**. Current work: extending the model to the full patrimoine — mortgage, primary
+residence, allocation, returns (ADR-009 Amendment 2) — plus post-MVP hardening
+(categorization quality, desktop packaging, cross-machine sync). Any future feature is tested against the north star sentence — if it does
 not serve it, it is cut, not parked (ADR-009). During MVP mode work is tracked on a
 lightweight TODO, not a public board.
 
