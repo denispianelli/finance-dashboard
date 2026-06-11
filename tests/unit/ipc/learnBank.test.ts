@@ -1,13 +1,7 @@
-// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { cleanup } from '@testing-library/react';
 import { DatabaseSync } from 'node:sqlite';
 import { runMigrations } from '../../../src/main/db/migrate';
 import type { PdfPage } from '../../../src/main/import/pdf/extract';
-
-afterEach(() => {
-  cleanup();
-});
 
 const dbHolder: { db: DatabaseSync | null } = { db: null };
 vi.mock('../../../src/main/db', () => ({ getDb: () => dbHolder.db }));
@@ -16,10 +10,11 @@ vi.mock('../../../src/main/import/readImportFile', () => ({
   readImportFile: vi.fn(() => Buffer.from('%PDF-1.4 fake')),
 }));
 const extractMock = vi.fn();
-vi.mock('../../../src/main/import/pdf/extract', async (importOriginal) => {
-  const orig = await importOriginal<typeof import('../../../src/main/import/pdf/extract')>();
-  return { ...orig, extractPdfText: (...a: unknown[]) => extractMock(...a) as unknown };
-});
+// Full mock (no importOriginal): the handler only uses extractPdfText at runtime,
+// and pulling the real module would drag pdfjs-dist into the test graph.
+vi.mock('../../../src/main/import/pdf/extract', () => ({
+  extractPdfText: (...a: unknown[]) => extractMock(...a) as unknown,
+}));
 
 import {
   handleBanksLearn,
