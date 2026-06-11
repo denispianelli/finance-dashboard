@@ -1,15 +1,9 @@
-// @vitest-environment jsdom
-import { afterEach, describe, it, expect } from 'vitest';
-import { cleanup } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
 import {
   suggestColumnOrder,
   validateColumnOrder,
 } from '../../../../src/main/import/pdf/suggestColumns';
 import type { PdfPage, PdfTextItem } from '../../../../src/main/import/pdf/extract';
-
-afterEach(() => {
-  cleanup();
-});
 
 function item(str: string, x: number, y: number): PdfTextItem {
   return { str, x, y, width: 0 };
