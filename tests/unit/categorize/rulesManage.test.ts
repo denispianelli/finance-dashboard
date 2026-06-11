@@ -82,6 +82,22 @@ describe('createRule', () => {
     ).toMatchObject({ user_modified: 0 });
   });
 
+  it('applies a regex rule retroactively', () => {
+    insertTx({ id: 't1', label: 'ZZZREF 0042' });
+    insertTx({ id: 't2', label: 'OTHER THING' });
+
+    const { applied } = createRule(db, {
+      matchType: 'regex',
+      matchValue: 'ZZZREF \\d+',
+      categoryId: 'cat-alimentation',
+    });
+
+    expect(applied).toBe(1);
+    expect(db.prepare('SELECT category_id FROM transactions WHERE id = ?').get('t1')).toMatchObject(
+      { category_id: 'cat-alimentation' },
+    );
+  });
+
   it.each([
     {
       name: 'empty value',

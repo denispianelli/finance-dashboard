@@ -85,14 +85,21 @@ function applyRetroactively(db: DatabaseSync, rule: CategorizationRule): number 
     .all() as unknown as { id: string; label_clean: string }[];
   const ids = rows.filter((r) => matchRule([rule], r.label_clean) !== null).map((r) => r.id);
   if (ids.length === 0) return 0;
-  const placeholders = ids.map(() => '?').join(',');
-  const res = db
-    .prepare(
-      `UPDATE transactions SET category_id = ?
-        WHERE id IN (${placeholders}) AND category_id IS NULL`,
-    )
-    .run(rule.categoryId, ...ids);
-  const applied = Number(res.changes);
+  // Chunked: a single IN (...) would hit SQLite's bind-variable limit (~32k)
+  // on a large residual.
+  const CHUNK = 500;
+  let applied = 0;
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const chunk = ids.slice(i, i + CHUNK);
+    const placeholders = chunk.map(() => '?').join(',');
+    const res = db
+      .prepare(
+        `UPDATE transactions SET category_id = ?
+          WHERE id IN (${placeholders}) AND category_id IS NULL`,
+      )
+      .run(rule.categoryId, ...chunk);
+    applied += Number(res.changes);
+  }
   db.prepare('UPDATE categorization_rules SET hit_count = hit_count + ? WHERE id = ?').run(
     applied,
     rule.id,
