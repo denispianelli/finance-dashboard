@@ -8,6 +8,39 @@ From v0.1.0 onward this file is generated automatically by
 [Conventional Commits](https://www.conventionalcommits.org/). Do not edit
 released sections by hand.
 
+## [0.5.0](https://github.com/denispianelli/finance-dashboard/compare/v0.4.0...v0.5.0) (2026-06-11)
+
+
+### Features
+
+* **categorize:** auto background categorization, non-blocking ([#207](https://github.com/denispianelli/finance-dashboard/issues/207)) ([0696b3e](https://github.com/denispianelli/finance-dashboard/commit/0696b3e674ac4c78b06224914455ff13362b0ecb))
+* **categorize:** one-click rules from corrections + rules audit section ([#212](https://github.com/denispianelli/finance-dashboard/issues/212)) ([f59833e](https://github.com/denispianelli/finance-dashboard/commit/f59833e12d507c7a249442cfaf0b7eb922bbaf52))
+* **dashboard:** show a hover tooltip on the balance chart ([#204](https://github.com/denispianelli/finance-dashboard/issues/204)) ([47a8cc5](https://github.com/denispianelli/finance-dashboard/commit/47a8cc5530c805bde183321cfa25b32c4a3242a4))
+* **dashboard:** wire chart range chips to a real balance series ([#202](https://github.com/denispianelli/finance-dashboard/issues/202)) ([3acab5a](https://github.com/denispianelli/finance-dashboard/commit/3acab5ac1f3f653f422cd1dd8790f60af8ddfc30))
+* **import:** allow acknowledged import despite a failed arithmetic check ([#203](https://github.com/denispianelli/finance-dashboard/issues/203)) ([db0dbfd](https://github.com/denispianelli/finance-dashboard/commit/db0dbfde5e2ad7aac1d49650fe7b17e9437d35c8))
+* **import:** capture multi-line PDF labels; key on digit-free tokens ([#205](https://github.com/denispianelli/finance-dashboard/issues/205)) ([74b9667](https://github.com/denispianelli/finance-dashboard/commit/74b9667b6e4c19325a04344f0224fac1fe27da6f))
+* **import:** manual bank mapping assistant (ADR-019 phase 1b) ([#214](https://github.com/denispianelli/finance-dashboard/issues/214)) ([e6b29e1](https://github.com/denispianelli/finance-dashboard/commit/e6b29e195eeca7ee0ef4aa3dffa217e9573143d9))
+
+
+### Bug Fixes
+
+* **categorize:** key history matching on stableLabelKey ([#200](https://github.com/denispianelli/finance-dashboard/issues/200)) ([56a3d98](https://github.com/denispianelli/finance-dashboard/commit/56a3d98b3a820689da5792ebb8c6ca80d65a1f1b))
+* **categorize:** match contains rules at word boundaries ([#198](https://github.com/denispianelli/finance-dashboard/issues/198)) ([d5bdc3f](https://github.com/denispianelli/finance-dashboard/commit/d5bdc3f11771ea84277d1e1a0d04c0b397716cff))
+* **import:** import the selected non-duplicate rows of an already-known file ([#210](https://github.com/denispianelli/finance-dashboard/issues/210)) ([48ac51e](https://github.com/denispianelli/finance-dashboard/commit/48ac51ea71ce7538d36304b3d37f3ab07cc3127f))
+
+
+### Refactoring
+
+* remove the LLM (ADR-019 phase 2) ([#215](https://github.com/denispianelli/finance-dashboard/issues/215)) ([f7d1ea3](https://github.com/denispianelli/finance-dashboard/commit/f7d1ea36a4a45de1f0d47040551bd39690acbcde))
+
+
+### Documentation
+
+* **adr:** amend ADR-009 — personal patrimoine tool, assets & liabilities in scope ([#209](https://github.com/denispianelli/finance-dashboard/issues/209)) ([d2788b0](https://github.com/denispianelli/finance-dashboard/commit/d2788b0e141fc7dda865f3e00fcf653609d43fdf))
+* **adr:** decide LLM removal — deterministic categorization and bank mapping (ADR-019) ([#211](https://github.com/denispianelli/finance-dashboard/issues/211)) ([f347a36](https://github.com/denispianelli/finance-dashboard/commit/f347a36312f46ea10aa1c6e68fa834a3134143b0))
+* **claude:** add working-loop rules for single-maintainer build sessions ([#213](https://github.com/denispianelli/finance-dashboard/issues/213)) ([1c46498](https://github.com/denispianelli/finance-dashboard/commit/1c46498a72fad7ae8eacbc106c6472ec7358084c))
+* realign README with ADR-009 scope; archive shipped specs and plans ([#206](https://github.com/denispianelli/finance-dashboard/issues/206)) ([a763812](https://github.com/denispianelli/finance-dashboard/commit/a763812644df4c96e9fb5a076074563368c257e2))
+
 ## [0.4.0](https://github.com/denispianelli/finance-dashboard/compare/v0.3.0...v0.4.0) (2026-06-10)
 
 
