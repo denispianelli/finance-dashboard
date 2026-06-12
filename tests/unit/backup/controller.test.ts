@@ -75,6 +75,15 @@ describe('snapshotBeforeImport', () => {
   });
 });
 
+describe('createNow', () => {
+  it('writes a snapshot and returns its file name', () => {
+    const res = controller.createNow();
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(listBackups(join(dir, 'backups')).map((b) => b.fileName)).toContain(res.fileName);
+  });
+});
+
 describe('restore', () => {
   it('refuses a fileName that is not a plain backup name (path traversal)', () => {
     expect(controller.restore('../finance.sqlite')).toEqual({
