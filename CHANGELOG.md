@@ -10,17 +10,15 @@ released sections by hand.
 
 ## [0.6.0](https://github.com/denispianelli/finance-dashboard/compare/v0.5.0...v0.6.0) (2026-06-12)
 
-
 ### Features
 
-* **backup:** local rotating snapshots + read-only JSON export ([#220](https://github.com/denispianelli/finance-dashboard/issues/220)) ([c5341b2](https://github.com/denispianelli/finance-dashboard/commit/c5341b2c85bafa877c05200113d2b2bdeb1b0f91))
-* **reports:** kit tooltips on the flow bars and donut slices ([#217](https://github.com/denispianelli/finance-dashboard/issues/217)) ([cb1a035](https://github.com/denispianelli/finance-dashboard/commit/cb1a0353e3a58f11fbb8e8bdb6633f44ba14e4b5))
-* **sync:** encrypted sync-folder snapshots for multi-machine use ([#208](https://github.com/denispianelli/finance-dashboard/issues/208)) ([540271b](https://github.com/denispianelli/finance-dashboard/commit/540271b70a45036add713ad306c9fde04963a82e))
-
+- **backup:** local rotating snapshots + read-only JSON export ([#220](https://github.com/denispianelli/finance-dashboard/issues/220)) ([c5341b2](https://github.com/denispianelli/finance-dashboard/commit/c5341b2c85bafa877c05200113d2b2bdeb1b0f91))
+- **reports:** kit tooltips on the flow bars and donut slices ([#217](https://github.com/denispianelli/finance-dashboard/issues/217)) ([cb1a035](https://github.com/denispianelli/finance-dashboard/commit/cb1a0353e3a58f11fbb8e8bdb6633f44ba14e4b5))
+- **sync:** encrypted sync-folder snapshots for multi-machine use ([#208](https://github.com/denispianelli/finance-dashboard/issues/208)) ([540271b](https://github.com/denispianelli/finance-dashboard/commit/540271b70a45036add713ad306c9fde04963a82e))
 
 ### Documentation
 
-* **spec:** local rotating backups + read-only JSON export design ([#219](https://github.com/denispianelli/finance-dashboard/issues/219)) ([033b46e](https://github.com/denispianelli/finance-dashboard/commit/033b46e6686b012d49210e4d10b10bfd6e36f94d))
+- **spec:** local rotating backups + read-only JSON export design ([#219](https://github.com/denispianelli/finance-dashboard/issues/219)) ([033b46e](https://github.com/denispianelli/finance-dashboard/commit/033b46e6686b012d49210e4d10b10bfd6e36f94d))
 
 ## [0.5.0](https://github.com/denispianelli/finance-dashboard/compare/v0.4.0...v0.5.0) (2026-06-11)
 
