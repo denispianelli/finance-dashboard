@@ -8,6 +8,13 @@ From v0.1.0 onward this file is generated automatically by
 [Conventional Commits](https://www.conventionalcommits.org/). Do not edit
 released sections by hand.
 
+## [0.6.1](https://github.com/denispianelli/finance-dashboard/compare/v0.6.0...v0.6.1) (2026-06-12)
+
+
+### Bug Fixes
+
+* **shell:** refresh sidebar net worth after account create/rename/delete ([#222](https://github.com/denispianelli/finance-dashboard/issues/222)) ([5b44dc4](https://github.com/denispianelli/finance-dashboard/commit/5b44dc49d3959d8a8d34085a2e4c902a732f2d5d))
+
 ## [0.6.0](https://github.com/denispianelli/finance-dashboard/compare/v0.5.0...v0.6.0) (2026-06-12)
 
 ### Features
