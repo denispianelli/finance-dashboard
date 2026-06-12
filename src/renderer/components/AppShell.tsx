@@ -48,6 +48,9 @@ export function AppShell() {
                 openCreateAccount: () => {
                   setCreateAccountOpen(true);
                 },
+                notifyDataChanged: () => {
+                  setRefreshToken((t) => t + 1);
+                },
               } satisfies AppOutletContext
             }
           />

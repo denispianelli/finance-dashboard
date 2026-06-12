@@ -24,8 +24,10 @@ import { cn } from '../../lib/utils';
 const INPUT =
   'h-9 rounded-md border border-line-2 bg-ink-3 px-2.5 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
 
-export function AccountManager() {
-  const { accounts, createAccount, updateAccount, deleteAccount } = useAccounts();
+/** `onMutated` is forwarded to `useAccounts` so account create / rename / delete
+ *  can refresh shell-level data (sidebar net worth). */
+export function AccountManager({ onMutated }: { onMutated?: () => void }) {
+  const { accounts, createAccount, updateAccount, deleteAccount } = useAccounts(onMutated);
   const [adding, setAdding] = useState(false);
 
   return (
