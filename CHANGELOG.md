@@ -8,39 +8,76 @@ From v0.1.0 onward this file is generated automatically by
 [Conventional Commits](https://www.conventionalcommits.org/). Do not edit
 released sections by hand.
 
-## [0.4.0](https://github.com/denispianelli/finance-dashboard/compare/v0.3.0...v0.4.0) (2026-06-10)
-
+## [0.6.0](https://github.com/denispianelli/finance-dashboard/compare/v0.5.0...v0.6.0) (2026-06-12)
 
 ### Features
 
-* **sidebar:** net worth anchor + manual collapse toggle ([#178](https://github.com/denispianelli/finance-dashboard/issues/178)) ([3a07c89](https://github.com/denispianelli/finance-dashboard/commit/3a07c890fec116d8c5464453e6cc0c84b916a926))
+- **backup:** local rotating snapshots + read-only JSON export ([#220](https://github.com/denispianelli/finance-dashboard/issues/220)) ([c5341b2](https://github.com/denispianelli/finance-dashboard/commit/c5341b2c85bafa877c05200113d2b2bdeb1b0f91))
+- **reports:** kit tooltips on the flow bars and donut slices ([#217](https://github.com/denispianelli/finance-dashboard/issues/217)) ([cb1a035](https://github.com/denispianelli/finance-dashboard/commit/cb1a0353e3a58f11fbb8e8bdb6633f44ba14e4b5))
+- **sync:** encrypted sync-folder snapshots for multi-machine use ([#208](https://github.com/denispianelli/finance-dashboard/issues/208)) ([540271b](https://github.com/denispianelli/finance-dashboard/commit/540271b70a45036add713ad306c9fde04963a82e))
 
+### Documentation
+
+- **spec:** local rotating backups + read-only JSON export design ([#219](https://github.com/denispianelli/finance-dashboard/issues/219)) ([033b46e](https://github.com/denispianelli/finance-dashboard/commit/033b46e6686b012d49210e4d10b10bfd6e36f94d))
+
+## [0.5.0](https://github.com/denispianelli/finance-dashboard/compare/v0.4.0...v0.5.0) (2026-06-11)
+
+### Features
+
+- **categorize:** auto background categorization, non-blocking ([#207](https://github.com/denispianelli/finance-dashboard/issues/207)) ([0696b3e](https://github.com/denispianelli/finance-dashboard/commit/0696b3e674ac4c78b06224914455ff13362b0ecb))
+- **categorize:** one-click rules from corrections + rules audit section ([#212](https://github.com/denispianelli/finance-dashboard/issues/212)) ([f59833e](https://github.com/denispianelli/finance-dashboard/commit/f59833e12d507c7a249442cfaf0b7eb922bbaf52))
+- **dashboard:** show a hover tooltip on the balance chart ([#204](https://github.com/denispianelli/finance-dashboard/issues/204)) ([47a8cc5](https://github.com/denispianelli/finance-dashboard/commit/47a8cc5530c805bde183321cfa25b32c4a3242a4))
+- **dashboard:** wire chart range chips to a real balance series ([#202](https://github.com/denispianelli/finance-dashboard/issues/202)) ([3acab5a](https://github.com/denispianelli/finance-dashboard/commit/3acab5ac1f3f653f422cd1dd8790f60af8ddfc30))
+- **import:** allow acknowledged import despite a failed arithmetic check ([#203](https://github.com/denispianelli/finance-dashboard/issues/203)) ([db0dbfd](https://github.com/denispianelli/finance-dashboard/commit/db0dbfde5e2ad7aac1d49650fe7b17e9437d35c8))
+- **import:** capture multi-line PDF labels; key on digit-free tokens ([#205](https://github.com/denispianelli/finance-dashboard/issues/205)) ([74b9667](https://github.com/denispianelli/finance-dashboard/commit/74b9667b6e4c19325a04344f0224fac1fe27da6f))
+- **import:** manual bank mapping assistant (ADR-019 phase 1b) ([#214](https://github.com/denispianelli/finance-dashboard/issues/214)) ([e6b29e1](https://github.com/denispianelli/finance-dashboard/commit/e6b29e195eeca7ee0ef4aa3dffa217e9573143d9))
 
 ### Bug Fixes
 
-* **import:** honour the OFX declared charset instead of forcing latin-1 ([#188](https://github.com/denispianelli/finance-dashboard/issues/188)) ([0ff47b2](https://github.com/denispianelli/finance-dashboard/commit/0ff47b2d45eabda33e19c93610ac646542d2d78a)), closes [#182](https://github.com/denispianelli/finance-dashboard/issues/182)
-* **import:** robust amount/date/balance parsing for non-LCL banks ([#187](https://github.com/denispianelli/finance-dashboard/issues/187)) ([ea5ff4c](https://github.com/denispianelli/finance-dashboard/commit/ea5ff4ca55e658833ac6ffd7926b49c816c4ed21))
-* **main:** backend correctness cleanup (label normalize, NaN, no-op, dates, logs) ([#190](https://github.com/denispianelli/finance-dashboard/issues/190)) ([cdf7ea3](https://github.com/denispianelli/finance-dashboard/commit/cdf7ea3e55e76b8f4dc6637ba805fe860edcafb6))
-* **nav:** sidebar import opens the modal; drop dead placeholders ([#176](https://github.com/denispianelli/finance-dashboard/issues/176)) ([e951808](https://github.com/denispianelli/finance-dashboard/commit/e951808a0dfb9fbde01f0d492afb300134d1137a))
-* **renderer:** consistent data invalidation and visible IPC read errors ([#192](https://github.com/denispianelli/finance-dashboard/issues/192)) ([0f2a35c](https://github.com/denispianelli/finance-dashboard/commit/0f2a35cdf08d775df42e86f272cbf65b88a00c76)), closes [#181](https://github.com/denispianelli/finance-dashboard/issues/181)
-* **security:** harden renderer against egress and arbitrary file reads ([#179](https://github.com/denispianelli/finance-dashboard/issues/179)) ([028b9f4](https://github.com/denispianelli/finance-dashboard/commit/028b9f4bd9e8904ac5829d88ac9d20bd1a19bd74))
-* **ui:** remove dead controls — chart range chips, CSV picker, silent categorize ([#189](https://github.com/denispianelli/finance-dashboard/issues/189)) ([4d54d90](https://github.com/denispianelli/finance-dashboard/commit/4d54d90afda28b940f587ec683c687667dd903c8)), closes [#183](https://github.com/denispianelli/finance-dashboard/issues/183)
+- **categorize:** key history matching on stableLabelKey ([#200](https://github.com/denispianelli/finance-dashboard/issues/200)) ([56a3d98](https://github.com/denispianelli/finance-dashboard/commit/56a3d98b3a820689da5792ebb8c6ca80d65a1f1b))
+- **categorize:** match contains rules at word boundaries ([#198](https://github.com/denispianelli/finance-dashboard/issues/198)) ([d5bdc3f](https://github.com/denispianelli/finance-dashboard/commit/d5bdc3f11771ea84277d1e1a0d04c0b397716cff))
+- **import:** import the selected non-duplicate rows of an already-known file ([#210](https://github.com/denispianelli/finance-dashboard/issues/210)) ([48ac51e](https://github.com/denispianelli/finance-dashboard/commit/48ac51ea71ce7538d36304b3d37f3ab07cc3127f))
+
+### Refactoring
+
+- remove the LLM (ADR-019 phase 2) ([#215](https://github.com/denispianelli/finance-dashboard/issues/215)) ([f7d1ea3](https://github.com/denispianelli/finance-dashboard/commit/f7d1ea36a4a45de1f0d47040551bd39690acbcde))
+
+### Documentation
+
+- **adr:** amend ADR-009 — personal patrimoine tool, assets & liabilities in scope ([#209](https://github.com/denispianelli/finance-dashboard/issues/209)) ([d2788b0](https://github.com/denispianelli/finance-dashboard/commit/d2788b0e141fc7dda865f3e00fcf653609d43fdf))
+- **adr:** decide LLM removal — deterministic categorization and bank mapping (ADR-019) ([#211](https://github.com/denispianelli/finance-dashboard/issues/211)) ([f347a36](https://github.com/denispianelli/finance-dashboard/commit/f347a36312f46ea10aa1c6e68fa834a3134143b0))
+- **claude:** add working-loop rules for single-maintainer build sessions ([#213](https://github.com/denispianelli/finance-dashboard/issues/213)) ([1c46498](https://github.com/denispianelli/finance-dashboard/commit/1c46498a72fad7ae8eacbc106c6472ec7358084c))
+- realign README with ADR-009 scope; archive shipped specs and plans ([#206](https://github.com/denispianelli/finance-dashboard/issues/206)) ([a763812](https://github.com/denispianelli/finance-dashboard/commit/a763812644df4c96e9fb5a076074563368c257e2))
+
+## [0.4.0](https://github.com/denispianelli/finance-dashboard/compare/v0.3.0...v0.4.0) (2026-06-10)
+
+### Features
+
+- **sidebar:** net worth anchor + manual collapse toggle ([#178](https://github.com/denispianelli/finance-dashboard/issues/178)) ([3a07c89](https://github.com/denispianelli/finance-dashboard/commit/3a07c890fec116d8c5464453e6cc0c84b916a926))
+
+### Bug Fixes
+
+- **import:** honour the OFX declared charset instead of forcing latin-1 ([#188](https://github.com/denispianelli/finance-dashboard/issues/188)) ([0ff47b2](https://github.com/denispianelli/finance-dashboard/commit/0ff47b2d45eabda33e19c93610ac646542d2d78a)), closes [#182](https://github.com/denispianelli/finance-dashboard/issues/182)
+- **import:** robust amount/date/balance parsing for non-LCL banks ([#187](https://github.com/denispianelli/finance-dashboard/issues/187)) ([ea5ff4c](https://github.com/denispianelli/finance-dashboard/commit/ea5ff4ca55e658833ac6ffd7926b49c816c4ed21))
+- **main:** backend correctness cleanup (label normalize, NaN, no-op, dates, logs) ([#190](https://github.com/denispianelli/finance-dashboard/issues/190)) ([cdf7ea3](https://github.com/denispianelli/finance-dashboard/commit/cdf7ea3e55e76b8f4dc6637ba805fe860edcafb6))
+- **nav:** sidebar import opens the modal; drop dead placeholders ([#176](https://github.com/denispianelli/finance-dashboard/issues/176)) ([e951808](https://github.com/denispianelli/finance-dashboard/commit/e951808a0dfb9fbde01f0d492afb300134d1137a))
+- **renderer:** consistent data invalidation and visible IPC read errors ([#192](https://github.com/denispianelli/finance-dashboard/issues/192)) ([0f2a35c](https://github.com/denispianelli/finance-dashboard/commit/0f2a35cdf08d775df42e86f272cbf65b88a00c76)), closes [#181](https://github.com/denispianelli/finance-dashboard/issues/181)
+- **security:** harden renderer against egress and arbitrary file reads ([#179](https://github.com/denispianelli/finance-dashboard/issues/179)) ([028b9f4](https://github.com/denispianelli/finance-dashboard/commit/028b9f4bd9e8904ac5829d88ac9d20bd1a19bd74))
+- **ui:** remove dead controls — chart range chips, CSV picker, silent categorize ([#189](https://github.com/denispianelli/finance-dashboard/issues/189)) ([4d54d90](https://github.com/denispianelli/finance-dashboard/commit/4d54d90afda28b940f587ec683c687667dd903c8)), closes [#183](https://github.com/denispianelli/finance-dashboard/issues/183)
 
 ## [0.3.0](https://github.com/denispianelli/finance-dashboard/compare/v0.2.0...v0.3.0) (2026-06-08)
 
-
 ### Features
 
-* **categorize:** dedup + one-label-per-call + skeleton ([#170](https://github.com/denispianelli/finance-dashboard/issues/170)) ([04905cd](https://github.com/denispianelli/finance-dashboard/commit/04905cdb40db39dd11acbd75f1b7537fd0c0b563))
-* **categorize:** passthrough payees categorized by amount ([#173](https://github.com/denispianelli/finance-dashboard/issues/173)) ([54e5e4a](https://github.com/denispianelli/finance-dashboard/commit/54e5e4a1689c845d0b9857266be0bcca3cba3423))
-* **llm:** GPU (CUDA) acceleration for categorization ([#168](https://github.com/denispianelli/finance-dashboard/issues/168)) ([495a622](https://github.com/denispianelli/finance-dashboard/commit/495a6227723684fd3b011a5a513d82cd3b5baf6a))
-* **llm:** hardware-tiered model selection (adopt Qwen-7B) ([#174](https://github.com/denispianelli/finance-dashboard/issues/174)) ([c4da5da](https://github.com/denispianelli/finance-dashboard/commit/c4da5da4706ef381c132f7575558a659a5e8befb))
-* **model:** active-model transparency + opt-in upgrade banner (Phase B) ([#175](https://github.com/denispianelli/finance-dashboard/issues/175)) ([8541b21](https://github.com/denispianelli/finance-dashboard/commit/8541b21cc8c0e03bcb3843d6e19b809ff983f88b))
-
+- **categorize:** dedup + one-label-per-call + skeleton ([#170](https://github.com/denispianelli/finance-dashboard/issues/170)) ([04905cd](https://github.com/denispianelli/finance-dashboard/commit/04905cdb40db39dd11acbd75f1b7537fd0c0b563))
+- **categorize:** passthrough payees categorized by amount ([#173](https://github.com/denispianelli/finance-dashboard/issues/173)) ([54e5e4a](https://github.com/denispianelli/finance-dashboard/commit/54e5e4a1689c845d0b9857266be0bcca3cba3423))
+- **llm:** GPU (CUDA) acceleration for categorization ([#168](https://github.com/denispianelli/finance-dashboard/issues/168)) ([495a622](https://github.com/denispianelli/finance-dashboard/commit/495a6227723684fd3b011a5a513d82cd3b5baf6a))
+- **llm:** hardware-tiered model selection (adopt Qwen-7B) ([#174](https://github.com/denispianelli/finance-dashboard/issues/174)) ([c4da5da](https://github.com/denispianelli/finance-dashboard/commit/c4da5da4706ef381c132f7575558a659a5e8befb))
+- **model:** active-model transparency + opt-in upgrade banner (Phase B) ([#175](https://github.com/denispianelli/finance-dashboard/issues/175)) ([8541b21](https://github.com/denispianelli/finance-dashboard/commit/8541b21cc8c0e03bcb3843d6e19b809ff983f88b))
 
 ### Bug Fixes
 
-* **llm:** model download on fresh install + CPU-only build ([#166](https://github.com/denispianelli/finance-dashboard/issues/166)) ([c51dbb7](https://github.com/denispianelli/finance-dashboard/commit/c51dbb76cd7e7af050c12757fdc5bdc709fcd68a))
+- **llm:** model download on fresh install + CPU-only build ([#166](https://github.com/denispianelli/finance-dashboard/issues/166)) ([c51dbb7](https://github.com/denispianelli/finance-dashboard/commit/c51dbb76cd7e7af050c12757fdc5bdc709fcd68a))
 
 ## [0.2.0](https://github.com/denispianelli/finance-dashboard/compare/v0.1.0...v0.2.0) (2026-06-08)
 

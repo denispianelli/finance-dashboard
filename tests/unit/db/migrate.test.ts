@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
-import { runMigrations } from '../../../src/main/db/migrate';
+import { runMigrations, LATEST_SCHEMA_VERSION } from '../../../src/main/db/migrate';
 
 describe('runMigrations', () => {
   it('creates all tables on a fresh database', () => {
@@ -116,5 +116,17 @@ describe('runMigrations', () => {
     ).map((c) => c.name);
     expect(cols).toContain('deprecated_at');
     expect(cols).toContain('replaced_by_event_id');
+  });
+});
+
+describe('LATEST_SCHEMA_VERSION', () => {
+  it('matches the max applied migration version', () => {
+    const db = new DatabaseSync(':memory:');
+    runMigrations(db);
+    const row = db.prepare('SELECT MAX(version) AS v FROM schema_migrations').get() as {
+      v: number;
+    };
+    expect(LATEST_SCHEMA_VERSION).toBe(row.v);
+    db.close();
   });
 });

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { deriveColumnMapping } from '../../../../src/main/import/pdf/deriveMapping';
-import type { ColumnOrder } from '../../../../src/main/import/pdf/inferColumns';
+import type { ColumnOrder } from '@shared/types/bank';
 
 const SG_ORDER: ColumnOrder = { date: 1, valeur: 2, label: 3, debit: 4, credit: 5, balance: 6 };
 
@@ -32,7 +32,14 @@ describe('deriveColumnMapping', () => {
   });
 
   it('maps a clean two-column layout (no balance)', () => {
-    const order: ColumnOrder = { date: 1, valeur: null, label: 2, debit: 3, credit: 4, balance: null };
+    const order: ColumnOrder = {
+      date: 1,
+      valeur: null,
+      label: 2,
+      debit: 3,
+      credit: 4,
+      balance: null,
+    };
     const tokens = [
       { str: '03.02', x: 40 },
       { str: 'CARREFOUR', x: 75 },

@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
   monthLabelFr,
+  chartPeriodLabelFr,
   splitEuro,
   kpiDelta,
   sparkPoints,
-  chartGeometry,
   topSpendingCategories,
   latestMonth,
 } from '@renderer/lib/dashboardCharts';
@@ -87,18 +87,6 @@ describe('sparkPoints', () => {
   });
 });
 
-describe('chartGeometry', () => {
-  it('is empty for no values', () => {
-    expect(chartGeometry([])).toEqual({ line: '', area: '' });
-  });
-  it('builds a line and a closed area path', () => {
-    const { line, area } = chartGeometry([1, 2, 3]);
-    expect(line.split(' ')).toHaveLength(3);
-    expect(area.startsWith('M')).toBe(true);
-    expect(area.endsWith('Z')).toBe(true);
-  });
-});
-
 describe('topSpendingCategories', () => {
   const txs = [
     tx({ amount: -80, categoryName: 'Alimentation', date: '2026-05-02' }),
@@ -120,6 +108,21 @@ describe('topSpendingCategories', () => {
     expect(topSpendingCategories(txs, '2026-05', 1)).toEqual([
       { name: 'Alimentation', total: 100 },
     ]);
+  });
+});
+
+describe('chartPeriodLabelFr', () => {
+  it('formats a monthly period as month + year', () => {
+    expect(chartPeriodLabelFr('2026-05')).toBe('mai 2026');
+  });
+
+  it('formats a daily period as day + month + year, without a leading zero', () => {
+    expect(chartPeriodLabelFr('2026-05-15')).toBe('15 mai 2026');
+    expect(chartPeriodLabelFr('2026-03-01')).toBe('1 mars 2026');
+  });
+
+  it('passes through an unparseable period', () => {
+    expect(chartPeriodLabelFr('n/a')).toBe('n/a');
   });
 });
 

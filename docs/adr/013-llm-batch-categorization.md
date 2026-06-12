@@ -1,7 +1,8 @@
 # ADR-013 — LLM batch categorization
 
-- **Status**: Accepted — **amended 2026-06-05** (categorization moved from the
-  import Review to an async background pass; see the Amendment at the end)
+- **Status**: Superseded by ADR-019 (the LLM is removed from the product) —
+  previously amended 2026-06-05 (categorization moved from the import Review to an
+  async background pass; see the Amendment at the end)
 - **Date**: 2026-06-05
 - **Category**: LLM, Product, UX
 - **Related**: ADR-003 (deterministic extraction), ADR-004 (model selection),

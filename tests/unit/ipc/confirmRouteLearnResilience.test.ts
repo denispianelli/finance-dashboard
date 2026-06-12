@@ -9,6 +9,12 @@ import { findAccountByIdentifier } from '../../../src/main/import/accountRoutes'
 let testDb: DatabaseSync;
 vi.mock('../../../src/main/db', () => ({ getDb: () => testDb }));
 
+// importConfirm pulls in the electron-wired backup singleton; keep electron
+// out of the unit graph and make the pre-import snapshot a no-op success.
+vi.mock('../../../src/main/backup', () => ({
+  backupController: { snapshotBeforeImport: () => true },
+}));
+
 // Make route reading throw a non-ImportError runtime error to prove the
 // handler still returns ok:true for an import whose rows were written.
 vi.mock('../../../src/main/import/accountIdentifier', () => ({

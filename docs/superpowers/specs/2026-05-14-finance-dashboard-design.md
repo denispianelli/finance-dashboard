@@ -354,7 +354,7 @@ date de chaque transaction (vue fidèle à l'époque), tandis que `as_of_now`
 applique les événements postérieurs pour exprimer l'historique dans la
 taxonomie actuelle (vue rétrospective comparable dans le temps). Détails
 complets, sémantique du résolveur et règle de mapping exhaustive pour les
-splits : `docs/superpowers/specs/2026-05-20-versioned-taxonomy-design.md`
+splits : `docs/superpowers/specs/archive/2026-05-20-versioned-taxonomy-design.md`
 (et ADR-010).
 
 ## 11. Pages & UI

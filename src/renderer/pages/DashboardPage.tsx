@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Link, useNavigate, useOutletContext } from 'react-router-dom';
+import type { ChartRange } from '@shared/types/dashboard';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Overline } from '../components/ui/overline';
@@ -8,11 +10,12 @@ import { Kpi } from '../components/dashboard/Kpi';
 import { ChartCard } from '../components/dashboard/ChartCard';
 import { Insight, Quote, QuoteNum } from '../components/dashboard/Insight';
 import { TxTable } from '../components/dashboard/TxTable';
+import { RuleDialog, type RuleProposal } from '../components/categories/RuleDialog';
 import { useDashboard } from '../hooks/useDashboard';
+import { useBalanceSeries } from '../hooks/useBalanceSeries';
 import { toAccount, toTxRow } from '../lib/dashboardMap';
 import { formatEuro, MINUS, NBSP } from '../lib/euro';
 import {
-  chartGeometry,
   kpiDelta,
   latestMonth,
   monthLabelFr,
@@ -28,6 +31,7 @@ const RECENT_LIMIT = 10;
 export function DashboardPage() {
   const { refreshToken, openCreateAccount } = useOutletContext<AppOutletContext>();
   const navigate = useNavigate();
+  const [ruleProposal, setRuleProposal] = useState<RuleProposal | null>(null);
   const {
     accounts,
     transactions,
@@ -35,8 +39,9 @@ export function DashboardPage() {
     categories,
     selectedAccountId,
     reassign,
+    refresh,
     createCategory,
-  } = useDashboard(refreshToken);
+  } = useDashboard(refreshToken, { onProposeRule: setRuleProposal });
 
   const { series, balance } = metrics;
   const last = series.at(-1);
@@ -58,7 +63,8 @@ export function DashboardPage() {
     last && prev ? kpiDelta(Math.abs(last.expense), Math.abs(prev.expense), false) : undefined;
   const incomeDelta = last && prev ? kpiDelta(last.income, prev.income, true) : undefined;
 
-  const geom = chartGeometry(series.map((s) => s.balance));
+  const [chartRange, setChartRange] = useState<ChartRange>('1y');
+  const { points } = useBalanceSeries(selectedAccountId, chartRange, refreshToken);
   const accountCount = accounts.length;
   const chartCaption =
     month !== null
@@ -120,7 +126,12 @@ export function DashboardPage() {
       </KpiGrid>
 
       <Row2>
-        <ChartCard line={geom.line} area={geom.area} caption={chartCaption} />
+        <ChartCard
+          points={points}
+          caption={chartCaption}
+          range={chartRange}
+          onRangeChange={setChartRange}
+        />
         <Insight>
           {topCat ? (
             <>
@@ -156,7 +167,8 @@ export function DashboardPage() {
             rows={transactions.slice(0, RECENT_LIMIT).map(toTxRow)}
             categories={categories}
             onReassign={(txId, catId) => {
-              void reassign(txId, catId);
+              const t = transactions.find((tx) => tx.id === txId);
+              void reassign(txId, catId, t?.labelClean);
             }}
             onCreateCategory={createCategory}
           />
@@ -166,6 +178,16 @@ export function DashboardPage() {
           </p>
         )}
       </Card>
+      <RuleDialog
+        proposal={ruleProposal}
+        categories={categories}
+        onClose={() => {
+          setRuleProposal(null);
+        }}
+        onCreated={() => {
+          refresh();
+        }}
+      />
     </>
   );
 }

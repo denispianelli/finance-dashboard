@@ -9,6 +9,12 @@ vi.mock('../../../src/main/db', () => ({
   getDb: () => testDb,
 }));
 
+// importConfirm pulls in the electron-wired backup singleton; keep electron
+// out of the unit graph and make the pre-import snapshot a no-op success.
+vi.mock('../../../src/main/backup', () => ({
+  backupController: { snapshotBeforeImport: () => true },
+}));
+
 const { handleImportExtract } = await import('../../../src/main/ipc/handlers/importExtract');
 const { handleImportConfirm } = await import('../../../src/main/ipc/handlers/importConfirm');
 

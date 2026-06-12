@@ -5,6 +5,7 @@ import { normalizeLabel } from './txHash';
 import { ImportError } from './importError';
 import { loadRules } from '../categorize/rules';
 import { buildPassthroughDetector } from '../categorize/passthrough';
+import { buildHistoryIndex } from '../categorize/history';
 import { resolveImportCategory } from '../categorize/resolveImportCategory';
 
 export interface InsertResult {
@@ -17,12 +18,21 @@ export async function insertStatement(
   db: DatabaseSync,
   accountId: string,
   content: Buffer,
-  opts: { acknowledgedCannotVerify?: boolean; selectedHashes?: string[] } = {},
+  opts: {
+    acknowledgedCannotVerify?: boolean;
+    acknowledgedArithmeticFailed?: boolean;
+    selectedHashes?: string[];
+  } = {},
 ): Promise<InsertResult> {
   const extraction = await extractStatement(db, accountId, content);
 
-  if (extraction.alreadyImported) throw new ImportError('already_imported');
-  if (extraction.arithmetic.status === 'failed') throw new ImportError('arithmetic_failed');
+  // A known file (alreadyImported) is NOT a blocker: duplicate protection is
+  // per-transaction (the isDuplicate flags below), so a partially-imported
+  // statement can deliver its remaining rows. The review surfaces the file-level
+  // info; the old hard reject here silently discarded the user's selection.
+  if (extraction.arithmetic.status === 'failed' && opts.acknowledgedArithmeticFailed !== true) {
+    throw new ImportError('arithmetic_failed_unacknowledged');
+  }
   if (extraction.arithmetic.status === 'cannot_verify' && opts.acknowledgedCannotVerify !== true) {
     throw new ImportError('cannot_verify_unacknowledged');
   }
@@ -60,6 +70,7 @@ export async function insertStatement(
     // in the import Review screen (cascade tier), not stored as a score.
     const rules = loadRules(db);
     const isPassthrough = buildPassthroughDetector(db);
+    const history = buildHistoryIndex(db);
     const hits = new Map<string, number>();
     const selectedSet =
       opts.selectedHashes !== undefined ? new Set(opts.selectedHashes) : undefined;
@@ -69,11 +80,11 @@ export async function insertStatement(
       if (selectedSet !== undefined && !selectedSet.has(tx.tx_hash)) continue;
       const labelClean = normalizeLabel(tx.label);
       const { categoryId, ruleId } = resolveImportCategory(
-        db,
         labelClean,
         tx.amount,
         rules,
         isPassthrough,
+        history,
       );
       if (ruleId !== null) hits.set(ruleId, (hits.get(ruleId) ?? 0) + 1);
       insertTx.run(

@@ -6,11 +6,10 @@ import { handlePing } from './handlers/ping';
 import { handlePickFile } from './handlers/importPickFile';
 import { handleImportExtract } from './handlers/importExtract';
 import { handleImportConfirm } from './handlers/importConfirm';
-import { handleCategorizePending, handleCategorizeBatch } from './handlers/categorize';
 import { handleDashboardGetAccounts } from './handlers/dashboardGetAccounts';
 import { handleDashboardGetTransactions } from './handlers/dashboardGetTransactions';
-import { handleDashboardAggregate } from './handlers/dashboardAggregate';
 import { handleDashboardMetrics } from './handlers/dashboardMetrics';
+import { handleDashboardBalanceSeries } from './handlers/dashboardBalanceSeries';
 import { handleDashboardCashflow, handleDashboardNetWorth } from './handlers/dashboardConsolidated';
 import {
   handleAccountsCreate,
@@ -25,7 +24,7 @@ import {
   handleCategoriesDelete,
   handleTransactionsSetCategory,
 } from './handlers/categories';
-import { handleBanksLearn } from './handlers/learnBank';
+import { handleBanksLearn, handleBanksPrepareMapping } from './handlers/learnBank';
 import { handleRecurringList } from './handlers/recurringList';
 import { handleImportResolveAccount } from './handlers/importResolveAccount';
 import {
@@ -35,14 +34,31 @@ import {
 } from './handlers/transactions';
 import { handleTransactionsSetTransfer } from './handlers/transactionsSetTransfer';
 import {
-  handleModelStatus,
-  handleModelDownloadStart,
-  handleModelDownloadCancel,
-  handleModelRemove,
-  handleModelDetectSelection,
-  handleGetCategorizeOptOut,
-  handleSetCategorizeOptOut,
-} from './handlers/model';
+  handleSyncGetStatus,
+  handleSyncPickFolder,
+  handleSyncEnable,
+  handleSyncDisable,
+  handleSyncNow,
+  handleSyncLaunchCheck,
+  handleSyncRestore,
+  handleSyncKeepLocal,
+} from './handlers/sync';
+import { syncController } from '../sync/controller';
+import {
+  handleBackupGetStatus,
+  handleBackupPickFolder,
+  handleBackupSetFolder,
+  handleBackupCreate,
+  handleBackupRestore,
+  handleBackupRestoreFromFile,
+  handleBackupExportJson,
+} from './handlers/backup';
+import {
+  handleRulesList,
+  handleRulesCreate,
+  handleRulesUpdate,
+  handleRulesDelete,
+} from './handlers/rules';
 
 type Handler<C extends IpcChannel> = (
   payload: IpcPayload<C>,
@@ -56,12 +72,52 @@ function isValidSender(event: IpcMainInvokeEvent): boolean {
   return url.startsWith('file://');
 }
 
+/** Mutating handlers signal no-op failures with `{ ok: false }` envelopes. */
+function isDomainFailure(result: unknown): boolean {
+  return (
+    typeof result === 'object' &&
+    result !== null &&
+    'ok' in result &&
+    (result as { ok?: unknown }).ok === false
+  );
+}
+
+// Channels whose successful completion changes user data — each one marks the
+// DB dirty so the sync controller schedules a debounced snapshot.
+// Sync channels themselves are intentionally excluded — they write sync
+// metadata, not user financial data.
+const MUTATING_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
+  'import:confirm',
+  'accounts:create',
+  'accounts:update',
+  'accounts:delete',
+  'accounts:setDeclaredBalance',
+  'categories:rename',
+  'categories:create',
+  'categories:delete',
+  'transactions:setCategory',
+  'transactions:update',
+  'transactions:delete',
+  'transactions:restore',
+  'transactions:setTransfer',
+  'banks:learn',
+  // Rules mutations re-categorize existing transactions (retroactive apply).
+  'rules:create',
+  'rules:update',
+  'rules:delete',
+  // A backup restore replaces the whole DB: the sync folder must be told.
+  'backup:restore',
+  'backup:restoreFromFile',
+]);
+
 function register<C extends IpcChannel>(channel: C, handler: Handler<C>): void {
-  ipcMain.handle(channel, (event, payload: IpcPayload<C>) => {
+  ipcMain.handle(channel, async (event, payload: IpcPayload<C>) => {
     if (!isValidSender(event)) {
       throw new Error(`IPC: unauthorized sender for channel "${channel}"`);
     }
-    return handler(payload);
+    const result = await handler(payload);
+    if (MUTATING_CHANNELS.has(channel) && !isDomainFailure(result)) syncController.markDirty();
+    return result;
   });
 }
 
@@ -70,12 +126,10 @@ export function registerAllHandlers(): void {
   register(CHANNELS.importPickFile, () => handlePickFile());
   register(CHANNELS.importExtract, handleImportExtract);
   register(CHANNELS.importConfirm, handleImportConfirm);
-  register(CHANNELS.categorizePending, () => handleCategorizePending());
-  register(CHANNELS.categorizeBatch, handleCategorizeBatch);
   register(CHANNELS.dashboardGetAccounts, () => handleDashboardGetAccounts());
   register(CHANNELS.dashboardGetTransactions, handleDashboardGetTransactions);
-  register(CHANNELS.dashboardAggregate, handleDashboardAggregate);
   register(CHANNELS.dashboardMetrics, handleDashboardMetrics);
+  register(CHANNELS.dashboardBalanceSeries, handleDashboardBalanceSeries);
   register(CHANNELS.dashboardCashflow, handleDashboardCashflow);
   register(CHANNELS.dashboardNetWorth, () => handleDashboardNetWorth());
   register(CHANNELS.accountsCreate, handleAccountsCreate);
@@ -92,13 +146,26 @@ export function registerAllHandlers(): void {
   register(CHANNELS.transactionsRestore, handleTransactionsRestore);
   register(CHANNELS.transactionsSetTransfer, handleTransactionsSetTransfer);
   register(CHANNELS.banksLearn, handleBanksLearn);
+  register(CHANNELS.banksPrepareMapping, handleBanksPrepareMapping);
   register(CHANNELS.recurringList, () => handleRecurringList());
   register(CHANNELS.importResolveAccount, handleImportResolveAccount);
-  register(CHANNELS.modelStatus, () => handleModelStatus());
-  register(CHANNELS.modelDownloadStart, () => handleModelDownloadStart());
-  register(CHANNELS.modelDownloadCancel, () => handleModelDownloadCancel());
-  register(CHANNELS.modelRemove, () => handleModelRemove());
-  register(CHANNELS.modelDetectSelection, () => handleModelDetectSelection());
-  register(CHANNELS.settingsGetCategorizeOptOut, () => handleGetCategorizeOptOut());
-  register(CHANNELS.settingsSetCategorizeOptOut, handleSetCategorizeOptOut);
+  register(CHANNELS.syncGetStatus, () => handleSyncGetStatus());
+  register(CHANNELS.syncPickFolder, () => handleSyncPickFolder());
+  register(CHANNELS.syncEnable, handleSyncEnable);
+  register(CHANNELS.syncDisable, () => handleSyncDisable());
+  register(CHANNELS.syncNow, () => handleSyncNow());
+  register(CHANNELS.syncLaunchCheck, () => handleSyncLaunchCheck());
+  register(CHANNELS.syncRestore, () => handleSyncRestore());
+  register(CHANNELS.syncKeepLocal, () => handleSyncKeepLocal());
+  register(CHANNELS.backupGetStatus, () => handleBackupGetStatus());
+  register(CHANNELS.backupPickFolder, () => handleBackupPickFolder());
+  register(CHANNELS.backupSetFolder, handleBackupSetFolder);
+  register(CHANNELS.backupCreate, () => handleBackupCreate());
+  register(CHANNELS.backupRestore, handleBackupRestore);
+  register(CHANNELS.backupRestoreFromFile, () => handleBackupRestoreFromFile());
+  register(CHANNELS.backupExportJson, () => handleBackupExportJson());
+  register(CHANNELS.rulesList, () => handleRulesList());
+  register(CHANNELS.rulesCreate, handleRulesCreate);
+  register(CHANNELS.rulesUpdate, handleRulesUpdate);
+  register(CHANNELS.rulesDelete, handleRulesDelete);
 }

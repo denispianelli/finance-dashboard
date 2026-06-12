@@ -1,6 +1,8 @@
 import type { DatabaseSync } from 'node:sqlite';
 
-export type MatchType = 'contains' | 'exact' | 'regex';
+import type { RuleMatchType } from '@shared/types/rules';
+
+export type MatchType = RuleMatchType;
 
 export interface CategorizationRule {
   readonly id: string;
@@ -47,8 +49,17 @@ export function matchRule(
   return null;
 }
 
+/** `contains` matches at word boundaries: the value must not be embedded in a
+ *  longer word (ORANGE must not hit "ORANGERIE"). Only letters block a boundary —
+ *  digits and punctuation are separators, since bank labels glue references onto
+ *  payee names ("EDF5521...", "VIR/EDF"). */
+function containsWord(haystack: string, needle: string): boolean {
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?<!\\p{L})${escaped}(?!\\p{L})`, 'u').test(haystack);
+}
+
 function ruleMatches(rule: CategorizationRule, label: string, upperLabel: string): boolean {
-  if (rule.matchType === 'contains') return upperLabel.includes(rule.matchValue.toUpperCase());
+  if (rule.matchType === 'contains') return containsWord(upperLabel, rule.matchValue.toUpperCase());
   if (rule.matchType === 'exact') return upperLabel === rule.matchValue.toUpperCase();
   // regex — a malformed pattern simply never matches; it must not abort a whole
   // import batch. Rule creation should validate patterns up front.

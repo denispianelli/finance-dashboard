@@ -62,18 +62,50 @@ beforeEach(() => {
 });
 
 describe('insertStatement — guards', () => {
-  it('refuses an already-imported file and writes nothing', async () => {
+  it('re-imports a known file: inserts the non-duplicate rows instead of rejecting', async () => {
     const db = freshDb();
-    extractMock.mockResolvedValue(baseExtraction({ alreadyImported: true }));
-    await expect(insertStatement(db, 'acc-lcl-default', Buffer.from('x'))).rejects.toMatchObject({
-      code: 'already_imported',
-    });
-    expect(db.prepare('SELECT count(*) n FROM imports').get()).toMatchObject({ n: 0 });
-    expect(db.prepare('SELECT count(*) n FROM transactions').get()).toMatchObject({ n: 0 });
+    // First import took only h1 (user deselected h2 in the review).
+    extractMock.mockResolvedValue(baseExtraction());
+    await insertStatement(db, 'acc-lcl-default', Buffer.from('x'), { selectedHashes: ['h1'] });
+
+    // Same file again: the file-level flag is set, h1 is now a row-level duplicate,
+    // h2 is still new and must go through — the bug was a hard reject here.
+    extractMock.mockResolvedValue(
+      baseExtraction({
+        alreadyImported: true,
+        newCount: 1,
+        duplicateCount: 1,
+        transactions: [
+          {
+            date: '2025-11-01',
+            label: 'A',
+            amount: -10,
+            tx_hash: 'h1',
+            fitid: null,
+            isDuplicate: true,
+          },
+          {
+            date: '2025-11-02',
+            label: 'B',
+            amount: 20,
+            tx_hash: 'h2',
+            fitid: null,
+            isDuplicate: false,
+          },
+        ],
+      }),
+    );
+    const res = await insertStatement(db, 'acc-lcl-default', Buffer.from('x'));
+
+    expect(res.insertedCount).toBe(1);
+    expect(res.skippedCount).toBe(1);
+    expect(db.prepare('SELECT count(*) n FROM transactions').get()).toMatchObject({ n: 2 });
+    // Each import event keeps its own row (file_hash is no longer unique).
+    expect(db.prepare('SELECT count(*) n FROM imports').get()).toMatchObject({ n: 2 });
     db.close();
   });
 
-  it('refuses when arithmetic failed and writes nothing', async () => {
+  it('refuses when arithmetic failed without acknowledgement and writes nothing', async () => {
     const db = freshDb();
     extractMock.mockResolvedValue(
       baseExtraction({
@@ -87,9 +119,49 @@ describe('insertStatement — guards', () => {
       }),
     );
     await expect(insertStatement(db, 'acc-lcl-default', Buffer.from('x'))).rejects.toMatchObject({
-      code: 'arithmetic_failed',
+      code: 'arithmetic_failed_unacknowledged',
     });
     expect(db.prepare('SELECT count(*) n FROM transactions').get()).toMatchObject({ n: 0 });
+    db.close();
+  });
+
+  it('inserts when arithmetic failed is acknowledged', async () => {
+    const db = freshDb();
+    extractMock.mockResolvedValue(
+      baseExtraction({
+        arithmetic: {
+          status: 'failed',
+          openingBalance: 0,
+          closingBalance: 999,
+          computedClosing: 10,
+          delta: -989,
+        },
+      }),
+    );
+    const r = await insertStatement(db, 'acc-lcl-default', Buffer.from('x'), {
+      acknowledgedArithmeticFailed: true,
+    });
+    expect(r.insertedCount).toBe(2);
+    expect(db.prepare('SELECT count(*) n FROM transactions').get()).toMatchObject({ n: 2 });
+    db.close();
+  });
+
+  it('does not let acknowledgedCannotVerify bypass a failed check', async () => {
+    const db = freshDb();
+    extractMock.mockResolvedValue(
+      baseExtraction({
+        arithmetic: {
+          status: 'failed',
+          openingBalance: 0,
+          closingBalance: 999,
+          computedClosing: 10,
+          delta: -989,
+        },
+      }),
+    );
+    await expect(
+      insertStatement(db, 'acc-lcl-default', Buffer.from('x'), { acknowledgedCannotVerify: true }),
+    ).rejects.toMatchObject({ code: 'arithmetic_failed_unacknowledged' });
     db.close();
   });
 

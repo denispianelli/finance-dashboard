@@ -1,5 +1,3 @@
-import type { AggregationMode } from './taxonomy';
-
 /** Input to create a new account. `type` defaults to checking; bank is a
  *  free-text label for display (e.g. "LCL", "Boursorama"). */
 export interface CreateAccountInput {
@@ -70,13 +68,6 @@ export interface GetTransactionsQuery {
   readonly limit?: number;
 }
 
-/** Payload for `dashboard:aggregate`. */
-export interface AggregateQuery {
-  readonly from: string;
-  readonly to: string;
-  readonly mode: AggregationMode;
-}
-
 /** One calendar month of activity for an account, with the running end-of-month balance. */
 export interface MonthPoint {
   /** `yyyy-mm`. */
@@ -97,6 +88,17 @@ export interface DashboardMetrics {
   readonly balance: number;
   /** Up to the last 12 months that have activity, chronological. Empty when no transactions. */
   readonly series: MonthPoint[];
+}
+
+/** Time window for the dashboard balance chart. `3m` is daily, the rest monthly. */
+export type ChartRange = '3m' | '6m' | '1y' | 'max';
+
+/** One point of the balance chart series. */
+export interface BalancePoint {
+  /** `yyyy-mm-dd` for the daily `3m` range, `yyyy-mm` for monthly ranges. */
+  readonly period: string;
+  /** Cumulative balance at the end of the period (all amounts, transfers included). */
+  readonly balance: number;
 }
 
 /** Month (`yyyy-mm`) or calendar-year (`yyyy`) bucketing for consolidated cash flow. */

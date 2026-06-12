@@ -1,5 +1,5 @@
 import type { ColumnMapping } from './extractTransactions';
-import type { ColumnOrder } from './inferColumns';
+import type { ColumnOrder } from '@shared/types/bank';
 
 /** Minimal positioned token (PdfTextItem is structurally compatible). */
 export interface PositionedToken {
@@ -33,10 +33,10 @@ function clusterLeftEdges(xs: number[], gap: number): number[] {
 }
 
 /**
- * Turn the LLM's column ORDER into the x-threshold ColumnMapping the deterministic
+ * Turn the user-confirmed column ORDER into the x-threshold ColumnMapping the deterministic
  * extractor consumes, using the real token positions:
  *  - amount columns are located by clustering the x of amount tokens, then mapped
- *    to debit/credit/balance left-to-right following the LLM order;
+ *    to debit/credit/balance left-to-right following the confirmed order;
  *  - the date column is the leftmost date token; the label column starts at the
  *    first non-date/non-amount token after the dates.
  *
@@ -73,7 +73,7 @@ export function deriveColumnMapping(
     .map((t) => t.x);
   const labelCol = labelXs.length > 0 ? Math.min(...labelXs) : dateColLeft + 10;
 
-  // Amount columns the LLM reported, in left-to-right order.
+  // Amount columns of the confirmed order, left-to-right.
   const amountCols = (['debit', 'credit', 'balance'] as const)
     .filter((c) => order[c] !== null)
     .sort((a, b) => (order[a] ?? 0) - (order[b] ?? 0));

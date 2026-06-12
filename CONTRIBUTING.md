@@ -90,28 +90,14 @@ A Story is **Done** when :
 
 ## Local development
 
-### Optional: GPU acceleration for the LLM (NVIDIA, WSL2/Linux)
-
-LLM categorization runs ~10× faster on an NVIDIA GPU. The CUDA prebuilt binary
-ships with `node-llama-cpp`; it only needs the CUDA 12 runtime libs locally:
-
-```bash
-npm run setup:cuda   # downloads libcudart/libcublas into .cuda-libs/ (gitignored)
-```
-
-`npm run dev` then adds `.cuda-libs` to `LD_LIBRARY_PATH` automatically. Confirm
-it worked: the dev terminal logs `[llm] inference backend: "cuda"` on the first
-categorization. Without this step (or on a machine with no NVIDIA GPU) the app
-falls back to CPU automatically — everything still works, just slower.
-
-The packaged Windows app bundles the CUDA backend and needs no setup beyond the
-NVIDIA driver.
-
 ## Documentation
 
 - **Specs** (single source of truth) : `docs/superpowers/specs/`
 - **ADRs** (single source of truth) : `docs/adr/`
 - **Plans** : `docs/superpowers/plans/` (one per Epic or sub-project)
+
+Specs and plans for **shipped** work are moved to the `archive/` subfolder of each directory
+once merged — only active documents stay at the top level.
 
 ## Issue types
 

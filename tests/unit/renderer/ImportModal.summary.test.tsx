@@ -5,7 +5,6 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 vi.mock('@renderer/ipc/client', () => ({
   ipc: {
     invoke: vi.fn().mockResolvedValue({ accounts: [] }),
-    onModelProgress: vi.fn().mockReturnValue(vi.fn()),
   },
 }));
 vi.mock('sonner', () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }));

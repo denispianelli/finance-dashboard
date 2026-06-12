@@ -3,8 +3,10 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registerAllHandlers } from './ipc/register';
 import { getDb, closeDb } from './db';
+import { syncController } from './sync/controller';
 import { detectTransfers } from './transfers/detect';
-import { modelController } from './llm/modelController';
+import { removeDownloadedModels } from './cleanup/removeDownloadedModels';
+import { backupController } from './backup';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -39,12 +41,6 @@ function createWindow(): void {
     callback(false);
   });
 
-  // Push every model-status change to the renderer (progress bar, banner, settings).
-  const unsubscribeModelStatus = modelController.subscribe((status) => {
-    if (!win.isDestroyed()) win.webContents.send('model:progress', status);
-  });
-  win.once('closed', unsubscribeModelStatus);
-
   if (process.env.ELECTRON_RENDERER_URL) {
     void win.loadURL(process.env.ELECTRON_RENDERER_URL);
   } else {
@@ -63,6 +59,15 @@ void app.whenReady().then(() => {
     // (e.g. a SQL regression) leaves a trail instead of silently stale flags.
     console.error('startup: transfer detection failed', e);
   }
+  // ADR-019: reclaim the disk space of previously downloaded LLM models.
+  try {
+    removeDownloadedModels(app.getPath('userData'));
+  } catch (e) {
+    // best-effort — a locked file must never block startup.
+    console.error('startup: model cleanup failed', e);
+  }
+  // Daily local snapshot before the user touches anything (local-backup spec §1).
+  backupController.ensureDailySnapshot();
   registerAllHandlers();
   createWindow();
   app.on('activate', () => {
@@ -70,7 +75,32 @@ void app.whenReady().then(() => {
   });
 });
 
-app.on('will-quit', () => {
+// Write a final snapshot when quitting with unsynced changes. preventDefault +
+// async flush + re-quit is the standard Electron pattern; the guard makes the
+// second pass fall through to closeDb.
+let quitFlushStarted = false;
+app.on('will-quit', (event) => {
+  if (!quitFlushStarted && syncController.needsQuitFlush()) {
+    quitFlushStarted = true;
+    event.preventDefault();
+    const QUIT_FLUSH_TIMEOUT_MS = 10_000;
+    void Promise.race([
+      syncController.flushOnQuit(),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('sync: quit flush timed out'));
+        }, QUIT_FLUSH_TIMEOUT_MS).unref();
+      }),
+    ])
+      .catch((e: unknown) => {
+        console.error('sync: quit flush failed', e);
+      })
+      .finally(() => {
+        closeDb();
+        app.quit();
+      });
+    return;
+  }
   closeDb();
 });
 

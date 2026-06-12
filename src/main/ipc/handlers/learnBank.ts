@@ -1,53 +1,91 @@
-import type { LearnBankInput, LearnBankResponse } from '@shared/types/bank';
+import type {
+  LearnBankInput,
+  LearnBankResponse,
+  PrepareMappingInput,
+  PrepareMappingResponse,
+} from '@shared/types/bank';
 import { getDb } from '../../db';
+import { detectBank } from '../../import/detectBank';
 import { extractPdfText } from '../../import/pdf/extract';
-import { inferColumnOrder } from '../../import/pdf/inferColumns';
+import type { PdfPage } from '../../import/pdf/extract';
+import { suggestColumnOrder, validateColumnOrder } from '../../import/pdf/suggestColumns';
 import { learnBankMapping, persistLearnedBank, slugifyBank } from '../../import/pdf/learnBank';
 import { readImportFile } from '../../import/readImportFile';
-import { getModel, isModelAvailable } from '../../llm/llm';
-import { modelsDir } from '../../llm/modelsDir';
 
 const PDF_MAGIC = Buffer.from('%PDF-');
 
-/**
- * Learn an unknown bank's column mapping from a sample PDF (option A: one slow
- * background pass; subsequent imports of that bank are deterministic).
- */
-export async function handleBanksLearn(payload: LearnBankInput): Promise<LearnBankResponse> {
-  const dir = modelsDir();
-  if (!isModelAvailable(dir)) return { ok: false, error: 'model_unavailable' };
+type PdfGuardResult = { ok: true; pages: PdfPage[] } | { ok: false; error: 'not_pdf' | 'no_text' };
 
+/** Shared file guards: allowlisted path, %PDF magic, extractible text. */
+async function loadPdfPages(path: string): Promise<PdfGuardResult> {
   let buffer: Buffer;
   try {
-    buffer = readImportFile(payload.path);
+    buffer = readImportFile(path);
   } catch {
-    // Disallowed extension / non-file (only a malicious renderer reaches here):
-    // learning accepts PDFs only, so surface the existing not_pdf code.
     return { ok: false, error: 'not_pdf' };
   }
   if (buffer.length < PDF_MAGIC.length || !buffer.subarray(0, PDF_MAGIC.length).equals(PDF_MAGIC)) {
     return { ok: false, error: 'not_pdf' };
   }
-
-  let pages;
   try {
     const res = await extractPdfText(buffer);
     if (!res.hasText) return { ok: false, error: 'no_text' };
-    pages = res.pages;
+    return { ok: true, pages: res.pages };
   } catch {
     return { ok: false, error: 'not_pdf' };
   }
+}
 
-  const model = await getModel(dir);
-  const mapping = await learnBankMapping(pages, (text) => inferColumnOrder(model, text));
-  if (mapping === null) return { ok: false, error: 'inference_failed' };
+/** Deterministic pre-fill for the mapping assistant (ADR-019 1b — no LLM). */
+export async function handleBanksPrepareMapping(
+  payload: PrepareMappingInput,
+): Promise<PrepareMappingResponse> {
+  const guard = await loadPdfPages(payload.path);
+  if (!guard.ok) return guard;
+  const suggestion = suggestColumnOrder(guard.pages);
+  return {
+    ok: true,
+    suggested: suggestion?.order ?? null,
+    headerTokens: suggestion?.headerTokens ?? [],
+  };
+}
 
+/**
+ * Persist an unknown bank from the user-confirmed column order. Fully
+ * deterministic; subsequent imports of that bank are recognized via the stored
+ * mapping. A wrong-but-derivable order is caught downstream by the arithmetic
+ * check on the review screen.
+ */
+export async function handleBanksLearn(payload: LearnBankInput): Promise<LearnBankResponse> {
+  const guard = await loadPdfPages(payload.path);
+  if (!guard.ok) return guard;
+
+  if (!validateColumnOrder(payload.order)) return { ok: false, error: 'invalid_mapping' };
+  const mapping = learnBankMapping(guard.pages, payload.order);
+  if (mapping === null) return { ok: false, error: 'invalid_mapping' };
+
+  const db = getDb();
   const bankId = slugifyBank(payload.bankName);
-  persistLearnedBank(getDb(), {
+  persistLearnedBank(db, {
     bankId,
     name: payload.bankName,
     signature: payload.bankName,
     mapping,
   });
+  // The typed name may not be printed anywhere (bank names are often logo
+  // images): if detection can't find the bank we just saved, every re-import
+  // would loop back to the assistant. Fall back to the table-header text, which
+  // the document is guaranteed to carry.
+  if (detectBank(db, guard.pages) === null) {
+    const header = suggestColumnOrder(guard.pages);
+    if (header !== null) {
+      persistLearnedBank(db, {
+        bankId,
+        name: payload.bankName,
+        signature: header.headerTokens.join(' '),
+        mapping,
+      });
+    }
+  }
   return { ok: true, bankId };
 }

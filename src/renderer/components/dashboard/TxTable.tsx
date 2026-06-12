@@ -5,7 +5,6 @@ import { cn } from '@renderer/lib/utils';
 import { CategoryIcon } from '@renderer/lib/categoryIcon';
 import { formatBalance, parseAmount } from '@renderer/lib/dashboardMap';
 import { Money, type MoneyKind } from '../ui/money';
-import { Skeleton } from '../ui/skeleton';
 import { CategoryPicker } from './CategoryPicker';
 
 export interface TxRow {
@@ -26,8 +25,6 @@ export interface TxRow {
   editDate: string; // ISO yyyy-mm-dd
   editAmount: number;
   editLabel: string;
-  /** True when the transaction has no category yet (drives the categorizing skeleton). */
-  uncategorized: boolean;
 }
 
 export interface TxTableProps {
@@ -71,8 +68,6 @@ export interface TxTableRowProps {
   onReassign?: (transactionId: string, categoryId: string) => void;
   onCreateCategory?: (input: CreateCategoryInput) => Promise<CategoryDTO>;
   editing?: boolean;
-  /** When true, uncategorized rows show a skeleton in the category cell. */
-  categorizing?: boolean;
   onStartEdit?: (transactionId: string) => void;
   onSaveEdit?: (
     transactionId: string,
@@ -92,7 +87,6 @@ export function TxTableRow({
   onReassign,
   onCreateCategory,
   editing = false,
-  categorizing = false,
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
@@ -130,9 +124,7 @@ export function TxTableRow({
         </span>
       </span>
       <span className={cn(CELL, 'min-w-0')}>
-        {categorizing && t.uncategorized ? (
-          <Skeleton className="h-3.5 w-24 rounded-full bg-ink-4" />
-        ) : categories && onReassign && onCreateCategory ? (
+        {categories && onReassign && onCreateCategory ? (
           <CategoryPicker
             categories={categories}
             current={{ name: t.catName, color: t.catColor }}

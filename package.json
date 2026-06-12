@@ -1,7 +1,7 @@
 {
   "name": "finance-dashboard",
-  "version": "0.4.0",
-  "description": "Privacy-first desktop finance dashboard with local LLM",
+  "version": "0.6.0",
+  "description": "Privacy-first desktop finance dashboard — 100% local, deterministic",
   "main": "out/main/index.js",
   "license": "AGPL-3.0-only",
   "author": "Denis Pianelli <denis.pianelli@gmail.com>",
@@ -14,6 +14,9 @@
   },
   "private": true,
   "type": "module",
+  "overrides": {
+    "esbuild": "^0.28.1"
+  },
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "build": "electron-vite build",
@@ -28,7 +31,6 @@
     "test:all": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write src",
-    "setup:cuda": "python3 scripts/setup-cuda-libs.py",
     "test:e2e": "npm run build && playwright test",
     "prepare": "husky"
   },
@@ -40,6 +42,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@types/libsodium-wrappers-sumo": "^0.7.8",
     "@types/node": "^25.9.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
@@ -88,8 +91,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
+    "libsodium-wrappers-sumo": "^0.8.4",
     "lucide-react": "^1.17.0",
-    "node-llama-cpp": "^3.18.1",
     "pdfjs-dist": "^5.7.284",
     "react": "^19.2.7",
     "react-day-picker": "^10.0.1",

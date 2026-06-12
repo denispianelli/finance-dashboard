@@ -1,6 +1,5 @@
-import type { DatabaseSync } from 'node:sqlite';
 import { stableLabelKey } from './labelKey';
-import { findHistoryCategory, findAmountHistoryCategory } from './history';
+import type { HistoryIndex } from './history';
 import { matchRule, type CategorizationRule } from './rules';
 
 /**
@@ -10,16 +9,17 @@ import { matchRule, type CategorizationRule } from './rules';
  * the chosen category and the matched rule id (so the caller can bump hit counts).
  */
 export function resolveImportCategory(
-  db: DatabaseSync,
   labelClean: string,
   amount: number,
   rules: readonly CategorizationRule[],
   isPassthrough: (labelKey: string) => boolean,
+  history: HistoryIndex,
 ): { categoryId: string | null; ruleId: string | null } {
-  if (isPassthrough(stableLabelKey(labelClean))) {
-    return { categoryId: findAmountHistoryCategory(db, labelClean, amount), ruleId: null };
+  const labelKey = stableLabelKey(labelClean);
+  if (isPassthrough(labelKey)) {
+    return { categoryId: history.byLabelAmount(labelKey, amount), ruleId: null };
   }
-  const hist = findHistoryCategory(db, labelClean);
+  const hist = history.byLabel(labelKey);
   if (hist !== null) return { categoryId: hist, ruleId: null };
   const rule = matchRule(rules, labelClean);
   if (rule !== null) return { categoryId: rule.categoryId, ruleId: rule.id };

@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import type { StatementExtraction } from '@shared/types/import';
+import type { ColumnOrder } from '@shared/types/bank';
 import { ipc } from '@renderer/ipc/client';
 
 const VALID_EXT = ['pdf', 'ofx'];
@@ -29,15 +31,20 @@ export type SubState =
       sourceType: 'ofx' | 'pdf';
     }
   | { step: 'extracting' }
-  | { step: 'unknownBank'; accountId: string }
-  | { step: 'learning'; accountId: string }
-  | { step: 'modelRequired'; accountId: string; bankName: string }
+  | {
+      step: 'unknownBank';
+      accountId: string;
+      suggested: ColumnOrder | null;
+      headerTokens: string[];
+      mappingError: boolean;
+    }
   | {
       step: 'review';
       extraction: StatementExtraction;
       accountId: string;
       selected: Set<string>;
       acknowledgedCannotVerify: boolean;
+      acknowledgedArithmeticFailed: boolean;
       autoRouted: boolean;
     }
   | { step: 'confirming' }
@@ -53,10 +60,11 @@ export interface UseImport {
   pickFiles: () => Promise<void>;
   startFromPaths: (paths: string[]) => Promise<void>;
   chooseAccount: (accountId: string) => Promise<void>;
-  learnBank: (bankName: string) => Promise<void>;
+  learnBank: (bankName: string, order: ColumnOrder) => Promise<void>;
   toggleTx: (txHash: string) => void;
   toggleAll: () => void;
   setAcknowledgedCannotVerify: (value: boolean) => void;
+  setAcknowledgedArithmeticFailed: (value: boolean) => void;
   confirm: () => Promise<void>;
   skipFile: () => void;
   reset: () => void;
@@ -67,11 +75,10 @@ const ERROR_MESSAGES: Partial<Record<string, string>> = {
   malformed_ofx: 'Fichier OFX invalide ou corrompu.',
   not_pdf: 'Le fichier ne semble pas être un PDF valide.',
   no_text: 'Ce PDF ne contient pas de texte extractible (scan image ?).',
-  arithmetic_failed: 'Le solde ne correspond pas aux transactions. Import bloqué.',
+  arithmetic_failed_unacknowledged:
+    'Le solde ne correspond pas aux transactions. Import non confirmé.',
   cannot_verify_unacknowledged: 'Vérification du solde non confirmée.',
-  already_imported: 'Déjà importé — rien de nouveau.',
-  model_unavailable: "Modèle IA non installé — impossible d'analyser une nouvelle banque.",
-  inference_failed: "L'IA n'a pas réussi à lire la structure de ce relevé.",
+  invalid_mapping: "Colonnes introuvables avec ce mapping — vérifie l'ordre.",
 };
 
 function fileNameOf(path: string): string {
@@ -185,7 +192,28 @@ export function useImport(): UseImport {
     }
     if (!res.ok) {
       if (res.error === 'unknown_bank') {
-        setS({ step: 'queue', files, index, results, sub: { step: 'unknownBank', accountId } });
+        const prep = await safeInvoke(ipc.invoke('banks:prepareMapping', { path: file.path }));
+        if (!prep?.ok) {
+          // Unreadable as a PDF here means it will not be learnable either:
+          // surface the standard file error and move on.
+          const message =
+            prep === null ? UNEXPECTED_ERROR : (ERROR_MESSAGES[prep.error] ?? prep.error);
+          setS({ step: 'queue', files, index, results, sub: { step: 'fileError', message } });
+          return;
+        }
+        setS({
+          step: 'queue',
+          files,
+          index,
+          results,
+          sub: {
+            step: 'unknownBank',
+            accountId,
+            suggested: prep.suggested,
+            headerTokens: prep.headerTokens,
+            mappingError: false,
+          },
+        });
         return;
       }
       await advance(files, index, [
@@ -212,6 +240,7 @@ export function useImport(): UseImport {
         accountId,
         selected,
         acknowledgedCannotVerify: false,
+        acknowledgedArithmeticFailed: false,
         autoRouted,
       },
     });
@@ -250,18 +279,13 @@ export function useImport(): UseImport {
     await runExtract(cur.files, cur.index, cur.results, accountId, false);
   }
 
-  async function learnBank(bankName: string): Promise<void> {
+  async function learnBank(bankName: string, order: ColumnOrder): Promise<void> {
     const cur = stateRef.current;
-    if (
-      cur.step !== 'queue' ||
-      (cur.sub.step !== 'unknownBank' && cur.sub.step !== 'modelRequired')
-    )
-      return;
-    const { accountId } = cur.sub;
+    if (cur.step !== 'queue' || cur.sub.step !== 'unknownBank') return;
+    const { accountId, suggested, headerTokens } = cur.sub;
     const file = cur.files[cur.index];
     if (file === undefined) return;
-    setS({ ...cur, sub: { step: 'learning', accountId } });
-    const res = await safeInvoke(ipc.invoke('banks:learn', { path: file.path, bankName }));
+    const res = await safeInvoke(ipc.invoke('banks:learn', { path: file.path, bankName, order }));
     if (res?.ok) {
       await runExtract(cur.files, cur.index, cur.results, accountId, false);
     } else if (res === null) {
@@ -269,8 +293,11 @@ export function useImport(): UseImport {
         ...cur.results,
         { fileName: file.fileName, status: 'failed', error: UNEXPECTED_ERROR },
       ]);
-    } else if (res.error === 'model_unavailable') {
-      setS({ ...cur, sub: { step: 'modelRequired', accountId, bankName } });
+    } else if (res.error === 'invalid_mapping') {
+      setS({
+        ...cur,
+        sub: { step: 'unknownBank', accountId, suggested, headerTokens, mappingError: true },
+      });
     } else {
       await advance(cur.files, cur.index, [
         ...cur.results,
@@ -316,10 +343,24 @@ export function useImport(): UseImport {
     });
   }
 
+  function setAcknowledgedArithmeticFailed(value: boolean): void {
+    updateSub((prev) => {
+      if (prev.sub.step !== 'review') return prev;
+      return { ...prev, sub: { ...prev.sub, acknowledgedArithmeticFailed: value } };
+    });
+  }
+
   async function confirm(): Promise<void> {
     const cur = stateRef.current;
     if (cur.step !== 'queue' || cur.sub.step !== 'review') return;
-    const { extraction, accountId, selected, acknowledgedCannotVerify, autoRouted } = cur.sub;
+    const {
+      extraction,
+      accountId,
+      selected,
+      acknowledgedCannotVerify,
+      acknowledgedArithmeticFailed,
+      autoRouted,
+    } = cur.sub;
     const file = cur.files[cur.index];
     if (file === undefined) return;
     setS({ ...cur, sub: { step: 'confirming' } });
@@ -330,6 +371,7 @@ export function useImport(): UseImport {
         accountId,
         selectedHashes: [...selected],
         acknowledgedCannotVerify: ack,
+        acknowledgedArithmeticFailed,
       }),
     );
     if (res === null) {
@@ -338,6 +380,9 @@ export function useImport(): UseImport {
         { fileName: file.fileName, status: 'failed', error: UNEXPECTED_ERROR },
       ]);
     } else if (res.ok) {
+      if (res.preImportBackupFailed === true) {
+        toast.warning('Sauvegarde pré-import échouée — import effectué quand même.');
+      }
       await advance(cur.files, cur.index, [
         ...cur.results,
         {
@@ -346,15 +391,6 @@ export function useImport(): UseImport {
           accountId,
           insertedCount: res.insertedCount,
           autoRouted,
-        },
-      ]);
-    } else if (res.error === 'already_imported') {
-      await advance(cur.files, cur.index, [
-        ...cur.results,
-        {
-          fileName: file.fileName,
-          status: 'skipped',
-          reason: ERROR_MESSAGES.already_imported ?? '',
         },
       ]);
     } else {
@@ -388,6 +424,7 @@ export function useImport(): UseImport {
     toggleTx,
     toggleAll,
     setAcknowledgedCannotVerify,
+    setAcknowledgedArithmeticFailed,
     confirm,
     skipFile,
     reset,
