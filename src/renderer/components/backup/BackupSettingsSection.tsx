@@ -26,14 +26,15 @@ function formatTs(iso: string): string {
 
 const RESTORE_ERRORS: Record<string, string> = {
   file_unavailable: 'Fichier introuvable.',
-  not_a_database: "Ce fichier n'est pas une base de données de l'application.",
+  not_a_database: 'Ce fichier n’est pas une base de données de l’application.',
   integrity_failed: 'Sauvegarde corrompue — la base actuelle est intacte.',
-  schema_too_new: "Sauvegarde créée par une version plus récente de l'application.",
+  schema_too_new: 'Sauvegarde créée par une version plus récente de l’application.',
 };
 
 export function BackupSettingsSection({ Row }: { Row: React.ComponentType<RowProps> }) {
   const [status, setStatus] = useState<BackupStatusView | null>(null);
   const [pendingRestore, setPendingRestore] = useState<BackupFileInfo | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     void ipc.invoke('backup:getStatus', {}).then(setStatus);
@@ -46,43 +47,67 @@ export function BackupSettingsSection({ Row }: { Row: React.ComponentType<RowPro
   if (status === null) return null;
 
   async function handlePickFolder() {
-    const result = await ipc.invoke('backup:pickFolder', {});
-    if (result.cancelled) return;
-    await ipc.invoke('backup:setFolder', { folderPath: result.path });
-    refresh();
-    toast.success('Dossier de sauvegarde modifié.');
+    if (busy) return;
+    setBusy(true);
+    try {
+      const result = await ipc.invoke('backup:pickFolder', {});
+      if (result.cancelled) return;
+      await ipc.invoke('backup:setFolder', { folderPath: result.path });
+      refresh();
+      toast.success('Dossier de sauvegarde modifié.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleCreateNow() {
-    const result = await ipc.invoke('backup:create', {});
-    if (result.ok) {
-      toast.success('Sauvegarde écrite.');
-    } else {
-      toast.error('Échec d’écriture de la sauvegarde.');
+    if (busy) return;
+    setBusy(true);
+    try {
+      const result = await ipc.invoke('backup:create', {});
+      if (result.ok) {
+        toast.success('Sauvegarde écrite.');
+      } else {
+        toast.error('Échec d’écriture de la sauvegarde.');
+      }
+    } finally {
+      setBusy(false);
+      refresh();
     }
-    refresh();
   }
 
   async function handleRestoreConfirm() {
+    if (busy) return;
     if (pendingRestore === null) return;
     const fileName = pendingRestore.fileName;
     setPendingRestore(null);
-    const result = await ipc.invoke('backup:restore', { fileName });
-    if (result.ok) {
-      toast.success('Sauvegarde restaurée.');
-      window.location.reload();
-    } else if (result.error !== 'cancelled') {
-      toast.error(RESTORE_ERRORS[result.error] ?? result.error);
+    setBusy(true);
+    try {
+      const result = await ipc.invoke('backup:restore', { fileName });
+      if (result.ok) {
+        toast.success('Sauvegarde restaurée.');
+        window.location.reload();
+      } else if (result.error !== 'cancelled') {
+        toast.error(RESTORE_ERRORS[result.error] ?? result.error);
+      }
+    } finally {
+      setBusy(false);
     }
   }
 
   async function handleRestoreFromFile() {
-    const result = await ipc.invoke('backup:restoreFromFile', {});
-    if (result.ok) {
-      toast.success('Sauvegarde restaurée.');
-      window.location.reload();
-    } else if (result.error !== 'cancelled') {
-      toast.error(RESTORE_ERRORS[result.error] ?? result.error);
+    if (busy) return;
+    setBusy(true);
+    try {
+      const result = await ipc.invoke('backup:restoreFromFile', {});
+      if (result.ok) {
+        toast.success('Sauvegarde restaurée.');
+        window.location.reload();
+      } else if (result.error !== 'cancelled') {
+        toast.error(RESTORE_ERRORS[result.error] ?? result.error);
+      }
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -97,6 +122,7 @@ export function BackupSettingsSection({ Row }: { Row: React.ComponentType<RowPro
           <Button
             variant="secondary"
             size="sm"
+            disabled={busy}
             onClick={() => {
               void handlePickFolder();
             }}
@@ -114,6 +140,7 @@ export function BackupSettingsSection({ Row }: { Row: React.ComponentType<RowPro
         <Button
           variant="secondary"
           size="sm"
+          disabled={busy}
           onClick={() => {
             void handleCreateNow();
           }}
@@ -130,7 +157,7 @@ export function BackupSettingsSection({ Row }: { Row: React.ComponentType<RowPro
       {/* Row: Snapshots */}
       <Row label="Snapshots">
         {status.backups.length === 0 ? (
-          <span className="text-paper-dim">Aucune sauvegarde pour l'instant.</span>
+          <span className="text-paper-dim">Aucune sauvegarde pour l’instant.</span>
         ) : (
           <div className="flex flex-col gap-1">
             {status.backups.map((b) => (
@@ -144,6 +171,7 @@ export function BackupSettingsSection({ Row }: { Row: React.ComponentType<RowPro
                 <Button
                   variant="secondary"
                   size="sm"
+                  disabled={busy}
                   onClick={() => {
                     setPendingRestore(b);
                   }}
@@ -164,6 +192,7 @@ export function BackupSettingsSection({ Row }: { Row: React.ComponentType<RowPro
         <Button
           variant="secondary"
           size="sm"
+          disabled={busy}
           onClick={() => {
             void handleRestoreFromFile();
           }}
@@ -201,6 +230,7 @@ export function BackupSettingsSection({ Row }: { Row: React.ComponentType<RowPro
             <Button
               variant="destructive"
               size="sm"
+              disabled={busy}
               onClick={() => {
                 void handleRestoreConfirm();
               }}
