@@ -23,8 +23,10 @@ async function fetchAccounts(): Promise<AccountSummary[]> {
   return accounts;
 }
 
-/** Loads accounts and exposes create / update / delete for the Settings page. */
-export function useAccounts(): UseAccounts {
+/** Loads accounts and exposes create / update / delete for the Settings page.
+ *  `onMutated` fires after every successful mutation so the caller can refresh
+ *  data living outside this hook (e.g. the sidebar net-worth anchor). */
+export function useAccounts(onMutated?: () => void): UseAccounts {
   const [accounts, setAccounts] = useState<AccountSummary[]>([]);
 
   const reload = useCallback(async () => {
@@ -46,12 +48,13 @@ export function useAccounts(): UseAccounts {
       try {
         const { account } = await ipc.invoke('accounts:create', input);
         await reload();
+        onMutated?.();
         toast.success(`Compte « ${account.name} » créé`);
       } catch (e) {
         toast.error(`Compte non créé : ${message(e)}`);
       }
     },
-    [reload],
+    [reload, onMutated],
   );
 
   const updateAccount = useCallback(
@@ -59,12 +62,13 @@ export function useAccounts(): UseAccounts {
       try {
         const { account } = await ipc.invoke('accounts:update', input);
         await reload();
+        onMutated?.();
         toast.success(`Compte « ${account.name} » mis à jour`);
       } catch (e) {
         toast.error(`Mise à jour impossible : ${message(e)}`);
       }
     },
-    [reload],
+    [reload, onMutated],
   );
 
   const deleteAccount = useCallback(
@@ -72,6 +76,7 @@ export function useAccounts(): UseAccounts {
       try {
         const { deletedTransactions } = await ipc.invoke('accounts:delete', { id });
         await reload();
+        onMutated?.();
         toast.success(
           deletedTransactions > 0
             ? `Compte supprimé — ${String(deletedTransactions)} transaction(s) effacée(s)`
@@ -81,7 +86,7 @@ export function useAccounts(): UseAccounts {
         toast.error(`Suppression impossible : ${message(e)}`);
       }
     },
-    [reload],
+    [reload, onMutated],
   );
 
   return { accounts, createAccount, updateAccount, deleteAccount };
