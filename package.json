@@ -1,7 +1,7 @@
 {
   "name": "finance-dashboard",
   "version": "0.5.0",
-  "description": "Privacy-first desktop finance dashboard with local LLM",
+  "description": "Privacy-first desktop finance dashboard — 100% local, deterministic",
   "main": "out/main/index.js",
   "license": "AGPL-3.0-only",
   "author": "Denis Pianelli <denis.pianelli@gmail.com>",
@@ -14,6 +14,9 @@
   },
   "private": true,
   "type": "module",
+  "overrides": {
+    "esbuild": "^0.28.1"
+  },
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "build": "electron-vite build",
