@@ -45,6 +45,15 @@ import {
 } from './handlers/sync';
 import { syncController } from '../sync/controller';
 import {
+  handleBackupGetStatus,
+  handleBackupPickFolder,
+  handleBackupSetFolder,
+  handleBackupCreate,
+  handleBackupRestore,
+  handleBackupRestoreFromFile,
+  handleBackupExportJson,
+} from './handlers/backup';
+import {
   handleRulesList,
   handleRulesCreate,
   handleRulesUpdate,
@@ -96,6 +105,9 @@ const MUTATING_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'rules:create',
   'rules:update',
   'rules:delete',
+  // A backup restore replaces the whole DB: the sync folder must be told.
+  'backup:restore',
+  'backup:restoreFromFile',
 ]);
 
 function register<C extends IpcChannel>(channel: C, handler: Handler<C>): void {
@@ -145,6 +157,13 @@ export function registerAllHandlers(): void {
   register(CHANNELS.syncLaunchCheck, () => handleSyncLaunchCheck());
   register(CHANNELS.syncRestore, () => handleSyncRestore());
   register(CHANNELS.syncKeepLocal, () => handleSyncKeepLocal());
+  register(CHANNELS.backupGetStatus, () => handleBackupGetStatus());
+  register(CHANNELS.backupPickFolder, () => handleBackupPickFolder());
+  register(CHANNELS.backupSetFolder, handleBackupSetFolder);
+  register(CHANNELS.backupCreate, () => handleBackupCreate());
+  register(CHANNELS.backupRestore, handleBackupRestore);
+  register(CHANNELS.backupRestoreFromFile, () => handleBackupRestoreFromFile());
+  register(CHANNELS.backupExportJson, () => handleBackupExportJson());
   register(CHANNELS.rulesList, () => handleRulesList());
   register(CHANNELS.rulesCreate, handleRulesCreate);
   register(CHANNELS.rulesUpdate, handleRulesUpdate);

@@ -6,6 +6,7 @@ import { getDb, closeDb } from './db';
 import { syncController } from './sync/controller';
 import { detectTransfers } from './transfers/detect';
 import { removeDownloadedModels } from './cleanup/removeDownloadedModels';
+import { backupController } from './backup';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -65,6 +66,8 @@ void app.whenReady().then(() => {
     // best-effort — a locked file must never block startup.
     console.error('startup: model cleanup failed', e);
   }
+  // Daily local snapshot before the user touches anything (local-backup spec §1).
+  backupController.ensureDailySnapshot();
   registerAllHandlers();
   createWindow();
   app.on('activate', () => {
