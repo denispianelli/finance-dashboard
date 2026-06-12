@@ -1,11 +1,12 @@
 import { type ComponentType, type ReactNode } from 'react';
-import { Database, Palette } from 'lucide-react';
+import { Database, FolderSync, Palette } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Chip } from '../components/ui/chip';
 import { Overline } from '../components/ui/overline';
 import { cn } from '../lib/utils';
+import { SyncSettingsSection } from '../components/sync/SyncSettingsSection';
 
 // First draft per docs/superpowers/specs/archive/2026-06-03-settings-view-content-design.md.
 // Content/structure only — nothing is wired to IPC yet. Values shown as static placeholders
@@ -17,8 +18,17 @@ export function SettingsPage() {
   return (
     <div className="flex max-w-[680px] flex-col gap-4">
       <DataSection />
+      <SyncSection />
       <AppearanceSection />
     </div>
+  );
+}
+
+function SyncSection() {
+  return (
+    <Section icon={FolderSync} overline="— Multi-machines" title="Synchronisation">
+      <SyncSettingsSection Row={Row} />
+    </Section>
   );
 }
 

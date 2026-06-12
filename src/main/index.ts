@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registerAllHandlers } from './ipc/register';
 import { getDb, closeDb } from './db';
+import { syncController } from './sync/controller';
 import { detectTransfers } from './transfers/detect';
 import { removeDownloadedModels } from './cleanup/removeDownloadedModels';
 
@@ -71,7 +72,32 @@ void app.whenReady().then(() => {
   });
 });
 
-app.on('will-quit', () => {
+// Write a final snapshot when quitting with unsynced changes. preventDefault +
+// async flush + re-quit is the standard Electron pattern; the guard makes the
+// second pass fall through to closeDb.
+let quitFlushStarted = false;
+app.on('will-quit', (event) => {
+  if (!quitFlushStarted && syncController.needsQuitFlush()) {
+    quitFlushStarted = true;
+    event.preventDefault();
+    const QUIT_FLUSH_TIMEOUT_MS = 10_000;
+    void Promise.race([
+      syncController.flushOnQuit(),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('sync: quit flush timed out'));
+        }, QUIT_FLUSH_TIMEOUT_MS).unref();
+      }),
+    ])
+      .catch((e: unknown) => {
+        console.error('sync: quit flush failed', e);
+      })
+      .finally(() => {
+        closeDb();
+        app.quit();
+      });
+    return;
+  }
   closeDb();
 });
 

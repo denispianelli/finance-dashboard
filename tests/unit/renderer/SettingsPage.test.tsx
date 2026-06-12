@@ -3,6 +3,11 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 
 vi.mock('sonner', () => ({ toast: { info: vi.fn() } }));
+// The sync body talks IPC on mount and has its own test file — stub it here so
+// this test stays about the page structure.
+vi.mock('@renderer/components/sync/SyncSettingsSection', () => ({
+  SyncSettingsSection: () => null,
+}));
 
 import { SettingsPage } from '@renderer/pages/SettingsPage';
 
@@ -11,8 +16,9 @@ afterEach(() => {
 });
 
 describe('SettingsPage', () => {
-  it('renders the two content sections and no model section', () => {
+  it('renders the three content sections and no model section', () => {
     render(<SettingsPage />);
+    expect(screen.getByText('Synchronisation')).toBeInTheDocument();
     expect(screen.getByText('Données & Sauvegarde')).toBeInTheDocument();
     expect(screen.getByText('Apparence & divers')).toBeInTheDocument();
     expect(screen.queryByText('Modèle LLM')).not.toBeInTheDocument();

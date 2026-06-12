@@ -61,7 +61,7 @@ Same step of the import modal, new content:
 
 - New channel `banks:prepareMapping` `{ path }` →
   `{ ok: true; suggested: ColumnOrder | null; headerTokens: string[] } |
- { ok: false; error: 'not_pdf' | 'no_text' }`.
+{ ok: false; error: 'not_pdf' | 'no_text' }`.
   Called when the unknown-bank step is entered (the renderer keeps the path it already
   has). Reuses the handler-side PDF guards (extension allowlist, %PDF magic, hasText).
 - `banks:learn` payload becomes `{ path, bankName, order: ColumnOrder }`; the handler
