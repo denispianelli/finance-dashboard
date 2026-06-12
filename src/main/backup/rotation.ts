@@ -35,8 +35,11 @@ export function listBackups(folderPath: string): BackupFileInfo[] {
   return out;
 }
 
+/** True when a snapshot whose name is dated `day`'s local calendar day exists. */
 export function hasBackupForDay(folderPath: string, day: Date): boolean {
-  const prefix = backupFileName(day).slice(0, 'finance-2026-06-12'.length);
+  // 'finance-YYYY-MM-DD' — the date-only prefix of backupFileName's output.
+  const DATE_PREFIX_LENGTH = 'finance-XXXX-XX-XX'.length;
+  const prefix = backupFileName(day).slice(0, DATE_PREFIX_LENGTH);
   return listBackups(folderPath).some((b) => b.fileName.startsWith(prefix));
 }
 
