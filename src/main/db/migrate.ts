@@ -50,6 +50,9 @@ const MIGRATIONS: Migration[] = [
   { version: 19, sql: sql019 },
 ];
 
+/** Highest migration version this build knows — embedded in snapshot headers. */
+export const LATEST_SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1]?.version ?? 0;
+
 export function runMigrations(db: DatabaseSync): void {
   db.exec(
     "CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT (datetime('now')))",

@@ -1,5 +1,12 @@
 import type { StatementExtraction } from './import';
 import type {
+  SyncStatusView,
+  SyncLaunchCheck,
+  SyncNowResult,
+  SyncRestoreResult,
+  SyncEnableResult,
+} from './sync';
+import type {
   AccountSummary,
   CreateAccountInput,
   UpdateAccountInput,
@@ -151,6 +158,20 @@ export interface IpcContract {
   'banks:learn': { payload: LearnBankInput; response: LearnBankResponse };
   'banks:prepareMapping': { payload: PrepareMappingInput; response: PrepareMappingResponse };
   'recurring:list': { payload: Record<string, never>; response: RecurringReport };
+  'sync:getStatus': { payload: Record<string, never>; response: SyncStatusView };
+  'sync:pickFolder': {
+    payload: Record<string, never>;
+    response: { cancelled: true } | { cancelled: false; path: string };
+  };
+  'sync:enable': {
+    payload: { folderPath: string; passphrase: string };
+    response: SyncEnableResult;
+  };
+  'sync:disable': { payload: Record<string, never>; response: { ok: true } };
+  'sync:now': { payload: Record<string, never>; response: SyncNowResult };
+  'sync:launchCheck': { payload: Record<string, never>; response: SyncLaunchCheck };
+  'sync:restore': { payload: Record<string, never>; response: SyncRestoreResult };
+  'sync:keepLocal': { payload: Record<string, never>; response: SyncNowResult };
 }
 
 export type IpcChannel = keyof IpcContract;

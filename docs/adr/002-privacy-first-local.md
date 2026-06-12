@@ -29,7 +29,8 @@ Any cloud-connected or telemetry-enabled approach — rejected outright as antit
 
 ## Consequences
 
-- No multi-machine sync (intentional)
+- No multi-machine sync over the network (refined by ADR-017: optional local encrypted
+  sync-folder snapshots, transported by the user's own tooling)
 - No bank connection (PSD2 — incompatible with the privacy promise)
 - No cloud backup (user manages `.fbk` exports)
 - Public source code (AGPL) so the user can verify the privacy promise

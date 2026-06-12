@@ -34,6 +34,17 @@ import {
 } from './handlers/transactions';
 import { handleTransactionsSetTransfer } from './handlers/transactionsSetTransfer';
 import {
+  handleSyncGetStatus,
+  handleSyncPickFolder,
+  handleSyncEnable,
+  handleSyncDisable,
+  handleSyncNow,
+  handleSyncLaunchCheck,
+  handleSyncRestore,
+  handleSyncKeepLocal,
+} from './handlers/sync';
+import { syncController } from '../sync/controller';
+import {
   handleRulesList,
   handleRulesCreate,
   handleRulesUpdate,
@@ -52,12 +63,49 @@ function isValidSender(event: IpcMainInvokeEvent): boolean {
   return url.startsWith('file://');
 }
 
+/** Mutating handlers signal no-op failures with `{ ok: false }` envelopes. */
+function isDomainFailure(result: unknown): boolean {
+  return (
+    typeof result === 'object' &&
+    result !== null &&
+    'ok' in result &&
+    (result as { ok?: unknown }).ok === false
+  );
+}
+
+// Channels whose successful completion changes user data — each one marks the
+// DB dirty so the sync controller schedules a debounced snapshot.
+// Sync channels themselves are intentionally excluded — they write sync
+// metadata, not user financial data.
+const MUTATING_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
+  'import:confirm',
+  'accounts:create',
+  'accounts:update',
+  'accounts:delete',
+  'accounts:setDeclaredBalance',
+  'categories:rename',
+  'categories:create',
+  'categories:delete',
+  'transactions:setCategory',
+  'transactions:update',
+  'transactions:delete',
+  'transactions:restore',
+  'transactions:setTransfer',
+  'banks:learn',
+  // Rules mutations re-categorize existing transactions (retroactive apply).
+  'rules:create',
+  'rules:update',
+  'rules:delete',
+]);
+
 function register<C extends IpcChannel>(channel: C, handler: Handler<C>): void {
-  ipcMain.handle(channel, (event, payload: IpcPayload<C>) => {
+  ipcMain.handle(channel, async (event, payload: IpcPayload<C>) => {
     if (!isValidSender(event)) {
       throw new Error(`IPC: unauthorized sender for channel "${channel}"`);
     }
-    return handler(payload);
+    const result = await handler(payload);
+    if (MUTATING_CHANNELS.has(channel) && !isDomainFailure(result)) syncController.markDirty();
+    return result;
   });
 }
 
@@ -89,6 +137,14 @@ export function registerAllHandlers(): void {
   register(CHANNELS.banksPrepareMapping, handleBanksPrepareMapping);
   register(CHANNELS.recurringList, () => handleRecurringList());
   register(CHANNELS.importResolveAccount, handleImportResolveAccount);
+  register(CHANNELS.syncGetStatus, () => handleSyncGetStatus());
+  register(CHANNELS.syncPickFolder, () => handleSyncPickFolder());
+  register(CHANNELS.syncEnable, handleSyncEnable);
+  register(CHANNELS.syncDisable, () => handleSyncDisable());
+  register(CHANNELS.syncNow, () => handleSyncNow());
+  register(CHANNELS.syncLaunchCheck, () => handleSyncLaunchCheck());
+  register(CHANNELS.syncRestore, () => handleSyncRestore());
+  register(CHANNELS.syncKeepLocal, () => handleSyncKeepLocal());
   register(CHANNELS.rulesList, () => handleRulesList());
   register(CHANNELS.rulesCreate, handleRulesCreate);
   register(CHANNELS.rulesUpdate, handleRulesUpdate);
