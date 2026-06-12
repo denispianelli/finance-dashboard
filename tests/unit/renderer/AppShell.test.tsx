@@ -32,8 +32,15 @@ afterEach(() => {
 });
 
 function TokenProbe() {
-  const { refreshToken } = useOutletContext<AppOutletContext>();
-  return <div data-testid="token">{refreshToken}</div>;
+  const { refreshToken, notifyDataChanged } = useOutletContext<AppOutletContext>();
+  return (
+    <div>
+      <div data-testid="token">{refreshToken}</div>
+      <button type="button" onClick={notifyDataChanged}>
+        simulate-data-change
+      </button>
+    </div>
+  );
 }
 
 function renderShell() {
@@ -55,6 +62,15 @@ describe('AppShell', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Importer un relevé' }));
     await userEvent.click(screen.getByRole('button', { name: 'simulate-import-success' }));
+
+    expect(screen.getByTestId('token').textContent).toBe('1');
+  });
+
+  it('bumps the refresh token when a page reports a data change (e.g. account deletion)', async () => {
+    renderShell();
+    expect(screen.getByTestId('token').textContent).toBe('0');
+
+    await userEvent.click(screen.getByRole('button', { name: 'simulate-data-change' }));
 
     expect(screen.getByTestId('token').textContent).toBe('1');
   });
