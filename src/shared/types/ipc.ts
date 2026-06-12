@@ -35,6 +35,12 @@ import type {
 import type { RecurringReport } from './recurring';
 import type { UpdateTransactionInput, DeletedTransactionSnapshot } from './transaction';
 import type { RuleDTO, RuleInput } from './rules';
+import type {
+  BackupStatusView,
+  BackupCreateResult,
+  BackupRestoreResult,
+  BackupExportResult,
+} from './backup';
 
 export interface PingPayload {
   now: number;
@@ -85,7 +91,14 @@ export interface ConfirmPayload {
 }
 
 export type ConfirmResponse =
-  | { ok: true; importId: string; insertedCount: number; skippedCount: number }
+  | {
+      ok: true;
+      importId: string;
+      insertedCount: number;
+      skippedCount: number;
+      /** Present when the pre-import backup snapshot failed (import still done). */
+      preImportBackupFailed?: true;
+    }
   | {
       ok: false;
       error:
@@ -172,6 +185,16 @@ export interface IpcContract {
   'sync:launchCheck': { payload: Record<string, never>; response: SyncLaunchCheck };
   'sync:restore': { payload: Record<string, never>; response: SyncRestoreResult };
   'sync:keepLocal': { payload: Record<string, never>; response: SyncNowResult };
+  'backup:getStatus': { payload: Record<string, never>; response: BackupStatusView };
+  'backup:pickFolder': {
+    payload: Record<string, never>;
+    response: { cancelled: true } | { cancelled: false; path: string };
+  };
+  'backup:setFolder': { payload: { folderPath: string }; response: { ok: true } };
+  'backup:create': { payload: Record<string, never>; response: BackupCreateResult };
+  'backup:restore': { payload: { fileName: string }; response: BackupRestoreResult };
+  'backup:restoreFromFile': { payload: Record<string, never>; response: BackupRestoreResult };
+  'backup:exportJson': { payload: Record<string, never>; response: BackupExportResult };
 }
 
 export type IpcChannel = keyof IpcContract;
