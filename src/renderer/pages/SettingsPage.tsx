@@ -7,6 +7,8 @@ import { Chip } from '../components/ui/chip';
 import { Overline } from '../components/ui/overline';
 import { cn } from '../lib/utils';
 import { SyncSettingsSection } from '../components/sync/SyncSettingsSection';
+import { BackupSettingsSection } from '../components/backup/BackupSettingsSection';
+import { ipc } from '../ipc/client';
 
 // First draft per docs/superpowers/specs/archive/2026-06-03-settings-view-content-design.md.
 // Content/structure only — nothing is wired to IPC yet. Values shown as static placeholders
@@ -48,24 +50,22 @@ function DataSection() {
           <Button variant="secondary" size="sm" onClick={() => toast.info(SOON)}>
             CSV
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => toast.info(SOON)}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              void ipc.invoke('backup:exportJson', {}).then((result) => {
+                if (result.ok) toast.success(`Export écrit : ${result.path}`);
+                else if (result.error !== 'cancelled') toast.error("Échec de l'export JSON.");
+              });
+            }}
+          >
             JSON
           </Button>
         </div>
       </Row>
 
-      <Row label="Sauvegarde" hint="Copie le fichier de base vers un dossier de ton choix.">
-        <Button variant="secondary" size="sm" onClick={() => toast.info(SOON)}>
-          Sauvegarder
-        </Button>
-      </Row>
-
-      <Row label="Restauration" hint="Remplace la base depuis une sauvegarde.">
-        <Button variant="secondary" size="sm" disabled>
-          Restaurer
-          <SoonBadge />
-        </Button>
-      </Row>
+      <BackupSettingsSection Row={Row} />
 
       <Separator />
 

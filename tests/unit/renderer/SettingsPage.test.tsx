@@ -2,12 +2,16 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 
-vi.mock('sonner', () => ({ toast: { info: vi.fn() } }));
-// The sync body talks IPC on mount and has its own test file — stub it here so
-// this test stays about the page structure.
+vi.mock('sonner', () => ({ toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() } }));
+// The sync and backup sections talk IPC on mount and have their own test files —
+// stub them here so this test stays about the page structure.
 vi.mock('@renderer/components/sync/SyncSettingsSection', () => ({
   SyncSettingsSection: () => null,
 }));
+vi.mock('@renderer/components/backup/BackupSettingsSection', () => ({
+  BackupSettingsSection: () => null,
+}));
+vi.mock('@renderer/ipc/client', () => ({ ipc: { invoke: vi.fn() } }));
 
 import { SettingsPage } from '@renderer/pages/SettingsPage';
 
@@ -24,16 +28,16 @@ describe('SettingsPage', () => {
     expect(screen.queryByText('Modèle LLM')).not.toBeInTheDocument();
   });
 
-  it('disables the "à venir" actions (restore, reset)', () => {
+  it('disables the "à venir" actions (reset)', () => {
     render(<SettingsPage />);
-    expect(screen.getByRole('button', { name: /Restaurer/ })).toBeDisabled();
+    // "Restaurer" moved into BackupSettingsSection (stubbed here); only "Tout réinitialiser" stays.
     expect(screen.getByRole('button', { name: /Tout réinitialiser/ })).toBeDisabled();
   });
 
-  it('keeps the live-worthy export/backup actions enabled', () => {
+  it('keeps the live-worthy export actions enabled', () => {
     render(<SettingsPage />);
     expect(screen.getByRole('button', { name: 'CSV' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'JSON' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Sauvegarder' })).toBeEnabled();
+    // "Sauvegarder maintenant" moved into BackupSettingsSection (stubbed here).
   });
 });
