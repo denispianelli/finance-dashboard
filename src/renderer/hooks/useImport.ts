@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import type { StatementExtraction } from '@shared/types/import';
 import type { ColumnOrder } from '@shared/types/bank';
 import { ipc } from '@renderer/ipc/client';
@@ -379,6 +380,9 @@ export function useImport(): UseImport {
         { fileName: file.fileName, status: 'failed', error: UNEXPECTED_ERROR },
       ]);
     } else if (res.ok) {
+      if (res.preImportBackupFailed === true) {
+        toast.warning('Sauvegarde pré-import échouée — import effectué quand même.');
+      }
       await advance(cur.files, cur.index, [
         ...cur.results,
         {

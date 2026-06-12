@@ -40,4 +40,11 @@ export const CHANNELS = {
   rulesCreate: 'rules:create',
   rulesUpdate: 'rules:update',
   rulesDelete: 'rules:delete',
+  backupGetStatus: 'backup:getStatus',
+  backupPickFolder: 'backup:pickFolder',
+  backupSetFolder: 'backup:setFolder',
+  backupCreate: 'backup:create',
+  backupRestore: 'backup:restore',
+  backupRestoreFromFile: 'backup:restoreFromFile',
+  backupExportJson: 'backup:exportJson',
 } as const satisfies Record<string, IpcChannel>;

@@ -6,9 +6,13 @@ import { readImportFile } from '../../import/readImportFile';
 import { readIdentifier } from '../../import/accountIdentifier';
 import { learnAccountRoute } from '../../import/accountRoutes';
 import { detectTransfers } from '../../transfers/detect';
+import { backupController } from '../../backup';
 
 export async function handleImportConfirm(payload: ConfirmPayload): Promise<ConfirmResponse> {
   try {
+    // Snapshot before the riskiest operation (local-backup spec §1). A backup
+    // failure must never block the import — flag it for a renderer warning.
+    const backupOk = backupController.snapshotBeforeImport();
     const content = readImportFile(payload.path);
     const result = await insertStatement(getDb(), payload.accountId, content, {
       acknowledgedCannotVerify: payload.acknowledgedCannotVerify,
@@ -36,7 +40,7 @@ export async function handleImportConfirm(payload: ConfirmPayload): Promise<Conf
       // best-effort — figures will be corrected on the next import / re-run.
       console.error('importConfirm: transfer detection failed', e);
     }
-    return { ok: true, ...result };
+    return { ok: true, ...result, ...(backupOk ? {} : { preImportBackupFailed: true as const }) };
   } catch (e) {
     if (e instanceof ImportError) {
       return { ok: false, error: e.code };
