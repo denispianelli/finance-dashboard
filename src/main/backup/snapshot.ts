@@ -19,7 +19,7 @@ export interface WriteBackupResult {
 /**
  * VACUUM INTO a tmp name inside the backup folder (clean, WAL-independent
  * copy — same pattern as sync/snapshot.ts), then rename atomically.
- * Same-minute target already present → skip: it captures the same state.
+ * Same-minute target already present → skip: it captures the same state (best-effort existsSync check, not a lock — fine for a single main process).
  * Throws on fs/SQLite errors — callers map that to a user-facing result.
  */
 export function writeBackupSnapshot(

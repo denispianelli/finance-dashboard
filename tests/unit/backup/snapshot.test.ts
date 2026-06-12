@@ -30,6 +30,10 @@ describe('backupFileName', () => {
   it('formats local date and time with zero padding', () => {
     expect(backupFileName(new Date(2026, 5, 3, 9, 7))).toBe('finance-2026-06-03_0907.sqlite');
   });
+
+  it('handles two-digit month/day and midnight', () => {
+    expect(backupFileName(new Date(2026, 11, 25, 0, 0))).toBe('finance-2026-12-25_0000.sqlite');
+  });
 });
 
 describe('writeBackupSnapshot', () => {
@@ -52,6 +56,13 @@ describe('writeBackupSnapshot', () => {
     writeBackupSnapshot(db, folder, when);
     const res = writeBackupSnapshot(db, folder, when);
     expect(res.skipped).toBe(true);
+  });
+
+  it('cleans up the tmp file when VACUUM fails', () => {
+    db.close();
+    expect(() => writeBackupSnapshot(db, folder, new Date(2026, 5, 12, 11, 0))).toThrow();
+    expect(readdirSync(folder)).toEqual([]); // no tmp, no partial target
+    db = new DatabaseSync(join(dir, 'source.sqlite')); // keep afterEach happy
   });
 
   it('propagates fs errors (unwritable folder)', () => {
