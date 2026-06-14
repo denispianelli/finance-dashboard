@@ -45,7 +45,9 @@ export interface LoanWithStats {
   endDate: string; // due_date of the last installment
   nextInstallment: LoanInstallmentDTO | null; // first installment with due_date >= today
   interestThisYear: number; // Σ interest of installments in the current calendar year
+  insuranceThisYear: number; // Σ insurance of installments in the current calendar year
   remainingCost: number; // Σ interest of installments with due_date >= today
+  remainingInsurance: number; // Σ insurance of installments with due_date >= today
 }
 
 export interface AssetDTO {

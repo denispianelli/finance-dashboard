@@ -10,11 +10,12 @@ const eur = (n: number): string =>
     maximumFractionDigits: 0,
   }).format(n);
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="flex flex-col gap-0.5">
       <span className="font-sans text-[11px] text-paper-dim">{label}</span>
       <span className="font-mono text-[13px] text-paper">{value}</span>
+      {sub && <span className="font-sans text-[10px] text-paper-dim">{sub}</span>}
     </div>
   );
 }
@@ -64,8 +65,16 @@ export function LoanCard({
           label="Prochaine échéance"
           value={next ? `${eur(next.payment)} · ${next.dueDate}` : '—'}
         />
-        <Stat label="Intérêts cette année" value={eur(loan.interestThisYear)} />
-        <Stat label="Coût restant (intérêts)" value={eur(loan.remainingCost)} />
+        <Stat
+          label="Coût cette année"
+          value={eur(loan.interestThisYear + loan.insuranceThisYear)}
+          sub={`dont assurance ${eur(loan.insuranceThisYear)}`}
+        />
+        <Stat
+          label="Coût restant"
+          value={eur(loan.remainingCost + loan.remainingInsurance)}
+          sub={`dont assurance ${eur(loan.remainingInsurance)}`}
+        />
       </div>
     </Card>
   );

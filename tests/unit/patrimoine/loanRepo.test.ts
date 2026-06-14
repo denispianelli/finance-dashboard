@@ -83,6 +83,8 @@ describe('loanRepo', () => {
     expect(loan?.nextInstallment?.dueDate).toBe('2018-07-05');
     expect(loan?.remainingCost).toBe(2.5); // interest of installments 2 + 3 = 1.67 + 0.83
     expect(loan?.interestThisYear).toBe(5); // all three rows are in 2018
+    expect(loan?.remainingInsurance).toBe(2); // insurance of installments 2 + 3 = 1 + 1
+    expect(loan?.insuranceThisYear).toBe(3); // insurance of all three 2018 rows = 1 + 1 + 1
     db.close();
   });
 

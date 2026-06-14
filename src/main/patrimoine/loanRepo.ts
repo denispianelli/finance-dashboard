@@ -121,12 +121,12 @@ export function listLoans(db: DatabaseSync, todayIso: string): LoanWithStats[] {
   return loans.map((l) => {
     const rows = installments(db, l.id);
     const next = rows.find((r) => r.due_date >= todayIso) ?? null;
-    const remainingCost = round2(
-      rows.filter((r) => r.due_date >= todayIso).reduce((s, r) => s + r.interest, 0),
-    );
-    const interestThisYear = round2(
-      rows.filter((r) => r.due_date.slice(0, 4) === year).reduce((s, r) => s + r.interest, 0),
-    );
+    const remaining = rows.filter((r) => r.due_date >= todayIso);
+    const thisYear = rows.filter((r) => r.due_date.slice(0, 4) === year);
+    const remainingCost = round2(remaining.reduce((s, r) => s + r.interest, 0));
+    const remainingInsurance = round2(remaining.reduce((s, r) => s + r.insurance, 0));
+    const interestThisYear = round2(thisYear.reduce((s, r) => s + r.interest, 0));
+    const insuranceThisYear = round2(thisYear.reduce((s, r) => s + r.insurance, 0));
     return {
       id: l.id,
       name: l.name,
@@ -140,7 +140,9 @@ export function listLoans(db: DatabaseSync, todayIso: string): LoanWithStats[] {
       endDate: rows[rows.length - 1]?.due_date ?? l.start_date,
       nextInstallment: next ? toDto(next) : null,
       interestThisYear,
+      insuranceThisYear,
       remainingCost,
+      remainingInsurance,
     };
   });
 }

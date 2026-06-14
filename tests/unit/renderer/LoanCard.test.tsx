@@ -31,7 +31,9 @@ const LOAN: LoanWithStats = {
     balanceAfter: 119300,
   },
   interestThisYear: 2400,
+  insuranceThisYear: 583,
   remainingCost: 18000,
+  remainingInsurance: 4200,
 };
 
 describe('LoanCard', () => {
@@ -39,5 +41,12 @@ describe('LoanCard', () => {
     render(<LoanCard loan={LOAN} onView={vi.fn()} onDelete={vi.fn()} />);
     expect(screen.getByText('Prêt principal')).toBeInTheDocument();
     expect(screen.getByText(/restant dû/i)).toBeInTheDocument();
+  });
+
+  it('folds insurance into the cost figures with a breakdown', () => {
+    render(<LoanCard loan={LOAN} onView={vi.fn()} onDelete={vi.fn()} />);
+    // Coût restant = interest 18000 + insurance 4200 = 22 200 €.
+    expect(screen.getByText('Coût restant')).toBeInTheDocument();
+    expect(screen.getAllByText(/dont assurance/i).length).toBeGreaterThan(0);
   });
 });
