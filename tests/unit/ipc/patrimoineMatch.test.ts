@@ -5,6 +5,9 @@ import { runMigrations } from '../../../src/main/db/migrate';
 const db = new DatabaseSync(':memory:');
 runMigrations(db);
 vi.mock('../../../src/main/db', () => ({ getDb: () => db }));
+// The handler imports `electron` for `dialog`; mock it so this unit test never
+// loads the real Electron binary (whose install flakes on the macOS CI runner).
+vi.mock('electron', () => ({ dialog: { showOpenDialog: vi.fn() } }));
 
 const { handlePatrimoineDetectPayments, handlePatrimoineUnlinkPayment } =
   await import('../../../src/main/ipc/handlers/patrimoine');
