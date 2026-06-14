@@ -70,6 +70,8 @@ import {
   handlePatrimoineListAssets,
   handlePatrimoineUpsertAsset,
   handlePatrimoineDeleteAsset,
+  handlePatrimoineDetectPayments,
+  handlePatrimoineUnlinkPayment,
 } from './handlers/patrimoine';
 
 type Handler<C extends IpcChannel> = (
@@ -124,6 +126,8 @@ const MUTATING_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'patrimoine:deleteLoan',
   'patrimoine:upsertAsset',
   'patrimoine:deleteAsset',
+  'patrimoine:detectPayments',
+  'patrimoine:unlinkPayment',
 ]);
 
 function register<C extends IpcChannel>(channel: C, handler: Handler<C>): void {
@@ -194,4 +198,6 @@ export function registerAllHandlers(): void {
   register(CHANNELS.patrimoineListAssets, () => handlePatrimoineListAssets());
   register(CHANNELS.patrimoineUpsertAsset, handlePatrimoineUpsertAsset);
   register(CHANNELS.patrimoineDeleteAsset, handlePatrimoineDeleteAsset);
+  register(CHANNELS.patrimoineDetectPayments, handlePatrimoineDetectPayments);
+  register(CHANNELS.patrimoineUnlinkPayment, handlePatrimoineUnlinkPayment);
 }

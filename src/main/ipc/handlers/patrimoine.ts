@@ -12,6 +12,7 @@ import {
 } from '../../patrimoine/loanRepo';
 import { listAssets, upsertAsset, deleteAsset } from '../../patrimoine/assetRepo';
 import { importLoanFromPdf } from '../../patrimoine/importLoan';
+import { matchLoanPayments, unlinkPayment } from '../../patrimoine/matchPayments';
 
 const todayIso = (): string => new Date().toISOString().slice(0, 10);
 
@@ -69,5 +70,14 @@ export function handlePatrimoineUpsertAsset(payload: UpsertAssetInput) {
 
 export function handlePatrimoineDeleteAsset(payload: { id: string }): { ok: true } {
   deleteAsset(getDb(), payload.id);
+  return { ok: true };
+}
+
+export function handlePatrimoineDetectPayments(payload: { loanId: string }): { matched: number } {
+  return { matched: matchLoanPayments(getDb(), payload.loanId) };
+}
+
+export function handlePatrimoineUnlinkPayment(payload: { transactionId: string }): { ok: true } {
+  unlinkPayment(getDb(), payload.transactionId);
   return { ok: true };
 }

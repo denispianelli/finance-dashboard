@@ -223,6 +223,8 @@ export interface IpcContract {
   'patrimoine:listAssets': { payload: Record<string, never>; response: { assets: AssetDTO[] } };
   'patrimoine:upsertAsset': { payload: UpsertAssetInput; response: { asset: AssetDTO } };
   'patrimoine:deleteAsset': { payload: { id: string }; response: { ok: true } };
+  'patrimoine:detectPayments': { payload: { loanId: string }; response: { matched: number } };
+  'patrimoine:unlinkPayment': { payload: { transactionId: string }; response: { ok: true } };
 }
 
 export type IpcChannel = keyof IpcContract;

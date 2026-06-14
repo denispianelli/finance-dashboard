@@ -34,6 +34,7 @@ const LOAN: LoanWithStats = {
   insuranceThisYear: 583,
   remainingCost: 18000,
   remainingInsurance: 4200,
+  match: { matched: 0, due: 0 },
 };
 
 describe('LoanCard', () => {

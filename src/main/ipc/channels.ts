@@ -57,4 +57,6 @@ export const CHANNELS = {
   patrimoineListAssets: 'patrimoine:listAssets',
   patrimoineUpsertAsset: 'patrimoine:upsertAsset',
   patrimoineDeleteAsset: 'patrimoine:deleteAsset',
+  patrimoineDetectPayments: 'patrimoine:detectPayments',
+  patrimoineUnlinkPayment: 'patrimoine:unlinkPayment',
 } as const satisfies Record<string, IpcChannel>;

@@ -59,6 +59,7 @@ export interface LoanWithStats {
   insuranceThisYear: number; // Σ insurance of installments in the current calendar year
   remainingCost: number; // Σ interest of installments with due_date >= today
   remainingInsurance: number; // Σ insurance of installments with due_date >= today
+  match: { matched: number; due: number };
 }
 
 export interface AssetDTO {

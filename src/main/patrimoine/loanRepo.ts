@@ -7,6 +7,7 @@ import type {
   ParsedInstallment,
   ExistingLoanMatch,
 } from '@shared/types/patrimoine';
+import { loanMatchCount } from './matchPayments';
 
 interface LoanRow {
   id: string;
@@ -201,6 +202,7 @@ export function listLoans(db: DatabaseSync, todayIso: string): LoanWithStats[] {
       insuranceThisYear,
       remainingCost,
       remainingInsurance,
+      match: loanMatchCount(db, l.id, todayIso),
     };
   });
 }
