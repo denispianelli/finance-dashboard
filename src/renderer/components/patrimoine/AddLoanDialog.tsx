@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ipc } from '../../ipc/client';
 import { Button } from '../ui/button';
+import { cn } from '../../lib/utils';
 import type { ParsedLoanTable } from '@shared/types/patrimoine';
 
 const ERR: Record<string, string> = {
@@ -20,18 +21,34 @@ export function AddLoanDialog({
   const [name, setName] = useState('');
   const [sharePct, setSharePct] = useState(50);
   const [error, setError] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
 
-  async function pickAndParse() {
+  async function parseFromPath(path: string) {
     setError(null);
-    const picked = await ipc.invoke('patrimoine:pickLoanFile', {});
-    if (picked.cancelled) return;
-    const res = await ipc.invoke('patrimoine:parseLoanFile', { path: picked.path });
+    const res = await ipc.invoke('patrimoine:parseLoanFile', { path });
     if (!res.ok) {
       setError(ERR[res.error] ?? 'Erreur de lecture.');
       return;
     }
     setParsed(res.parsed);
     setName(res.parsed.name);
+  }
+
+  async function pickAndParse() {
+    const picked = await ipc.invoke('patrimoine:pickLoanFile', {});
+    if (picked.cancelled) return;
+    await parseFromPath(picked.path);
+  }
+
+  // Reuse the statement-import drag-and-drop: the preload turns each dropped File
+  // into an absolute path via webUtils.getPathForFile (see ImportModal).
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const paths = window.electronAPI
+      .getDroppedPaths(Array.from(e.dataTransfer.files))
+      .filter(Boolean);
+    if (paths[0]) void parseFromPath(paths[0]);
   }
 
   async function create() {
@@ -57,9 +74,22 @@ export function AddLoanDialog({
       >
         <h2 className="pb-3 font-sans text-sm font-medium text-paper">Ajouter un prêt</h2>
         {!parsed ? (
-          <div className="flex flex-col gap-3">
+          <div
+            className={cn(
+              'flex flex-col items-center gap-3 rounded-lg border border-dashed p-6 text-center transition-colors',
+              dragOver ? 'border-brass bg-ink-3' : 'border-line-2',
+            )}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => {
+              setDragOver(false);
+            }}
+            onDrop={onDrop}
+          >
             <p className="font-sans text-[13px] text-paper-soft">
-              Sélectionne le tableau d&apos;amortissement PDF de ta banque (LCL).
+              Glisse le tableau d&apos;amortissement PDF de ta banque (LCL) ici, ou
             </p>
             {error && <p className="font-sans text-[12px] text-coral">{error}</p>}
             <Button
