@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, it, expect, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { LoanCard } from '../../../src/renderer/components/patrimoine/LoanCard';
 import type { LoanWithStats } from '@shared/types/patrimoine';
 
@@ -48,5 +48,15 @@ describe('LoanCard', () => {
     // Coût restant = interest 18000 + insurance 4200 = 22 200 €.
     expect(screen.getByText('Coût restant')).toBeInTheDocument();
     expect(screen.getAllByText(/dont assurance/i).length).toBeGreaterThan(0);
+  });
+
+  it('asks for confirmation before deleting', () => {
+    const onDelete = vi.fn();
+    render(<LoanCard loan={LOAN} onView={vi.fn()} onDelete={onDelete} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer le prêt' }));
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(screen.getByText(/sera perdu/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer' }));
+    expect(onDelete).toHaveBeenCalledWith('l1');
   });
 });
