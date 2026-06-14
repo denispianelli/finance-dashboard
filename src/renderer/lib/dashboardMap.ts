@@ -72,5 +72,6 @@ export function toTxRow(tx: DashboardTransaction): TxRow {
     editDate: tx.date,
     editAmount: tx.amount,
     editLabel: tx.labelClean,
+    loanSplit: tx.loanSplit,
   };
 }

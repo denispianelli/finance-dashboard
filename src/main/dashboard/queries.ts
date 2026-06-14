@@ -98,6 +98,9 @@ interface TransactionRow {
   edited_at: string | null;
   is_internal_transfer: number;
   user_modified: number;
+  loan_installment_id: string | null;
+  li_interest: number | null;
+  li_insurance: number | null;
 }
 
 /** Transactions joined with their current category, newest first, capped by
@@ -131,9 +134,12 @@ export function getTransactions(
               t.category_id, c.name AS category_name, c.color AS category_color,
               c.icon AS category_icon,
               t.original_date, t.original_amount, t.edited_at,
-              t.is_internal_transfer, t.user_modified
+              t.is_internal_transfer, t.user_modified,
+              t.loan_installment_id,
+              li.interest AS li_interest, li.insurance AS li_insurance
        FROM transactions t
        LEFT JOIN categories c ON c.id = t.category_id
+       LEFT JOIN loan_installments li ON li.id = t.loan_installment_id
        ${whereSql}
        ORDER BY t.date DESC, t.id DESC
        LIMIT ?`,
@@ -156,5 +162,16 @@ export function getTransactions(
     editedAt: r.edited_at,
     isInternalTransfer: r.is_internal_transfer === 1,
     userModified: r.user_modified === 1,
+    loanSplit:
+      r.loan_installment_id !== null && r.li_interest !== null && r.li_insurance !== null
+        ? {
+            interest: Math.round(r.li_interest * 100) / 100,
+            insurance: Math.round(r.li_insurance * 100) / 100,
+            capital: Math.max(
+              0,
+              Math.round((Math.abs(r.amount) - (r.li_interest + r.li_insurance)) * 100) / 100,
+            ),
+          }
+        : null,
   }));
 }

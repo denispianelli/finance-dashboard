@@ -25,9 +25,14 @@ export function getConsolidatedCashflow(
   const rows = db
     .prepare(
       `SELECT ${periodExpr} AS period,
-              COALESCE(SUM(CASE WHEN ${INCOME_ROW} THEN amount ELSE 0 END), 0) AS income,
-              COALESCE(SUM(CASE WHEN ${EXPENSE_ROW} THEN amount ELSE 0 END), 0) AS expense
-       FROM transactions
+              COALESCE(SUM(CASE
+                WHEN loan_installment_id IS NULL AND ${INCOME_ROW} THEN amount ELSE 0 END), 0) AS income,
+              COALESCE(SUM(CASE
+                WHEN loan_installment_id IS NOT NULL THEN -(li.interest + li.insurance)
+                WHEN ${EXPENSE_ROW} THEN amount
+                ELSE 0 END), 0) AS expense
+       FROM transactions t
+       LEFT JOIN loan_installments li ON li.id = t.loan_installment_id
        GROUP BY period
        ORDER BY period ASC`,
     )

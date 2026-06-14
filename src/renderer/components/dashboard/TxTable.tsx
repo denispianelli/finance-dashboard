@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Pencil, Trash2, Check, X } from 'lucide-react';
+import { Pencil, Trash2, Check, X, Landmark, Unlink2 } from 'lucide-react';
 import type { CategoryDTO, CreateCategoryInput } from '@shared/types/category';
 import { cn } from '@renderer/lib/utils';
 import { CategoryIcon } from '@renderer/lib/categoryIcon';
 import { formatBalance, parseAmount } from '@renderer/lib/dashboardMap';
+import { formatAmount } from '@renderer/lib/euro';
 import { Money, type MoneyKind } from '../ui/money';
 import { CategoryPicker } from './CategoryPicker';
 
@@ -25,6 +26,8 @@ export interface TxRow {
   editDate: string; // ISO yyyy-mm-dd
   editAmount: number;
   editLabel: string;
+  /** When set, this row is matched to a loan installment and carries its split. */
+  loanSplit: { interest: number; insurance: number; capital: number } | null;
 }
 
 export interface TxTableProps {
@@ -35,6 +38,7 @@ export interface TxTableProps {
   onCreateCategory?: (input: CreateCategoryInput) => Promise<CategoryDTO>;
   onStartEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onUnlinkLoan?: (transactionId: string) => void;
 }
 
 const HEAD =
@@ -75,6 +79,7 @@ export interface TxTableRowProps {
   ) => void;
   onCancelEdit?: () => void;
   onDelete?: (transactionId: string) => void;
+  onUnlinkLoan?: (transactionId: string) => void;
 }
 
 const INPUT =
@@ -91,6 +96,7 @@ export function TxTableRow({
   onSaveEdit,
   onCancelEdit,
   onDelete,
+  onUnlinkLoan,
 }: TxTableRowProps) {
   if (editing) {
     return <TxTableRowEdit row={t} onSaveEdit={onSaveEdit} onCancelEdit={onCancelEdit} />;
@@ -124,7 +130,23 @@ export function TxTableRow({
         </span>
       </span>
       <span className={cn(CELL, 'min-w-0')}>
-        {categories && onReassign && onCreateCategory ? (
+        {t.loanSplit ? (
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-line-2 bg-ink-2 px-2 py-0.5 font-sans text-[11px] text-paper-soft">
+            <Landmark size={12} strokeWidth={1.8} className="text-brass" />
+            Mensualité prêt · int. {formatAmount(t.loanSplit.interest)} · assu.{' '}
+            {formatAmount(t.loanSplit.insurance)} · cap. {formatAmount(t.loanSplit.capital)}
+            <button
+              type="button"
+              aria-label="Dissocier la mensualité"
+              className="text-paper-dim hover:text-paper"
+              onClick={() => {
+                onUnlinkLoan?.(t.id);
+              }}
+            >
+              <Unlink2 size={12} />
+            </button>
+          </span>
+        ) : categories && onReassign && onCreateCategory ? (
           <CategoryPicker
             categories={categories}
             current={{ name: t.catName, color: t.catColor }}
@@ -268,6 +290,7 @@ export function TxTable({
   onCreateCategory,
   onStartEdit,
   onDelete,
+  onUnlinkLoan,
 }: TxTableProps) {
   return (
     <div>
@@ -281,6 +304,7 @@ export function TxTable({
           onCreateCategory={onCreateCategory}
           onStartEdit={onStartEdit}
           onDelete={onDelete}
+          onUnlinkLoan={onUnlinkLoan}
         />
       ))}
     </div>

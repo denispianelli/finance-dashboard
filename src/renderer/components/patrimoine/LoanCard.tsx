@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, Trash2 } from 'lucide-react';
+import { Eye, Search, Trash2 } from 'lucide-react';
 import type { LoanWithStats } from '@shared/types/patrimoine';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -21,10 +21,12 @@ export function LoanCard({
   loan,
   onView,
   onDelete,
+  onDetect,
 }: {
   loan: LoanWithStats;
   onView: (loan: LoanWithStats) => void;
   onDelete: (id: string) => void;
+  onDetect: (id: string) => void;
 }) {
   const next = loan.nextInstallment;
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -83,25 +85,43 @@ export function LoanCard({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <Stat label="Capital restant dû" value={eur(loan.crd)} />
-          <Stat label="Quote-part" value={`${String(Math.round(loan.share * 100))} %`} />
-          <Stat label="Fin du prêt" value={loan.endDate} />
-          <Stat
-            label="Prochaine échéance"
-            value={next ? `${eur(next.payment)} · ${next.dueDate}` : '—'}
-          />
-          <Stat
-            label="Coût cette année"
-            value={eur(loan.interestThisYear + loan.insuranceThisYear)}
-            sub={`dont assurance ${eur(loan.insuranceThisYear)}`}
-          />
-          <Stat
-            label="Coût restant"
-            value={eur(loan.remainingCost + loan.remainingInsurance)}
-            sub={`dont assurance ${eur(loan.remainingInsurance)}`}
-          />
-        </div>
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Stat label="Capital restant dû" value={eur(loan.crd)} />
+            <Stat label="Quote-part" value={`${String(Math.round(loan.share * 100))} %`} />
+            <Stat label="Fin du prêt" value={loan.endDate} />
+            <Stat
+              label="Prochaine échéance"
+              value={next ? `${eur(next.payment)} · ${next.dueDate}` : '—'}
+            />
+            <Stat
+              label="Coût cette année"
+              value={eur(loan.interestThisYear + loan.insuranceThisYear)}
+              sub={`dont assurance ${eur(loan.insuranceThisYear)}`}
+            />
+            <Stat
+              label="Coût restant"
+              value={eur(loan.remainingCost + loan.remainingInsurance)}
+              sub={`dont assurance ${eur(loan.remainingInsurance)}`}
+            />
+          </div>
+          <div className="flex items-center justify-between border-t border-line-1 pt-2.5">
+            <span className="font-sans text-[11px] text-paper-dim">
+              {loan.match.matched} / {loan.match.due} mensualités appariées
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label="Détecter les mensualités"
+              onClick={() => {
+                onDetect(loan.id);
+              }}
+            >
+              <Search size={13} strokeWidth={1.8} />
+              Détecter
+            </Button>
+          </div>
+        </>
       )}
     </Card>
   );

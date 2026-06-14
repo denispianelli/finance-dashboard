@@ -46,6 +46,7 @@ const TX: DashboardTransaction[] = [
     editedAt: null,
     isInternalTransfer: false,
     userModified: false,
+    loanSplit: null,
   },
 ];
 

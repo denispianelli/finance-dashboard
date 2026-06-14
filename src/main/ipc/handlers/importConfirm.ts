@@ -7,6 +7,7 @@ import { readIdentifier } from '../../import/accountIdentifier';
 import { learnAccountRoute } from '../../import/accountRoutes';
 import { detectTransfers } from '../../transfers/detect';
 import { backupController } from '../../backup';
+import { matchAllLoans } from '../../patrimoine/matchPayments';
 
 export async function handleImportConfirm(payload: ConfirmPayload): Promise<ConfirmResponse> {
   try {
@@ -39,6 +40,13 @@ export async function handleImportConfirm(payload: ConfirmPayload): Promise<Conf
     } catch (e) {
       // best-effort — figures will be corrected on the next import / re-run.
       console.error('importConfirm: transfer detection failed', e);
+    }
+    // Match new mortgage debits to their loan installments. Best-effort — a
+    // failure here must never block an import whose rows are already written.
+    try {
+      matchAllLoans(getDb());
+    } catch {
+      /* matching is non-critical to the import */
     }
     return { ok: true, ...result, ...(backupOk ? {} : { preImportBackupFailed: true as const }) };
   } catch (e) {
