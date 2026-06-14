@@ -59,6 +59,17 @@ import {
   handleRulesUpdate,
   handleRulesDelete,
 } from './handlers/rules';
+import {
+  handlePatrimoineListLoans,
+  handlePatrimoineListInstallments,
+  handlePatrimoinePickLoanFile,
+  handlePatrimoineParseLoanFile,
+  handlePatrimoineCreateLoan,
+  handlePatrimoineDeleteLoan,
+  handlePatrimoineListAssets,
+  handlePatrimoineUpsertAsset,
+  handlePatrimoineDeleteAsset,
+} from './handlers/patrimoine';
 
 type Handler<C extends IpcChannel> = (
   payload: IpcPayload<C>,
@@ -108,6 +119,10 @@ const MUTATING_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   // A backup restore replaces the whole DB: the sync folder must be told.
   'backup:restore',
   'backup:restoreFromFile',
+  'patrimoine:createLoan',
+  'patrimoine:deleteLoan',
+  'patrimoine:upsertAsset',
+  'patrimoine:deleteAsset',
 ]);
 
 function register<C extends IpcChannel>(channel: C, handler: Handler<C>): void {
@@ -168,4 +183,13 @@ export function registerAllHandlers(): void {
   register(CHANNELS.rulesCreate, handleRulesCreate);
   register(CHANNELS.rulesUpdate, handleRulesUpdate);
   register(CHANNELS.rulesDelete, handleRulesDelete);
+  register(CHANNELS.patrimoineListLoans, () => handlePatrimoineListLoans());
+  register(CHANNELS.patrimoineListInstallments, handlePatrimoineListInstallments);
+  register(CHANNELS.patrimoinePickLoanFile, () => handlePatrimoinePickLoanFile());
+  register(CHANNELS.patrimoineParseLoanFile, handlePatrimoineParseLoanFile);
+  register(CHANNELS.patrimoineCreateLoan, handlePatrimoineCreateLoan);
+  register(CHANNELS.patrimoineDeleteLoan, handlePatrimoineDeleteLoan);
+  register(CHANNELS.patrimoineListAssets, () => handlePatrimoineListAssets());
+  register(CHANNELS.patrimoineUpsertAsset, handlePatrimoineUpsertAsset);
+  register(CHANNELS.patrimoineDeleteAsset, handlePatrimoineDeleteAsset);
 }

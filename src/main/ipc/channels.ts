@@ -47,4 +47,13 @@ export const CHANNELS = {
   backupRestore: 'backup:restore',
   backupRestoreFromFile: 'backup:restoreFromFile',
   backupExportJson: 'backup:exportJson',
+  patrimoineListLoans: 'patrimoine:listLoans',
+  patrimoineListInstallments: 'patrimoine:listInstallments',
+  patrimoinePickLoanFile: 'patrimoine:pickLoanFile',
+  patrimoineParseLoanFile: 'patrimoine:parseLoanFile',
+  patrimoineCreateLoan: 'patrimoine:createLoan',
+  patrimoineDeleteLoan: 'patrimoine:deleteLoan',
+  patrimoineListAssets: 'patrimoine:listAssets',
+  patrimoineUpsertAsset: 'patrimoine:upsertAsset',
+  patrimoineDeleteAsset: 'patrimoine:deleteAsset',
 } as const satisfies Record<string, IpcChannel>;
