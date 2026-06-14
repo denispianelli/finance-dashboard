@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 import type { AppOutletContext } from '../lib/outletContext';
 import type { LoanWithStats } from '@shared/types/patrimoine';
@@ -57,7 +58,12 @@ export function PatrimoinePage() {
                   void deleteLoan(id).then(notifyDataChanged);
                 }}
                 onDetect={(id) => {
-                  void detectPayments(id).then(notifyDataChanged);
+                  void detectPayments(id).then((n) => {
+                    toast.success(
+                      `${String(n)} mensualité${n === 1 ? '' : 's'} appariée${n === 1 ? '' : 's'}`,
+                    );
+                    notifyDataChanged();
+                  });
                 }}
               />
             ))}

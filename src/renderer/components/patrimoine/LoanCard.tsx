@@ -112,6 +112,7 @@ export function LoanCard({
             <Button
               variant="ghost"
               size="sm"
+              aria-label="Détecter les mensualités"
               onClick={() => {
                 onDetect(loan.id);
               }}

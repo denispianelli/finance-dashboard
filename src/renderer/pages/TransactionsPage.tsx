@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
+import { ipc } from '@renderer/ipc/client';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Overline } from '../components/ui/overline';
@@ -252,6 +253,13 @@ export function TransactionsPage() {
                       }}
                       onDelete={(id) => {
                         void deleteTransaction(id);
+                      }}
+                      onUnlinkLoan={(id) => {
+                        void ipc
+                          .invoke('patrimoine:unlinkPayment', { transactionId: id })
+                          .then(() => {
+                            refresh();
+                          });
                       }}
                     />
                   </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pencil, Trash2, Check, X, Landmark } from 'lucide-react';
+import { Pencil, Trash2, Check, X, Landmark, Unlink2 } from 'lucide-react';
 import type { CategoryDTO, CreateCategoryInput } from '@shared/types/category';
 import { cn } from '@renderer/lib/utils';
 import { CategoryIcon } from '@renderer/lib/categoryIcon';
@@ -38,6 +38,7 @@ export interface TxTableProps {
   onCreateCategory?: (input: CreateCategoryInput) => Promise<CategoryDTO>;
   onStartEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onUnlinkLoan?: (transactionId: string) => void;
 }
 
 const HEAD =
@@ -78,6 +79,7 @@ export interface TxTableRowProps {
   ) => void;
   onCancelEdit?: () => void;
   onDelete?: (transactionId: string) => void;
+  onUnlinkLoan?: (transactionId: string) => void;
 }
 
 const INPUT =
@@ -94,6 +96,7 @@ export function TxTableRow({
   onSaveEdit,
   onCancelEdit,
   onDelete,
+  onUnlinkLoan,
 }: TxTableRowProps) {
   if (editing) {
     return <TxTableRowEdit row={t} onSaveEdit={onSaveEdit} onCancelEdit={onCancelEdit} />;
@@ -132,6 +135,16 @@ export function TxTableRow({
             <Landmark size={12} strokeWidth={1.8} className="text-brass" />
             Mensualité prêt · int. {formatAmount(t.loanSplit.interestInsurance)} · cap.{' '}
             {formatAmount(t.loanSplit.capital)}
+            <button
+              type="button"
+              aria-label="Dissocier la mensualité"
+              className="text-paper-dim hover:text-paper"
+              onClick={() => {
+                onUnlinkLoan?.(t.id);
+              }}
+            >
+              <Unlink2 size={12} />
+            </button>
           </span>
         ) : categories && onReassign && onCreateCategory ? (
           <CategoryPicker
@@ -277,6 +290,7 @@ export function TxTable({
   onCreateCategory,
   onStartEdit,
   onDelete,
+  onUnlinkLoan,
 }: TxTableProps) {
   return (
     <div>
@@ -290,6 +304,7 @@ export function TxTable({
           onCreateCategory={onCreateCategory}
           onStartEdit={onStartEdit}
           onDelete={onDelete}
+          onUnlinkLoan={onUnlinkLoan}
         />
       ))}
     </div>
