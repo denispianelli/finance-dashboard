@@ -79,11 +79,19 @@ function stubIpc(transactions: DashboardTransaction[] = TX): void {
 }
 
 beforeEach(() => {
+  // Freeze "today" so the fixtures (dated 2026-05-14) always fall inside the
+  // page's default last-30-days window. Without this the suite is a time bomb:
+  // it passes until the real clock moves >30 days past the fixture date, then
+  // the default filter hides every row. Fake only Date — real timers stay live
+  // so testing-library's findByText polling still works.
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-05-20T12:00:00Z'));
   mockInvoke.mockReset();
   stubIpc();
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   cleanup();
 });
 

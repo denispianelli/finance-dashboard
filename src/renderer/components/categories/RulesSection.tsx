@@ -38,7 +38,7 @@ export function RulesSection({ categories }: { categories: CategoryDTO[] }) {
   const filterActive = needle !== '' || categoryFilter !== '';
 
   return (
-    <Card>
+    <Card className="min-h-0 flex-1">
       <CardHeader>
         <div className="flex items-center gap-3.5">
           <Overline>— II</Overline>
@@ -80,7 +80,7 @@ export function RulesSection({ categories }: { categories: CategoryDTO[] }) {
           </span>
         )}
       </div>
-      <div className="flex flex-col">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {filtered.map((r) => (
           <RuleRow
             key={r.id}
