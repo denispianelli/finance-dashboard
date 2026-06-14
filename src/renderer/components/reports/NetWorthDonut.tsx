@@ -19,13 +19,17 @@ export interface NetWorthDonutProps {
 /** Net worth as a donut of account composition, with the total in the ring centre. */
 export function NetWorthDonut({ netWorth }: NetWorthDonutProps) {
   const slices = accountComposition(netWorth);
+  // The donut shows account composition only ("tous comptes"); its centre must be
+  // the accounts subtotal so it reconciles with the slices. The full net worth
+  // (incl. declared assets and loan CRD) is shown in the sidebar, not here.
+  const accountsTotal = slices.reduce((sum, s) => sum + s.value, 0);
 
   return (
     <DonutCard
       overline="— IV"
       title="Patrimoine · tous comptes"
-      centerTop="Net"
-      centerMain={formatCompact(netWorth?.total ?? 0)}
+      centerTop="Comptes"
+      centerMain={formatCompact(accountsTotal)}
       emptyHint="Aucun solde connu — importez un relevé ou déclarez un solde."
       segments={slices.map((s, i) => ({
         key: s.name,

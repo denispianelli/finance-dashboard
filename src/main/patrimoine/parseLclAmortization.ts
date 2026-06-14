@@ -54,6 +54,17 @@ export function parseLclAmortization(lines: string[]): ParsedLoanTable {
 
   const totalsLine = lines.find((l) => /^\s*TOTAL\b/.test(l)) ?? '';
   const totalsAmounts = extractAmounts(totalsLine);
+  const totalsCapital = totalsAmounts[0] ?? 0;
+
+  // Integrity gate: when the table prints a TOTAL line, the parsed rows must sum
+  // to it (a dropped or mis-parsed row would otherwise import silently). Tolerate
+  // a cent of float accumulation.
+  if (totalsCapital > 0) {
+    const sumCapital = Math.round(installments.reduce((s, i) => s + i.capital, 0) * 100) / 100;
+    if (Math.abs(sumCapital - totalsCapital) > 0.01) {
+      throw new Error('parseLclAmortization: capital sum does not match the TOTAL line');
+    }
+  }
 
   const rawRate = (rateM?.[1] ?? '0').replace(/0+$/, '') || '0';
 
@@ -65,7 +76,7 @@ export function parseLclAmortization(lines: string[]): ParsedLoanTable {
     startDate: startM ? frDateToIso(startM[1] ?? '') : (installments[0]?.dueDate ?? ''),
     installments,
     totals: {
-      capital: totalsAmounts[0] ?? 0,
+      capital: totalsCapital,
       interest: totalsAmounts[1] ?? 0,
       insurance: totalsAmounts[2] ?? 0,
     },

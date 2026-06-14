@@ -42,7 +42,8 @@ export function getConsolidatedCashflow(
 }
 
 /**
- * Consolidated net worth: accounts + declared assets − loan CRD (ADR-014).
+ * Consolidated net worth: accounts + declared assets − loan CRD (ADR-009
+ * Amendment 2; account balances per ADR-014).
  * Unanchored accounts carry `balance: null` and contribute 0 to the total; they
  * are still listed so the UI can surface "declare a balance" (brick F2). Loans
  * and declared assets are folded in at the maintainer's share (`share` column).
