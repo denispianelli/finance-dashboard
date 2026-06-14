@@ -138,6 +138,11 @@ Lucide, French sentence case.
 - Splitting non-LCL or insurance-separate loans.
 - Showing the capital part as an explicit "savings" line in reports (it is
   neutralized; the equity it builds already shows in net worth via the CRD).
+- **Per-account dashboard KPIs / 12-month chart (`metrics.ts`) are NOT split** —
+  the decomposition is applied only to the consolidated cashflow and the category
+  reports. So a matched mortgage debit reads as interest+insurance in Reports but
+  as the full debit on the single-account dashboard. Accepted for v1 (the account
+  balance must stay raw anyway); revisit if the inconsistency bites.
 
 ## 8. Verification & testing
 
