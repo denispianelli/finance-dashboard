@@ -27,6 +27,7 @@ function tx(over: Partial<DashboardTransaction>): DashboardTransaction {
     editedAt: null,
     isInternalTransfer: false,
     userModified: false,
+    loanSplit: null,
     ...over,
   };
 }

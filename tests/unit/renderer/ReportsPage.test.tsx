@@ -70,6 +70,7 @@ const transactions = [
     editedAt: null,
     isInternalTransfer: false,
     userModified: false,
+    loanSplit: null,
   },
 ];
 
