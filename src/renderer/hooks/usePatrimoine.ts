@@ -50,5 +50,14 @@ export function usePatrimoine(refreshToken: number) {
     [reload],
   );
 
-  return { loans, assets, reload, deleteLoan, upsertAsset, deleteAsset };
+  const detectPayments = useCallback(
+    async (loanId: string) => {
+      const { matched } = await ipc.invoke('patrimoine:detectPayments', { loanId });
+      reload();
+      return matched;
+    },
+    [reload],
+  );
+
+  return { loans, assets, reload, deleteLoan, upsertAsset, deleteAsset, detectPayments };
 }

@@ -39,13 +39,13 @@ const LOAN: LoanWithStats = {
 
 describe('LoanCard', () => {
   it('shows the name, CRD and end date', () => {
-    render(<LoanCard loan={LOAN} onView={vi.fn()} onDelete={vi.fn()} />);
+    render(<LoanCard loan={LOAN} onView={vi.fn()} onDelete={vi.fn()} onDetect={vi.fn()} />);
     expect(screen.getByText('Prêt principal')).toBeInTheDocument();
     expect(screen.getByText(/restant dû/i)).toBeInTheDocument();
   });
 
   it('folds insurance into the cost figures with a breakdown', () => {
-    render(<LoanCard loan={LOAN} onView={vi.fn()} onDelete={vi.fn()} />);
+    render(<LoanCard loan={LOAN} onView={vi.fn()} onDelete={vi.fn()} onDetect={vi.fn()} />);
     // Coût restant = interest 18000 + insurance 4200 = 22 200 €.
     expect(screen.getByText('Coût restant')).toBeInTheDocument();
     expect(screen.getAllByText(/dont assurance/i).length).toBeGreaterThan(0);
@@ -53,7 +53,7 @@ describe('LoanCard', () => {
 
   it('asks for confirmation before deleting', () => {
     const onDelete = vi.fn();
-    render(<LoanCard loan={LOAN} onView={vi.fn()} onDelete={onDelete} />);
+    render(<LoanCard loan={LOAN} onView={vi.fn()} onDelete={onDelete} onDetect={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Supprimer le prêt' }));
     expect(onDelete).not.toHaveBeenCalled();
     expect(screen.getByText(/sera perdu/i)).toBeInTheDocument();

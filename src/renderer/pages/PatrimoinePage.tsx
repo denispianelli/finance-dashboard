@@ -14,7 +14,7 @@ import { AddLoanDialog } from '../components/patrimoine/AddLoanDialog';
 
 export function PatrimoinePage() {
   const { refreshToken, notifyDataChanged } = useOutletContext<AppOutletContext>();
-  const { loans, assets, reload, deleteLoan, upsertAsset, deleteAsset } =
+  const { loans, assets, reload, deleteLoan, upsertAsset, deleteAsset, detectPayments } =
     usePatrimoine(refreshToken);
   const [viewing, setViewing] = useState<LoanWithStats | null>(null);
   const [adding, setAdding] = useState(false);
@@ -55,6 +55,9 @@ export function PatrimoinePage() {
                 onView={setViewing}
                 onDelete={(id) => {
                   void deleteLoan(id).then(notifyDataChanged);
+                }}
+                onDetect={(id) => {
+                  void detectPayments(id).then(notifyDataChanged);
                 }}
               />
             ))}
