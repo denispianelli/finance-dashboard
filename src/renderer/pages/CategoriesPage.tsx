@@ -18,8 +18,12 @@ export function CategoriesPage() {
   const [adding, setAdding] = useState(false);
 
   return (
-    <>
-      <Card>
+    // Fill the viewport height so the page itself doesn't scroll. The two cards
+    // split the available height 50/50 (both flex-1) and each scrolls its own
+    // list internally — so neither card can push the other off-screen on a short
+    // window (same internal-scroll idea as the Transactions page).
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
+      <Card className="min-h-0 flex-1">
         <CardHeader>
           <div className="flex items-center gap-3.5">
             <Overline>— I</Overline>
@@ -55,7 +59,7 @@ export function CategoriesPage() {
           </div>
         )}
 
-        <div className="flex flex-col">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           {categories.map((c) => (
             <CategoryRow
               key={c.id}
@@ -67,7 +71,7 @@ export function CategoriesPage() {
         </div>
       </Card>
       <RulesSection categories={categories} />
-    </>
+    </div>
   );
 }
 
