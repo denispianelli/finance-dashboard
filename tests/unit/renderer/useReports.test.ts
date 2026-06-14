@@ -9,7 +9,12 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const netWorth = { total: 9200, accounts: [{ accountId: 'a', name: 'A', balance: 9200 }] };
+const netWorth = {
+  total: 9200,
+  accounts: [{ accountId: 'a', name: 'A', balance: 9200 }],
+  assets: [],
+  loans: [],
+};
 const recurring = {
   subscriptions: [
     {

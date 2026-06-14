@@ -35,7 +35,12 @@ The app:
   expense;
 - **answers the retrospective questions**: a Reports page with net worth over time,
   gained/lost per month and year, top categories, savings rate, subscriptions & recurring
-  charges, year-vs-N-1, biggest movements.
+  charges, year-vs-N-1, biggest movements;
+- **tracks the full patrimoine**: a Patrimoine page with loans imported from the bank's
+  definitive amortization-table PDF (capital restant dû read by date lookup; capital vs
+  interest vs insurance split comes straight from the table — no formula re-derivation), a
+  declared primary-residence value at the maintainer's quote-part, and net worth computed
+  as accounts + declared assets − loan CRD (all local, no network).
 
 **All on your machine. Source code is public so the privacy promise is verifiable.**
 

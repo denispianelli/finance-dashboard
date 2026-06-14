@@ -1,0 +1,72 @@
+import { Eye, Trash2 } from 'lucide-react';
+import type { LoanWithStats } from '@shared/types/patrimoine';
+import { Card, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+
+const eur = (n: number): string =>
+  new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 0,
+  }).format(n);
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="font-sans text-[11px] text-paper-dim">{label}</span>
+      <span className="font-mono text-[13px] text-paper">{value}</span>
+    </div>
+  );
+}
+
+export function LoanCard({
+  loan,
+  onView,
+  onDelete,
+}: {
+  loan: LoanWithStats;
+  onView: (loan: LoanWithStats) => void;
+  onDelete: (id: string) => void;
+}) {
+  const next = loan.nextInstallment;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{loan.name}</CardTitle>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              onView(loan);
+            }}
+            aria-label="Voir le tableau"
+          >
+            <Eye size={14} strokeWidth={1.8} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              onDelete(loan.id);
+            }}
+            aria-label="Supprimer le prêt"
+          >
+            <Trash2 size={14} strokeWidth={1.8} />
+          </Button>
+        </div>
+      </CardHeader>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <Stat label="Capital restant dû" value={eur(loan.crd)} />
+        <Stat label="Quote-part" value={`${String(Math.round(loan.share * 100))} %`} />
+        <Stat label="Fin du prêt" value={loan.endDate} />
+        <Stat
+          label="Prochaine échéance"
+          value={next ? `${eur(next.payment)} · ${next.dueDate}` : '—'}
+        />
+        <Stat label="Intérêts cette année" value={eur(loan.interestThisYear)} />
+        <Stat label="Coût restant (intérêts)" value={eur(loan.remainingCost)} />
+      </div>
+    </Card>
+  );
+}

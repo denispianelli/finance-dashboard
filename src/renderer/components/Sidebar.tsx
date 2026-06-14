@@ -6,6 +6,7 @@ import {
   Settings,
   Tags,
   Upload,
+  Wallet,
 } from 'lucide-react';
 import type { ComponentType, ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
@@ -52,6 +53,7 @@ function buildGroups(onImport: () => void): NavGroup[] {
         { kind: 'route', path: '/accounts', label: 'Comptes', Icon: Landmark, enabled: true },
         { kind: 'route', path: '/categories', label: 'Catégories', Icon: Tags, enabled: true },
         { kind: 'route', path: '/reports', label: 'Rapports', Icon: LineChart, enabled: true },
+        { kind: 'route', path: '/patrimoine', label: 'Patrimoine', Icon: Wallet, enabled: true },
       ],
     },
     {

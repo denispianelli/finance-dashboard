@@ -41,6 +41,14 @@ import type {
   BackupRestoreResult,
   BackupExportResult,
 } from './backup';
+import type {
+  LoanWithStats,
+  LoanInput,
+  LoanInstallmentDTO,
+  AssetDTO,
+  UpsertAssetInput,
+  ParseLoanResponse,
+} from './patrimoine';
 
 export interface PingPayload {
   now: number;
@@ -195,6 +203,21 @@ export interface IpcContract {
   'backup:restore': { payload: { fileName: string }; response: BackupRestoreResult };
   'backup:restoreFromFile': { payload: Record<string, never>; response: BackupRestoreResult };
   'backup:exportJson': { payload: Record<string, never>; response: BackupExportResult };
+  'patrimoine:listLoans': { payload: Record<string, never>; response: { loans: LoanWithStats[] } };
+  'patrimoine:listInstallments': {
+    payload: { loanId: string };
+    response: { installments: LoanInstallmentDTO[] };
+  };
+  'patrimoine:pickLoanFile': {
+    payload: Record<string, never>;
+    response: { cancelled: true } | { cancelled: false; path: string };
+  };
+  'patrimoine:parseLoanFile': { payload: { path: string }; response: ParseLoanResponse };
+  'patrimoine:createLoan': { payload: LoanInput; response: { ok: true; id: string } };
+  'patrimoine:deleteLoan': { payload: { id: string }; response: { ok: true } };
+  'patrimoine:listAssets': { payload: Record<string, never>; response: { assets: AssetDTO[] } };
+  'patrimoine:upsertAsset': { payload: UpsertAssetInput; response: { asset: AssetDTO } };
+  'patrimoine:deleteAsset': { payload: { id: string }; response: { ok: true } };
 }
 
 export type IpcChannel = keyof IpcContract;
