@@ -28,6 +28,18 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs['recommended-latest'].rules,
       ...reactRefresh.configs.vite.rules,
+      // Design-system guardrail: amounts go through lib/euro (formatEuro /
+      // formatAmount / formatCompact) or the <Money> component — never a
+      // hand-rolled Intl.NumberFormat. Keeps every figure formatted identically.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "NewExpression[callee.object.name='Intl'][callee.property.name='NumberFormat']",
+          message:
+            'Format amounts via lib/euro (formatEuro/formatAmount/formatCompact) or <Money> — do not hand-roll Intl.NumberFormat (design-system drift).',
+        },
+      ],
     },
   },
 

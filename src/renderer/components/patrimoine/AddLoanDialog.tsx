@@ -1,14 +1,26 @@
 import { useState } from 'react';
 import { ipc } from '../../ipc/client';
 import { Button } from '../ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 import { cn } from '../../lib/utils';
+import { formatEuro } from '../../lib/euro';
 import type { ParsedLoanTable, ExistingLoanMatch } from '@shared/types/patrimoine';
 
 const ERR: Record<string, string> = {
   not_pdf: 'Ce fichier n’est pas un PDF.',
-  no_text: 'Ce PDF n’a pas de couche texte (scan ?).',
-  unrecognized_format: 'Format non reconnu — ce n’est pas un tableau d’amortissement LCL.',
+  no_text: 'Ce PDF n’a pas de couche texte (scan ?).',
+  unrecognized_format: 'Format non reconnu — ce n’est pas un tableau d’amortissement LCL.',
 };
+
+const INPUT =
+  'h-8 rounded-md border border-line-2 bg-ink-3 px-2 text-[13px] text-paper focus:outline-none focus:ring-1 focus:ring-brass';
 
 export function AddLoanDialog({
   onClose,
@@ -76,17 +88,20 @@ export function AddLoanDialog({
   const last = parsed ? parsed.installments[parsed.installments.length - 1] : undefined;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-8"
-      onClick={onClose}
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
     >
-      <div
-        className="w-full max-w-lg rounded-lg border border-line-2 bg-ink-2 p-5"
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
-      >
-        <h2 className="pb-3 font-sans text-sm font-medium text-paper">Ajouter un prêt</h2>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Ajouter un prêt</DialogTitle>
+          <DialogDescription className="sr-only">
+            Importer un tableau d’amortissement LCL pour suivre le prêt dans ton patrimoine.
+          </DialogDescription>
+        </DialogHeader>
+
         {!parsed ? (
           <div
             className={cn(
@@ -103,7 +118,7 @@ export function AddLoanDialog({
             onDrop={onDrop}
           >
             <p className="font-sans text-[13px] text-paper-soft">
-              Glisse le tableau d&apos;amortissement PDF de ta banque (LCL) ici, ou
+              Glisse le tableau d’amortissement PDF de ta banque (LCL) ici, ou
             </p>
             {error && <p className="font-sans text-[12px] text-coral">{error}</p>}
             <Button
@@ -117,29 +132,31 @@ export function AddLoanDialog({
             </Button>
           </div>
         ) : (
-          <div className="flex flex-col gap-3 font-mono text-[12px] text-paper">
+          <div className="flex flex-col gap-3">
             {existing && (
               <p className="rounded-md border border-brass/40 bg-brass-soft px-2.5 py-1.5 font-sans text-[12px] text-paper">
                 Ce prêt (N°&nbsp;{parsed.loanNumber}) existe déjà — il sera{' '}
                 <strong>remplacé</strong> par ce tableau.
               </p>
             )}
-            <div>
-              Montant&nbsp;: {parsed.principal.toLocaleString('fr-FR')} € · Taux{' '}
-              {parsed.nominalRate}&nbsp;% · {parsed.termMonths} mois
+            <div className="flex flex-col gap-1 font-mono text-[12px] tabular-nums text-paper-soft">
+              <div>
+                Montant&nbsp;: {formatEuro(parsed.principal)} · Taux {parsed.nominalRate}&nbsp;% ·{' '}
+                {parsed.termMonths} mois
+              </div>
+              <div>
+                1ʳᵉ échéance&nbsp;: {first?.dueDate} · CRD{' '}
+                {first ? formatEuro(first.balanceAfter) : '—'}
+              </div>
+              <div>
+                Dernière&nbsp;: {last?.dueDate} · CRD {last ? formatEuro(last.balanceAfter) : '—'}
+              </div>
+              <div>Total intérêts&nbsp;: {formatEuro(parsed.totals.interest)}</div>
             </div>
-            <div>
-              1ʳᵉ échéance&nbsp;: {first?.dueDate} · CRD{' '}
-              {first?.balanceAfter.toLocaleString('fr-FR')} €
-            </div>
-            <div>
-              Dernière&nbsp;: {last?.dueDate} · CRD {last?.balanceAfter.toLocaleString('fr-FR')} €
-            </div>
-            <div>Total intérêts&nbsp;: {parsed.totals.interest.toLocaleString('fr-FR')} €</div>
             <label className="flex flex-col gap-1 font-sans text-[12px] text-paper-soft">
               Nom
               <input
-                className="h-8 rounded-md border border-line-2 bg-ink-3 px-2 text-paper"
+                className={INPUT}
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
@@ -152,14 +169,14 @@ export function AddLoanDialog({
                 type="number"
                 min={0}
                 max={100}
-                className="h-8 w-24 rounded-md border border-line-2 bg-ink-3 px-2 text-paper"
+                className={cn(INPUT, 'w-24')}
                 value={sharePct}
                 onChange={(e) => {
                   setSharePct(Number(e.target.value));
                 }}
               />
             </label>
-            <div className="flex justify-end gap-2">
+            <DialogFooter>
               <Button variant="ghost" size="sm" onClick={onClose}>
                 Annuler
               </Button>
@@ -172,10 +189,10 @@ export function AddLoanDialog({
               >
                 {existing ? 'Remplacer' : 'Enregistrer'}
               </Button>
-            </div>
+            </DialogFooter>
           </div>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -4,13 +4,9 @@ import type { AssetDTO, UpsertAssetInput } from '@shared/types/patrimoine';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Overline } from '../ui/overline';
+import { formatEuro } from '../../lib/euro';
 
-const eur = (n: number): string =>
-  new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  }).format(n);
+const eur = formatEuro;
 
 const INPUT =
   'h-8 rounded-md border border-line-2 bg-ink-3 px-2 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';

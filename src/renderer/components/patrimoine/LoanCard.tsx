@@ -3,13 +3,9 @@ import { Eye, Trash2 } from 'lucide-react';
 import type { LoanWithStats } from '@shared/types/patrimoine';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
+import { formatEuro } from '../../lib/euro';
 
-const eur = (n: number): string =>
-  new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  }).format(n);
+const eur = formatEuro;
 
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
