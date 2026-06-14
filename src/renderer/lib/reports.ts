@@ -1,5 +1,6 @@
 import type { CashflowPoint, DashboardTransaction, NetWorth } from '@shared/types/dashboard';
 import { isTransferTx, isRefundTx } from './filterTransactions';
+import { toAccountingRows } from './loanSplit';
 
 export interface CategoryShare {
   name: string;
@@ -105,7 +106,7 @@ export function periodTotals(txns: DashboardTransaction[]): {
 } {
   let income = 0;
   let net = 0;
-  for (const t of txns) {
+  for (const t of txns.flatMap(toAccountingRows)) {
     if (!counts(t)) continue;
     net += t.amount;
     if (t.amount > 0 && !isRefundTx(t)) income += t.amount;
@@ -121,7 +122,7 @@ export function dailyFlow(txns: DashboardTransaction[], month: string): MonthlyF
   const monthNum = Number(month.slice(5, 7));
   const daysInMonth = new Date(year, monthNum, 0).getDate();
   const byDay = new Map<number, { income: number; expense: number }>();
-  for (const t of txns) {
+  for (const t of txns.flatMap(toAccountingRows)) {
     if (!t.date.startsWith(month) || !counts(t)) continue;
     const day = Number(t.date.slice(8, 10));
     const e = byDay.get(day) ?? { income: 0, expense: 0 };
@@ -194,7 +195,7 @@ export function previousPeriod(period: ReportPeriod): ReportPeriod {
  *  categorised), largest first. */
 export function topCategories(txns: DashboardTransaction[], limit = 5): CategoryShare[] {
   const totals = new Map<string, number>();
-  for (const tx of txns) {
+  for (const tx of txns.flatMap(toAccountingRows)) {
     if (tx.amount >= 0) continue;
     if (isTransferTx(tx) || isRefundTx(tx)) continue;
     if (tx.categoryName === null) continue;
@@ -217,7 +218,7 @@ export function categoryBreakdown(
 ): DonutSlice[] {
   const NEUTRAL = '#6E6E78';
   const map = new Map<string, { value: number; color: string }>();
-  for (const t of txns) {
+  for (const t of txns.flatMap(toAccountingRows)) {
     if (isTransferTx(t) || isRefundTx(t)) continue;
     if (sign === 'in' ? t.amount <= 0 : t.amount >= 0) continue;
     const name = t.categoryName ?? 'Non catégorisé';
