@@ -25,6 +25,7 @@ describe('patrimoine handlers', () => {
       share: 0.5,
       parsed: {
         name: 'Prêt',
+        loanNumber: null,
         principal: 1000,
         nominalRate: 1,
         termMonths: 1,

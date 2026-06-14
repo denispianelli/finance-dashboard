@@ -4,6 +4,7 @@ import { parseLclAmortization } from '../../../src/main/patrimoine/parseLclAmort
 // Synthetic 1.00%/3-month loan of 3 000,00 €, insurance 1,00/mo. Fake figures.
 const LINES = [
   'INTITULE DU PRET : PRET SYNTHETIQUE DE TEST',
+  'N° DU PRET : TEST-123ABC',
   "MONTANT DU PRET : EUR 3 000,00 PERCEPTION D'INTERETS : A TERME ECHU",
   'DUREE TOTALE DU PRET : 3 MOIS TYPE DE TAUX EN COURS : FIXE',
   'DATE DE DEPART DU PRET : 07.09.2016 TAUX DEBITEUR EN COURS : 1,000000 %',
@@ -22,6 +23,7 @@ describe('parseLclAmortization', () => {
     expect(t.nominalRate).toBe(1);
     expect(t.termMonths).toBe(3);
     expect(t.startDate).toBe('2016-09-07');
+    expect(t.loanNumber).toBe('TEST-123ABC');
   });
 
   it('reads installments with seq, iso date and the six amounts', () => {

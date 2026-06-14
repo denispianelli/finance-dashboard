@@ -38,6 +38,7 @@ function parseInstallmentLine(line: string, seq: number): ParsedInstallment | nu
 
 export function parseLclAmortization(lines: string[]): ParsedLoanTable {
   const nameM = firstMatch(lines, /INTITULE DU PRET\s*:\s*(.+?)\s*$/);
+  const numberM = firstMatch(lines, /N°\s*DU\s*PRET\s*:\s*(\S+)/);
   const principalM = firstMatch(lines, /MONTANT DU PRET\s*:\s*EUR\s*([\d ]+,\d{2})/);
   const rateM = firstMatch(lines, /TAUX DEBITEUR EN COURS\s*:\s*([\d ]*,\d+)\s*%/);
   const termM = firstMatch(lines, /DUREE TOTALE DU PRET\s*:\s*(\d+)\s*MOIS/);
@@ -70,6 +71,7 @@ export function parseLclAmortization(lines: string[]): ParsedLoanTable {
 
   return {
     name: nameM?.[1]?.trim() ?? 'Prêt',
+    loanNumber: numberM?.[1] ?? null,
     principal: principalM ? parseFrAmount(principalM[1] ?? '0') : 0,
     nominalRate: parseFrAmount(rawRate),
     termMonths: termM ? Number(termM[1]) : installments.length,

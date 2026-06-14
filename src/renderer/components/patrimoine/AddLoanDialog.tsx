@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ipc } from '../../ipc/client';
 import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
-import type { ParsedLoanTable } from '@shared/types/patrimoine';
+import type { ParsedLoanTable, ExistingLoanMatch } from '@shared/types/patrimoine';
 
 const ERR: Record<string, string> = {
   not_pdf: 'Ce fichier n’est pas un PDF.',
@@ -18,6 +18,7 @@ export function AddLoanDialog({
   onCreated: () => void;
 }) {
   const [parsed, setParsed] = useState<ParsedLoanTable | null>(null);
+  const [existing, setExisting] = useState<ExistingLoanMatch | null>(null);
   const [name, setName] = useState('');
   const [sharePct, setSharePct] = useState(50);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +32,15 @@ export function AddLoanDialog({
       return;
     }
     setParsed(res.parsed);
-    setName(res.parsed.name);
+    // Same bank loan number → this is a reissue of an existing loan: offer to
+    // replace it (keeping the user's name/share) rather than create a duplicate.
+    const match = res.parsed.loanNumber
+      ? (await ipc.invoke('patrimoine:findLoanByNumber', { loanNumber: res.parsed.loanNumber }))
+          .existing
+      : null;
+    setExisting(match);
+    setName(match?.name ?? res.parsed.name);
+    setSharePct(match ? Math.round(match.share * 100) : 50);
   }
 
   async function pickAndParse() {
@@ -53,7 +62,12 @@ export function AddLoanDialog({
 
   async function create() {
     if (!parsed) return;
-    await ipc.invoke('patrimoine:createLoan', { parsed, name, share: sharePct / 100 });
+    await ipc.invoke('patrimoine:createLoan', {
+      parsed,
+      name,
+      share: sharePct / 100,
+      ...(existing ? { replaceId: existing.id } : {}),
+    });
     onCreated();
     onClose();
   }
@@ -104,6 +118,12 @@ export function AddLoanDialog({
           </div>
         ) : (
           <div className="flex flex-col gap-3 font-mono text-[12px] text-paper">
+            {existing && (
+              <p className="rounded-md border border-brass/40 bg-brass-soft px-2.5 py-1.5 font-sans text-[12px] text-paper">
+                Ce prêt (N°&nbsp;{parsed.loanNumber}) existe déjà — il sera{' '}
+                <strong>remplacé</strong> par ce tableau.
+              </p>
+            )}
             <div>
               Montant&nbsp;: {parsed.principal.toLocaleString('fr-FR')} € · Taux{' '}
               {parsed.nominalRate}&nbsp;% · {parsed.termMonths} mois
@@ -150,7 +170,7 @@ export function AddLoanDialog({
                   void create();
                 }}
               >
-                Enregistrer
+                {existing ? 'Remplacer' : 'Enregistrer'}
               </Button>
             </div>
           </div>

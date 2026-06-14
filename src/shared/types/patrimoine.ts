@@ -13,6 +13,8 @@ export interface ParsedInstallment {
 /** Result of parsing one LCL amortization PDF. */
 export interface ParsedLoanTable {
   name: string;
+  /** Bank loan number (N° DU PRET) — stable across reissues; the dedup key. Null if absent. */
+  loanNumber: string | null;
   principal: number;
   nominalRate: number; // annual percent, e.g. 1.7 or 0
   termMonths: number;
@@ -25,6 +27,15 @@ export interface LoanInput {
   parsed: ParsedLoanTable;
   name: string; // editable override of parsed.name
   share: number; // 0..1
+  /** When set, replace this existing loan (same bank loan number) instead of adding. */
+  replaceId?: string;
+}
+
+/** An existing loan matched by bank loan number, for replace-on-reimport. */
+export interface ExistingLoanMatch {
+  id: string;
+  name: string;
+  share: number;
 }
 
 export interface LoanInstallmentDTO extends ParsedInstallment {

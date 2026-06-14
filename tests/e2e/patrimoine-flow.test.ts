@@ -48,6 +48,7 @@ const LOAN = {
   share: 0.5,
   parsed: {
     name: 'Prêt E2E',
+    loanNumber: null,
     principal: 1000,
     nominalRate: 1,
     termMonths: 2,

@@ -11,7 +11,15 @@ describe('migration 020', () => {
     const db = new DatabaseSync(':memory:');
     runMigrations(db);
     expect(cols(db, 'loans')).toEqual(
-      expect.arrayContaining(['id', 'name', 'principal', 'nominal_rate', 'term_months', 'share']),
+      expect.arrayContaining([
+        'id',
+        'name',
+        'principal',
+        'nominal_rate',
+        'term_months',
+        'share',
+        'loan_number',
+      ]),
     );
     expect(cols(db, 'loan_installments')).toEqual(
       expect.arrayContaining(['loan_id', 'seq', 'due_date', 'balance_after', 'payment']),

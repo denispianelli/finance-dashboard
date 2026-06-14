@@ -8,6 +8,7 @@ import type { ParsedLoanTable } from '@shared/types/patrimoine';
 
 const PARSED: ParsedLoanTable = {
   name: 'P',
+  loanNumber: null,
   principal: 3000,
   nominalRate: 1,
   termMonths: 1,

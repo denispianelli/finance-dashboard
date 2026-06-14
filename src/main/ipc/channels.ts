@@ -51,6 +51,7 @@ export const CHANNELS = {
   patrimoineListInstallments: 'patrimoine:listInstallments',
   patrimoinePickLoanFile: 'patrimoine:pickLoanFile',
   patrimoineParseLoanFile: 'patrimoine:parseLoanFile',
+  patrimoineFindLoanByNumber: 'patrimoine:findLoanByNumber',
   patrimoineCreateLoan: 'patrimoine:createLoan',
   patrimoineDeleteLoan: 'patrimoine:deleteLoan',
   patrimoineListAssets: 'patrimoine:listAssets',

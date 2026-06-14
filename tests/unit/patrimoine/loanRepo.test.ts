@@ -1,11 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { runMigrations } from '../../../src/main/db/migrate';
-import { saveLoan, listLoans, deleteLoan, crdAt } from '../../../src/main/patrimoine/loanRepo';
+import {
+  saveLoan,
+  listLoans,
+  deleteLoan,
+  crdAt,
+  findLoanByNumber,
+  replaceLoan,
+} from '../../../src/main/patrimoine/loanRepo';
 import type { ParsedLoanTable } from '@shared/types/patrimoine';
 
 const PARSED: ParsedLoanTable = {
   name: 'Prêt test',
+  loanNumber: 'LN-TEST-1',
   principal: 3000,
   nominalRate: 1,
   termMonths: 3,
@@ -94,6 +102,55 @@ describe('loanRepo', () => {
     deleteLoan(db, id);
     expect(listLoans(db, '2018-07-01')).toHaveLength(0);
     expect(db.prepare('SELECT COUNT(*) c FROM loan_installments').get()).toEqual({ c: 0 });
+    db.close();
+  });
+
+  it('finds a loan by its bank number', () => {
+    const db = freshDb();
+    const id = saveLoan(db, { parsed: PARSED, name: 'Mon prêt', share: 0.5 });
+    expect(findLoanByNumber(db, 'LN-TEST-1')).toEqual({ id, name: 'Mon prêt', share: 0.5 });
+    expect(findLoanByNumber(db, 'unknown')).toBeNull();
+    db.close();
+  });
+
+  it('replaceLoan keeps the id, swaps the schedule and updates the header', () => {
+    const db = freshDb();
+    const id = saveLoan(db, { parsed: PARSED, name: 'Mon prêt', share: 0.5 });
+    // A reissued table: same loan number, fewer rows, a different remaining balance.
+    const reissued: ParsedLoanTable = {
+      ...PARSED,
+      principal: 1500,
+      installments: [
+        {
+          seq: 1,
+          dueDate: '2020-01-05',
+          capital: 700,
+          interest: 0,
+          insurance: 0,
+          fees: 0,
+          payment: 700,
+          balanceAfter: 800,
+        },
+        {
+          seq: 2,
+          dueDate: '2020-02-05',
+          capital: 800,
+          interest: 0,
+          insurance: 0,
+          fees: 0,
+          payment: 800,
+          balanceAfter: 0,
+        },
+      ],
+      totals: { capital: 1500, interest: 0, insurance: 0 },
+    };
+    const sameId = replaceLoan(db, id, { parsed: reissued, name: 'Mon prêt', share: 0.5 });
+    expect(sameId).toBe(id);
+    const loans = listLoans(db, '2020-01-10');
+    expect(loans).toHaveLength(1); // replaced, not duplicated
+    expect(loans[0]?.principal).toBe(1500);
+    expect(crdAt(db, id, '2020-01-10')).toBe(800);
+    expect(db.prepare('SELECT COUNT(*) c FROM loan_installments').get()).toEqual({ c: 2 });
     db.close();
   });
 });

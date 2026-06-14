@@ -2,7 +2,14 @@ import { readFileSync } from 'node:fs';
 import { dialog } from 'electron';
 import type { LoanInput, ParseLoanResponse, UpsertAssetInput } from '@shared/types/patrimoine';
 import { getDb } from '../../db';
-import { listLoans, listInstallments, saveLoan, deleteLoan } from '../../patrimoine/loanRepo';
+import {
+  listLoans,
+  listInstallments,
+  saveLoan,
+  replaceLoan,
+  findLoanByNumber,
+  deleteLoan,
+} from '../../patrimoine/loanRepo';
 import { listAssets, upsertAsset, deleteAsset } from '../../patrimoine/assetRepo';
 import { importLoanFromPdf } from '../../patrimoine/importLoan';
 
@@ -34,8 +41,17 @@ export async function handlePatrimoineParseLoanFile(payload: {
   return importLoanFromPdf(readFileSync(payload.path));
 }
 
+export function handlePatrimoineFindLoanByNumber(payload: { loanNumber: string }) {
+  return { existing: findLoanByNumber(getDb(), payload.loanNumber) };
+}
+
 export function handlePatrimoineCreateLoan(payload: LoanInput): { ok: true; id: string } {
-  return { ok: true, id: saveLoan(getDb(), payload) };
+  const db = getDb();
+  const id =
+    payload.replaceId !== undefined
+      ? replaceLoan(db, payload.replaceId, payload)
+      : saveLoan(db, payload);
+  return { ok: true, id };
 }
 
 export function handlePatrimoineDeleteLoan(payload: { id: string }): { ok: true } {

@@ -64,6 +64,7 @@ import {
   handlePatrimoineListInstallments,
   handlePatrimoinePickLoanFile,
   handlePatrimoineParseLoanFile,
+  handlePatrimoineFindLoanByNumber,
   handlePatrimoineCreateLoan,
   handlePatrimoineDeleteLoan,
   handlePatrimoineListAssets,
@@ -187,6 +188,7 @@ export function registerAllHandlers(): void {
   register(CHANNELS.patrimoineListInstallments, handlePatrimoineListInstallments);
   register(CHANNELS.patrimoinePickLoanFile, () => handlePatrimoinePickLoanFile());
   register(CHANNELS.patrimoineParseLoanFile, handlePatrimoineParseLoanFile);
+  register(CHANNELS.patrimoineFindLoanByNumber, handlePatrimoineFindLoanByNumber);
   register(CHANNELS.patrimoineCreateLoan, handlePatrimoineCreateLoan);
   register(CHANNELS.patrimoineDeleteLoan, handlePatrimoineDeleteLoan);
   register(CHANNELS.patrimoineListAssets, () => handlePatrimoineListAssets());

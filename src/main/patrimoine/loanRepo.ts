@@ -1,6 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
-import type { LoanInput, LoanInstallmentDTO, LoanWithStats } from '@shared/types/patrimoine';
+import type {
+  LoanInput,
+  LoanInstallmentDTO,
+  LoanWithStats,
+  ParsedInstallment,
+  ExistingLoanMatch,
+} from '@shared/types/patrimoine';
 
 interface LoanRow {
   id: string;
@@ -25,14 +31,41 @@ interface InstallmentRow {
   balance_after: number;
 }
 
+function insertInstallments(
+  db: DatabaseSync,
+  loanId: string,
+  installments: readonly ParsedInstallment[],
+): void {
+  const insert = db.prepare(
+    `INSERT INTO loan_installments
+       (id, loan_id, seq, due_date, capital, interest, insurance, fees, payment, balance_after)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
+  for (const i of installments) {
+    insert.run(
+      randomUUID(),
+      loanId,
+      i.seq,
+      i.dueDate,
+      i.capital,
+      i.interest,
+      i.insurance,
+      i.fees,
+      i.payment,
+      i.balanceAfter,
+    );
+  }
+}
+
 export function saveLoan(db: DatabaseSync, input: LoanInput): string {
   const id = randomUUID();
   const { parsed, name, share } = input;
   db.exec('BEGIN');
   try {
     db.prepare(
-      `INSERT INTO loans (id, name, lender, principal, nominal_rate, start_date, term_months, share)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO loans
+         (id, name, lender, principal, nominal_rate, start_date, term_months, share, loan_number)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       id,
       name,
@@ -42,32 +75,57 @@ export function saveLoan(db: DatabaseSync, input: LoanInput): string {
       parsed.startDate,
       parsed.termMonths,
       share,
+      parsed.loanNumber,
     );
-    const insert = db.prepare(
-      `INSERT INTO loan_installments
-         (id, loan_id, seq, due_date, capital, interest, insurance, fees, payment, balance_after)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    );
-    for (const i of parsed.installments) {
-      insert.run(
-        randomUUID(),
-        id,
-        i.seq,
-        i.dueDate,
-        i.capital,
-        i.interest,
-        i.insurance,
-        i.fees,
-        i.payment,
-        i.balanceAfter,
-      );
-    }
+    insertInstallments(db, id, parsed.installments);
     db.exec('COMMIT');
   } catch (err) {
     db.exec('ROLLBACK');
     throw err;
   }
   return id;
+}
+
+/**
+ * Replace an existing loan's header and schedule from a freshly imported table
+ * (same bank loan number — e.g. a renegotiation reissue). Keeps the loan's id so
+ * nothing else needs re-linking; the user's name/share come from `input`.
+ */
+export function replaceLoan(db: DatabaseSync, id: string, input: LoanInput): string {
+  const { parsed, name, share } = input;
+  db.exec('BEGIN');
+  try {
+    db.prepare(
+      `UPDATE loans
+         SET name = ?, principal = ?, nominal_rate = ?, start_date = ?,
+             term_months = ?, share = ?, loan_number = ?
+       WHERE id = ?`,
+    ).run(
+      name,
+      parsed.principal,
+      parsed.nominalRate,
+      parsed.startDate,
+      parsed.termMonths,
+      share,
+      parsed.loanNumber,
+      id,
+    );
+    db.prepare('DELETE FROM loan_installments WHERE loan_id = ?').run(id);
+    insertInstallments(db, id, parsed.installments);
+    db.exec('COMMIT');
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
+  return id;
+}
+
+/** Find an existing loan by bank loan number (the replace-on-reimport key). */
+export function findLoanByNumber(db: DatabaseSync, loanNumber: string): ExistingLoanMatch | null {
+  const row = db
+    .prepare('SELECT id, name, share FROM loans WHERE loan_number = ? LIMIT 1')
+    .get(loanNumber) as { id: string; name: string; share: number } | undefined;
+  return row ? { id: row.id, name: row.name, share: row.share } : null;
 }
 
 /** Capital restant dû at `isoDate` (100%): a pure lookup, never recomputed. */

@@ -48,6 +48,7 @@ import type {
   AssetDTO,
   UpsertAssetInput,
   ParseLoanResponse,
+  ExistingLoanMatch,
 } from './patrimoine';
 
 export interface PingPayload {
@@ -213,6 +214,10 @@ export interface IpcContract {
     response: { cancelled: true } | { cancelled: false; path: string };
   };
   'patrimoine:parseLoanFile': { payload: { path: string }; response: ParseLoanResponse };
+  'patrimoine:findLoanByNumber': {
+    payload: { loanNumber: string };
+    response: { existing: ExistingLoanMatch | null };
+  };
   'patrimoine:createLoan': { payload: LoanInput; response: { ok: true; id: string } };
   'patrimoine:deleteLoan': { payload: { id: string }; response: { ok: true } };
   'patrimoine:listAssets': { payload: Record<string, never>; response: { assets: AssetDTO[] } };
