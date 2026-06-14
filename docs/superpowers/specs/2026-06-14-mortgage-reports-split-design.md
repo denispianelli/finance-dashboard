@@ -1,6 +1,6 @@
 # Mortgage payment split in reports — design spec
 
-> Date: 2026-06-14. Status: approved (maintainer), ready for implementation plan.
+> Date: 2026-06-14. Status: implemented.
 > Scope: brick 2 of the mortgage module (deferred in
 > `2026-06-14-mortgage-module-design.md` §6). Source: ADR-009 Amendment 2
 > (§Conséquences — "la mensualité se décompose en intérêts = dépense et capital =

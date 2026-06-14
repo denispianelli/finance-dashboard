@@ -40,7 +40,11 @@ The app:
   definitive amortization-table PDF (capital restant dû read by date lookup; capital vs
   interest vs insurance split comes straight from the table — no formula re-derivation), a
   declared primary-residence value at the maintainer's quote-part, and net worth computed
-  as accounts + declared assets − loan CRD (all local, no network).
+  as accounts + declared assets − loan CRD (all local, no network). Mortgage monthly
+  payments imported from the bank are split in the reports: the interest + insurance part
+  counts as an "Intérêts d'emprunt" expense while the capital repayment is neutralized
+  (forced savings, net-worth-neutral). The match is auto-detected against the amortization
+  schedule and is reviewable on the loan card and badged in the transaction list.
 
 **All on your machine. Source code is public so the privacy promise is verifiable.**
 
