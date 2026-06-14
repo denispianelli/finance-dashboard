@@ -8,6 +8,13 @@ From v0.1.0 onward this file is generated automatically by
 [Conventional Commits](https://www.conventionalcommits.org/). Do not edit
 released sections by hand.
 
+## [0.6.2](https://github.com/denispianelli/finance-dashboard/compare/v0.6.1...v0.6.2) (2026-06-14)
+
+
+### Bug Fixes
+
+* **categories:** scroll the cards internally so the page stays fixed ([#225](https://github.com/denispianelli/finance-dashboard/issues/225)) ([e7f74d0](https://github.com/denispianelli/finance-dashboard/commit/e7f74d0e8110080a41a13a7720943c7e9063e16e))
+
 ## [0.6.1](https://github.com/denispianelli/finance-dashboard/compare/v0.6.0...v0.6.1) (2026-06-12)
 
 
