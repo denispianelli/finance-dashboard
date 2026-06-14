@@ -165,7 +165,8 @@ export function getTransactions(
     loanSplit:
       r.loan_installment_id !== null && r.li_interest !== null && r.li_insurance !== null
         ? {
-            interestInsurance: Math.round((r.li_interest + r.li_insurance) * 100) / 100,
+            interest: Math.round(r.li_interest * 100) / 100,
+            insurance: Math.round(r.li_insurance * 100) / 100,
             capital: Math.max(
               0,
               Math.round((Math.abs(r.amount) - (r.li_interest + r.li_insurance)) * 100) / 100,

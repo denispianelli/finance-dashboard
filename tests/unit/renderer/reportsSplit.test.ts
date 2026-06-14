@@ -27,13 +27,19 @@ function base(over: Partial<DashboardTransaction>): DashboardTransaction {
 
 describe('reports with a matched loan payment', () => {
   it('counts only interest+insurance as expense, not the full debit', () => {
-    const matched = base({ id: 'm', loanSplit: { interestInsurance: 263.13, capital: 685.43 } });
+    const matched = base({
+      id: 'm',
+      loanSplit: { interest: 214.57, insurance: 48.56, capital: 685.43 },
+    });
     const { expense } = periodTotals([matched]);
     expect(expense).toBeCloseTo(-263.13, 2); // not -948.56
   });
 
   it("attributes the interest to the Intérêts d'emprunt category", () => {
-    const matched = base({ id: 'm', loanSplit: { interestInsurance: 263.13, capital: 685.43 } });
+    const matched = base({
+      id: 'm',
+      loanSplit: { interest: 214.57, insurance: 48.56, capital: 685.43 },
+    });
     const top = topCategories([matched]);
     expect(top[0]?.name).toBe("Intérêts d'emprunt");
     expect(top[0]?.total).toBeCloseTo(263.13, 2);

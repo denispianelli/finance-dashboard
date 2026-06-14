@@ -16,11 +16,11 @@ export const INTEREST_LOAN_CATEGORY = {
  */
 export function toAccountingRows(t: DashboardTransaction): DashboardTransaction[] {
   if (t.loanSplit === null) return [t];
-  const { interestInsurance, capital } = t.loanSplit;
+  const { interest, insurance, capital } = t.loanSplit;
   return [
     {
       ...t,
-      amount: -interestInsurance,
+      amount: -(Math.round((interest + insurance) * 100) / 100),
       categoryId: INTEREST_LOAN_CATEGORY.id,
       categoryName: INTEREST_LOAN_CATEGORY.name,
       categoryColor: INTEREST_LOAN_CATEGORY.color,

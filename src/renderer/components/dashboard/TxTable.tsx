@@ -27,7 +27,7 @@ export interface TxRow {
   editAmount: number;
   editLabel: string;
   /** When set, this row is matched to a loan installment and carries its split. */
-  loanSplit: { interestInsurance: number; capital: number } | null;
+  loanSplit: { interest: number; insurance: number; capital: number } | null;
 }
 
 export interface TxTableProps {
@@ -133,8 +133,8 @@ export function TxTableRow({
         {t.loanSplit ? (
           <span className="inline-flex items-center gap-1.5 rounded-md border border-line-2 bg-ink-2 px-2 py-0.5 font-sans text-[11px] text-paper-soft">
             <Landmark size={12} strokeWidth={1.8} className="text-brass" />
-            Mensualité prêt · int. {formatAmount(t.loanSplit.interestInsurance)} · cap.{' '}
-            {formatAmount(t.loanSplit.capital)}
+            Mensualité prêt · int. {formatAmount(t.loanSplit.interest)} · assu.{' '}
+            {formatAmount(t.loanSplit.insurance)} · cap. {formatAmount(t.loanSplit.capital)}
             <button
               type="button"
               aria-label="Dissocier la mensualité"

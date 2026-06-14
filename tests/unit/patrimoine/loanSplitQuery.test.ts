@@ -45,7 +45,7 @@ describe('getTransactions loanSplit', () => {
     const txns = getTransactions(db, {});
     const matched = txns.find((t) => t.id === 'm');
     const other = txns.find((t) => t.id === 'o');
-    expect(matched?.loanSplit).toEqual({ interestInsurance: 263.13, capital: 685.43 });
+    expect(matched?.loanSplit).toEqual({ interest: 214.57, insurance: 48.56, capital: 685.43 });
     expect(other?.loanSplit).toBeNull();
     db.close();
   });

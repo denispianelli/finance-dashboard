@@ -23,7 +23,7 @@ const BASE_ROW: TxRow = {
   editDate: '2026-05-14',
   editAmount: -948.56,
   editLabel: 'Remboursement prêt immobilier',
-  loanSplit: { interestInsurance: 263.13, capital: 685.43 },
+  loanSplit: { interest: 214.57, insurance: 48.56, capital: 685.43 },
 };
 
 it('shows a loan badge with mensualité prêt text for a matched installment', () => {

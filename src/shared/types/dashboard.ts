@@ -59,9 +59,13 @@ export interface DashboardTransaction {
   readonly isInternalTransfer: boolean;
   readonly userModified: boolean;
   /** When this transaction is matched to a loan installment, the split of its
-   *  amount: interest+insurance (the true expense) and capital (neutralized).
-   *  Null when unmatched. */
-  readonly loanSplit: { readonly interestInsurance: number; readonly capital: number } | null;
+   *  amount: interest and insurance (together the true expense) and capital
+   *  (neutralized). Null when unmatched. */
+  readonly loanSplit: {
+    readonly interest: number;
+    readonly insurance: number;
+    readonly capital: number;
+  } | null;
 }
 
 /** Filters for `dashboard:getTransactions`. All optional; dates are ISO `yyyy-mm-dd`. */
