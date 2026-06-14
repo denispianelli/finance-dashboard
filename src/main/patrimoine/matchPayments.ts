@@ -57,6 +57,12 @@ export function matchLoanPayments(db: DatabaseSync, loanId: string): number {
   return count;
 }
 
+/** Run matching for every loan (used after an import). Returns total new links. */
+export function matchAllLoans(db: DatabaseSync): number {
+  const ids = db.prepare('SELECT id FROM loans').all() as unknown as { id: string }[];
+  return ids.reduce((sum, { id }) => sum + matchLoanPayments(db, id), 0);
+}
+
 export function unlinkPayment(db: DatabaseSync, transactionId: string): void {
   db.prepare('UPDATE transactions SET loan_installment_id = NULL WHERE id = ?').run(transactionId);
 }
