@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ipc } from '@renderer/ipc/client';
 
 export interface NetWorthSummary {
-  /** Sum of every account's balance, in euros. */
+  /** Consolidated net worth (accounts + declared assets − loan CRD, at the maintainer's share), in euros. */
   netWorth: number;
   /** Current calendar month's net flow (income − expenses, internal transfers excluded). */
   monthDelta: number;

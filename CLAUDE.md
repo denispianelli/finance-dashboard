@@ -62,6 +62,12 @@ one-liner ("go for the mortgage module") — these rules fill in the rest.
   `afterEach(() => { cleanup(); })` (auto-cleanup does not run with the per-file directive).
 - UI: shadcn/ui + Tailwind, `cn()` + variant pattern. Lucide for icons, never emoji in UI
   chrome. Respect the design tokens (identity scale in `tailwind.config.ts` / `globals.css`).
+- **Reuse the existing primitives — never hand-roll their equivalents.** Modals/dialogs use
+  `components/ui/dialog` (not a bespoke `fixed inset-0` overlay); amounts go through `lib/euro`
+  (`formatEuro` / `formatAmount` / `formatCompact`) or `<Money>` (a lint rule blocks
+  hand-rolled `Intl.NumberFormat`); fields follow the shared input/field classes. The
+  `finance-dashboard-design` skill is the visual source of truth. Drift here is a known failure
+  mode — audit with `grep -rn "fixed inset-0\|Intl.NumberFormat" src/renderer`.
 - Fonts are self-hosted via `@fontsource` (no CDN) — keep it that way.
 
 ## Git & process

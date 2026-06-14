@@ -2,6 +2,8 @@ import type { DatabaseSync } from 'node:sqlite';
 import type { CashflowGranularity, CashflowPoint, NetWorth } from '@shared/types/dashboard';
 import { INCOME_ROW, EXPENSE_ROW } from './transferFilter';
 import { getAccountSummaries } from './queries';
+import { listLoans } from '../patrimoine/loanRepo';
+import { listAssets } from '../patrimoine/assetRepo';
 
 interface CashflowRow {
   period: string;
@@ -40,16 +42,45 @@ export function getConsolidatedCashflow(
 }
 
 /**
- * Consolidated net worth: the sum of every account's real balance (ADR-014).
+ * Consolidated net worth: accounts + declared assets − loan CRD (ADR-009
+ * Amendment 2; account balances per ADR-014).
  * Unanchored accounts carry `balance: null` and contribute 0 to the total; they
- * are still listed so the UI can surface "declare a balance" (brick F2). No
- * market valuation, no network — balances come only from imported statements.
+ * are still listed so the UI can surface "declare a balance" (brick F2). Loans
+ * and declared assets are folded in at the maintainer's share (`share` column).
+ * No market valuation, no network.
  */
 export function getNetWorth(db: DatabaseSync): NetWorth {
   const accounts = getAccountSummaries(db);
-  const total = accounts.reduce((sum, a) => sum + (a.balance ?? 0), 0);
+  const accountsTotal = accounts.reduce((sum, a) => sum + (a.balance ?? 0), 0);
+
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const round2 = (n: number): number => Math.round(n * 100) / 100;
+
+  const loans = listLoans(db, todayIso).map((l) => ({
+    loanId: l.id,
+    name: l.name,
+    crd: l.crd,
+    share: l.share,
+    contribution: round2(-l.crd * l.share),
+  }));
+  const assets = listAssets(db).map((a) => ({
+    assetId: a.id,
+    name: a.name,
+    value: a.declaredValue,
+    share: a.share,
+    contribution: round2(a.declaredValue * a.share),
+  }));
+
+  const total = round2(
+    accountsTotal +
+      assets.reduce((s, a) => s + a.contribution, 0) +
+      loans.reduce((s, l) => s + l.contribution, 0),
+  );
+
   return {
     total,
     accounts: accounts.map((a) => ({ accountId: a.id, name: a.name, balance: a.balance })),
+    assets,
+    loans,
   };
 }

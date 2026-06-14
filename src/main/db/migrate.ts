@@ -18,6 +18,8 @@ import sql016 from './migrations/016_index_label_amount.sql?raw';
 import sql017 from './migrations/017_llm_attempts.sql?raw';
 import sql018 from './migrations/018_imports_allow_reimport.sql?raw';
 import sql019 from './migrations/019_drop_llm_attempts.sql?raw';
+import sql020 from './migrations/020_loans_assets.sql?raw';
+import sql021 from './migrations/021_loan_number.sql?raw';
 
 interface Migration {
   version: number;
@@ -48,6 +50,8 @@ const MIGRATIONS: Migration[] = [
   { version: 17, sql: sql017 },
   { version: 18, sql: sql018, rebuildsTables: true },
   { version: 19, sql: sql019 },
+  { version: 20, sql: sql020 },
+  { version: 21, sql: sql021 },
 ];
 
 /** Highest migration version this build knows — embedded in snapshot headers. */
