@@ -1,6 +1,6 @@
 # Mortgage module — design spec
 
-> Date: 2026-06-14. Status: approved (maintainer), ready for implementation plan.
+> Date: 2026-06-14. Status: implemented.
 > Scope source: ADR-009 Amendment 2 (§2 liabilities, §6 shortlist). First brick
 > of the patrimoine line. Privacy: ADR-002 (no data leaves the machine).
 >
