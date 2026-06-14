@@ -4,7 +4,12 @@ const db = { __fake: true };
 vi.mock('../../../src/main/db', () => ({ getDb: () => db }));
 
 const cashflow = [{ period: '2026', income: 1000, expense: -400, net: 600 }];
-const netWorth = { total: 1200, accounts: [{ accountId: 'perso', name: 'Perso', balance: 1200 }] };
+const netWorth = {
+  total: 1200,
+  accounts: [{ accountId: 'perso', name: 'Perso', balance: 1200 }],
+  assets: [],
+  loans: [],
+};
 const getConsolidatedCashflow = vi.fn<(db: unknown, granularity: unknown) => typeof cashflow>(
   () => cashflow,
 );

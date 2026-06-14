@@ -123,9 +123,26 @@ export interface NetWorthAccount {
   readonly balance: number | null;
 }
 
-/** Consolidated net worth: total of all account balances plus the per-account breakdown. */
+export interface NetWorthLoan {
+  readonly loanId: string;
+  readonly name: string;
+  readonly crd: number; // 100% capital restant dû today
+  readonly share: number;
+  readonly contribution: number; // negative: -crd * share
+}
+
+export interface NetWorthAsset {
+  readonly assetId: string;
+  readonly name: string;
+  readonly value: number; // 100% declared value
+  readonly share: number;
+  readonly contribution: number; // value * share
+}
+
+/** Consolidated net worth: accounts + declared assets − loan CRD, all at the maintainer's share. */
 export interface NetWorth {
-  /** Sum of non-null account balances. */
   readonly total: number;
   readonly accounts: NetWorthAccount[];
+  readonly assets: NetWorthAsset[];
+  readonly loans: NetWorthLoan[];
 }

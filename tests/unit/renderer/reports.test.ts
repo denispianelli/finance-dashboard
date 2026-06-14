@@ -260,6 +260,8 @@ describe('accountComposition', () => {
         { accountId: 'c', name: 'Vide', balance: null },
         { accountId: 'd', name: 'Zero', balance: 0 },
       ],
+      assets: [],
+      loans: [],
     };
     expect(accountComposition(nw)).toEqual([
       { name: 'Perso', value: 1200 },
