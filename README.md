@@ -57,11 +57,23 @@ The app:
 
 **All on your machine. Source code is public so the privacy promise is verifiable.**
 
+The only allowed outbound calls are:
+
+- An **opt-in version check** (sends no data; receives a version number only — ADR-002).
+- An **opt-in, off-by-default market-price feed** (investment Phase B): when you enable it, the app
+  fetches public quotes by ISIN/ticker to value your securities. It transmits **only** the
+  instrument identifier — never balances, amounts, quantities, or account names — and only for
+  holdings you chose to value online. Off by default; the app is fully functional offline on
+  declared values. See ADR-018.
+
+When both are off (the default), zero financial-adjacent traffic leaves the machine.
+
 **Deliberately out of scope** (ADR-009 — identity, not backlog): conversational chat,
-natural-language search, generative insights, budgets, market price feeds and position-level
-investment tracking. Patrimoine is tracked from your own statements and declared values —
+natural-language search, generative insights, budgets, and position-level investment tracking.
+Patrimoine is tracked from your own statements and declared values —
 mortgage amortization, asset allocation, money-weighted returns (TRI), deterministic
-projections — all computed locally, no network.
+projections — all computed locally. An opt-in price feed for public securities is available
+(Phase B, ADR-018) but off by default.
 
 ## Stack
 

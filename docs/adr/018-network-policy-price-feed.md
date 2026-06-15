@@ -72,3 +72,19 @@ maintainer does not hold.
   product is whole without it.
 - This ADR governs **only** the price feed. Any further outbound class (benchmark series, etc.)
   needs its own decision under the same opt-in, main-only, no-financial-data bar.
+
+## Addendum (2026-06-15) — finalised providers (Phase B build)
+
+Phase B is built. The provider choice §5 deferred to build time is now fixed:
+
+- **ISIN → EUR ticker:** `GET https://api.portfolio-performance.info/v1/search?q={ISIN}` (keyless),
+  picking the EUR market (prefer XETR). Verified live from the maintainer's machine 2026-06-15.
+- **Ticker → latest price:** `GET https://query1.finance.yahoo.com/v8/finance/chart/{ticker}` (keyless),
+  EUR only. Verified live (HTTP 200, EUR price) 2026-06-15.
+- The originally-illustrative `api.portfolio-report.net` host is **dead** (no response from two
+  networks) and is **not used**. Yahoo is the de-facto primary quote source because it is the only
+  reachable keyless option; Portfolio Report stays a documented future fallback.
+
+Each call sends only an instrument identifier (ISIN, then ticker) plus the unavoidable IP/User-Agent.
+No balances, quantities, account names, or amounts transit. The feed stays opt-in and off by default;
+when off, zero financial-adjacent traffic leaves the machine.
