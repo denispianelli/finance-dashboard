@@ -188,14 +188,20 @@ Every figure is recomputable by hand:
 - Sell/arbitrage UI (the model stores signed flows; a dedicated sell flow lands when needed).
 - Benchmark comparison, projections (a separate patrimoine brick), price feed (Phase B).
 
-## Open questions for the maintainer
+## Resolved decisions (maintainer, 2026-06-15)
 
-1. **Flow-timing convention** — Modified Dietz weights a flow by where it lands in the month
-   (proposed). Acceptable, or do you want the simpler "flow at period start" (slightly less
-   precise, marginally simpler)?
-2. **Returns shown** — annualised TRI/TTWROR by default (proposed), with cumulative since
-   inception available in the detail view? Or cumulative first?
-3. **Wrapper ↔ existing account** — your PEA/AV: do you currently have them as declared-balance
-   _accounts_ in the app, or not at all? Determines whether we link a wrapper to an account row or
-   keep wrappers fully separate (proposed: separate — an investment wrapper is its own thing, its
-   value comes from supports, not a declared account balance).
+1. **Flow timing — Modified Dietz** (weights each flow by where it lands in the sub-period), as in
+   the TTWROR formula above. Confirmed.
+2. **Returns display — annualised headline, cumulative fallback for short history.** The headline
+   figure per support/wrapper is the **annualised** TRI/TTWROR. **But** when a support has **less
+   than ~1 year** of history, annualising extrapolates and misleads, so the headline shows the
+   **cumulative return since inception**, explicitly labelled « depuis l'origine » (no annualised
+   number until ≥ 1 year). The detail view always shows both (annualised + cumulative). Rationale:
+   never display a figure the maintainer can't trust (north star); matches PP not annualising short
+   periods.
+3. **Wrappers are separate objects — not linked to accounts.** A wrapper's value is the sum of its
+   supports' latest valuations, never a declared account balance. Net worth gains a fourth,
+   distinct contributor: `accounts (bank) + declared assets (RP) + investment supports − loans`.
+   **Double-count guard:** if a declared asset or declared-balance account already represents a
+   wrapper (e.g. an "AV" asset created during the allocation brick), creating the wrapper offers to
+   remove it — no silent deletion, but the user is steered away from counting it twice.
