@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Overline } from '../components/ui/overline';
 import { LoanCard } from '../components/patrimoine/LoanCard';
-import { PropertyCard } from '../components/patrimoine/PropertyCard';
+import { AssetsCard } from '../components/patrimoine/AssetsCard';
 import { AllocationCard } from '../components/patrimoine/AllocationCard';
 import { ClassManagerDialog } from '../components/patrimoine/ClassManagerDialog';
 import { AmortizationTableDialog } from '../components/patrimoine/AmortizationTableDialog';
@@ -94,8 +94,8 @@ export function PatrimoinePage() {
         }}
       />
 
-      <PropertyCard
-        asset={assets[0] ?? null}
+      <AssetsCard
+        assets={assets}
         onSave={(input) => {
           void upsertAsset(input).then(notifyDataChanged);
         }}
