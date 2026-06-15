@@ -203,7 +203,7 @@ function ensureBoundaryValuations(db: DatabaseSync, supportId: string): void {
     .get(supportId) as AggRow | undefined;
 
   const first = agg?.first;
-  if (first === null || first === undefined) return;
+  if (agg === undefined || first === null || first === undefined) return;
 
   insert0IfAbsent(db, supportId, first);
 

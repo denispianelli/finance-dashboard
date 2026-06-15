@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { dialog } from 'electron';
 import { getDb } from '../../db';
 import type {
   CreateWrapperInput,
@@ -8,6 +10,8 @@ import type {
   Performance,
   DatedValue,
   DatedFlow,
+  ImportBourseResult,
+  OperationDTO,
 } from '@shared/types/investment';
 import {
   createWrapper,
@@ -20,6 +24,8 @@ import {
   getSupportHistory,
 } from '../../investment/investmentRepo';
 import { computePerformance } from '../../investment/performance';
+import { parseBourseCsv } from '../../investment/parseBourseCsv';
+import { importBourseCsv, listOperations } from '../../investment/importBourseCsv';
 
 /** Aggregate a set of supports' histories into one combined (valuations, flows) series.
  *  The wrapper-level valuation on a date = Σ each support's most-recent value as-of that date
@@ -90,4 +96,31 @@ export function handleInvestmentDeleteSupport(payload: { id: string }): { ok: tr
 export function handleInvestmentUpdateSupport(payload: SupportUpdateInput): { ok: true } {
   applyUpdate(getDb(), payload);
   return { ok: true };
+}
+
+export async function handleInvestmentPickBourseCsv(): Promise<
+  { cancelled: true } | { cancelled: false; path: string }
+> {
+  const r = await dialog.showOpenDialog({
+    title: "Sélectionner un relevé d'opérations (CSV)",
+    properties: ['openFile'],
+    filters: [{ name: 'CSV', extensions: ['csv'] }],
+  });
+  if (r.canceled || r.filePaths.length === 0) return { cancelled: true };
+  return { cancelled: false, path: r.filePaths[0] ?? '' };
+}
+
+export function handleInvestmentImportBourseCsv(payload: { path: string; wrapperId: string }): {
+  result: ImportBourseResult;
+} {
+  const text = readFileSync(payload.path, 'latin1'); // Fortuneo CSV is ISO-8859-1
+  const parsed = parseBourseCsv(text);
+  const result = importBourseCsv(getDb(), payload.wrapperId, parsed.ops);
+  return { result: { ...result, skippedRows: parsed.skipped.length } };
+}
+
+export function handleInvestmentListOperations(payload: { supportId: string }): {
+  operations: OperationDTO[];
+} {
+  return { operations: listOperations(getDb(), payload.supportId) };
 }

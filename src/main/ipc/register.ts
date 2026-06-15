@@ -87,6 +87,9 @@ import {
   handleInvestmentCreateSupport,
   handleInvestmentDeleteSupport,
   handleInvestmentUpdateSupport,
+  handleInvestmentPickBourseCsv,
+  handleInvestmentImportBourseCsv,
+  handleInvestmentListOperations,
 } from './handlers/investment';
 
 type Handler<C extends IpcChannel> = (
@@ -151,6 +154,7 @@ const MUTATING_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'investment:createSupport',
   'investment:deleteSupport',
   'investment:updateSupport',
+  'investment:importBourseCsv',
 ]);
 
 function register<C extends IpcChannel>(channel: C, handler: Handler<C>): void {
@@ -236,4 +240,7 @@ export function registerAllHandlers(): void {
   register(CHANNELS.investmentCreateSupport, handleInvestmentCreateSupport);
   register(CHANNELS.investmentDeleteSupport, handleInvestmentDeleteSupport);
   register(CHANNELS.investmentUpdateSupport, handleInvestmentUpdateSupport);
+  register(CHANNELS.investmentPickBourseCsv, () => handleInvestmentPickBourseCsv());
+  register(CHANNELS.investmentImportBourseCsv, handleInvestmentImportBourseCsv);
+  register(CHANNELS.investmentListOperations, handleInvestmentListOperations);
 }

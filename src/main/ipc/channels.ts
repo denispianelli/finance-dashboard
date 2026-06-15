@@ -72,4 +72,7 @@ export const CHANNELS = {
   investmentCreateSupport: 'investment:createSupport',
   investmentDeleteSupport: 'investment:deleteSupport',
   investmentUpdateSupport: 'investment:updateSupport',
+  investmentPickBourseCsv: 'investment:pickBourseCsv',
+  investmentImportBourseCsv: 'investment:importBourseCsv',
+  investmentListOperations: 'investment:listOperations',
 } as const satisfies Record<string, IpcChannel>;

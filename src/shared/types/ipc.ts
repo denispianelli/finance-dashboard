@@ -62,6 +62,8 @@ import type {
   CreateWrapperInput,
   CreateSupportInput,
   SupportUpdateInput,
+  ImportBourseResult,
+  OperationDTO,
 } from './investment';
 
 export interface PingPayload {
@@ -266,6 +268,18 @@ export interface IpcContract {
   'investment:createSupport': { payload: CreateSupportInput; response: { support: SupportDTO } };
   'investment:deleteSupport': { payload: { id: string }; response: { ok: true } };
   'investment:updateSupport': { payload: SupportUpdateInput; response: { ok: true } };
+  'investment:pickBourseCsv': {
+    payload: Record<string, never>;
+    response: { cancelled: true } | { cancelled: false; path: string };
+  };
+  'investment:importBourseCsv': {
+    payload: { path: string; wrapperId: string };
+    response: { result: ImportBourseResult };
+  };
+  'investment:listOperations': {
+    payload: { supportId: string };
+    response: { operations: OperationDTO[] };
+  };
 }
 
 export type IpcChannel = keyof IpcContract;
