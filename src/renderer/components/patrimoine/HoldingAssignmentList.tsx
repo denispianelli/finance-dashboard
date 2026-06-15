@@ -52,9 +52,14 @@ export function HoldingAssignmentList({
             {kindIcon(h.kind)}
           </span>
           <span className="min-w-0 flex-1 truncate font-sans text-[13px] text-paper">{h.name}</span>
-          <span className="shrink-0 font-mono text-[12px] tabular-nums text-paper-dim">
-            {formatEuro(h.signedValue)}
-          </span>
+          {/* Only assets carry a meaningful signed value here; accounts (statement
+              balance) and loans (CRD) are valued by the read-model, not this picker,
+              so we don't show a misleading 0 € for them. */}
+          {h.kind === 'asset' && (
+            <span className="shrink-0 font-mono text-[12px] tabular-nums text-paper-dim">
+              {formatEuro(h.signedValue)}
+            </span>
+          )}
           <select
             className={`${INPUT} w-44 shrink-0`}
             value={h.classId ?? ''}

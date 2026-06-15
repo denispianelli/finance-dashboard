@@ -24,17 +24,21 @@ export function getAllocation(db: DatabaseSync): Allocation {
     add(row?.class_id ?? null, a.balance ?? 0);
   }
 
+  // Round EACH contribution before bucketing, exactly as getNetWorth does
+  // (consolidated.ts rounds per asset/loan, then sums). Summing raw and rounding
+  // only the total would drift by a cent on fractional shares (e.g. 50% of an
+  // odd-cent CRD), breaking the cent-exact reconciliation invariant.
   const assets = db
     .prepare('SELECT declared_value, share, class_id FROM assets')
     .all() as unknown as { declared_value: number; share: number; class_id: string | null }[];
-  for (const a of assets) add(a.class_id, a.declared_value * a.share);
+  for (const a of assets) add(a.class_id, round2(a.declared_value * a.share));
 
   const loans = db.prepare('SELECT id, share, class_id FROM loans').all() as unknown as {
     id: string;
     share: number;
     class_id: string | null;
   }[];
-  for (const l of loans) add(l.class_id, -crdAt(db, l.id, todayIso) * l.share);
+  for (const l of loans) add(l.class_id, round2(-crdAt(db, l.id, todayIso) * l.share));
 
   const total = round2([...values.values()].reduce((s, v) => s + v, 0));
 

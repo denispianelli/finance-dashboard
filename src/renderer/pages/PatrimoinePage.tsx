@@ -127,16 +127,13 @@ export function PatrimoinePage() {
         classes={classes}
         holdings={holdings}
         onUpsertClass={(i) => {
-          void upsertClass(i);
-          notifyDataChanged();
+          void upsertClass(i).then(notifyDataChanged);
         }}
         onDeleteClass={(id) => {
-          void deleteClass(id);
-          notifyDataChanged();
+          void deleteClass(id).then(notifyDataChanged);
         }}
         onAssignClass={(k, id, cid) => {
-          void assignClass(k, id, cid);
-          notifyDataChanged();
+          void assignClass(k, id, cid).then(notifyDataChanged);
         }}
       />
     </div>

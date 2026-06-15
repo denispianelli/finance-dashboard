@@ -71,7 +71,39 @@ describe('getAllocation', () => {
     expect(immoSlice?.name).toBe('Immo');
 
     // total must reconcile with net worth to the cent
-    expect(allocation.total).toBeCloseTo(nw.total, 2);
+    expect(allocation.total).toBe(nw.total);
+
+    db.close();
+  });
+
+  it('Test C — reconciles EXACTLY with getNetWorth on fractional shares (per-contribution rounding)', () => {
+    // Two assets whose half-share lands on a half-cent (100.01 * 0.5 = 50.005).
+    // getNetWorth rounds each contribution before summing → 50.01 + 50.01 = 100.02.
+    // A naive sum-then-round would give round2(50.005 + 50.005) = 100.01 — a cent off.
+    // getAllocation must round each contribution the same way, so the totals match exactly.
+    const db = new DatabaseSync(':memory:');
+    runMigrations(db);
+    db.exec('DELETE FROM accounts');
+
+    const c = upsertClass(db, { name: 'C', color: '#abc', targetPct: null });
+    for (const name of ['A1', 'A2']) {
+      upsertAsset(db, {
+        name,
+        kind: 'autre',
+        declaredValue: 100.01,
+        share: 0.5,
+        valuedAt: '2026-06-14',
+        classId: c.id,
+      });
+    }
+
+    const allocation = getAllocation(db);
+    const nw = getNetWorth(db);
+
+    expect(allocation.total).toBe(100.02);
+    expect(nw.total).toBe(100.02);
+    expect(allocation.total).toBe(nw.total); // exact, not toBeCloseTo
+    expect(allocation.slices.find((s) => s.classId === c.id)?.value).toBe(100.02);
 
     db.close();
   });
@@ -99,7 +131,7 @@ describe('getAllocation', () => {
     expect(unclassified?.value).toBeCloseTo(10000, 2);
 
     // total must reconcile with net worth
-    expect(allocation.total).toBeCloseTo(nw.total, 2);
+    expect(allocation.total).toBe(nw.total);
 
     db.close();
   });

@@ -65,6 +65,35 @@ describe('assetRepo', () => {
     db.close();
   });
 
+  it('preserves classId when an edit re-sends it (the AssetsCard edit contract)', () => {
+    // upsertAsset writes class_id = excluded.class_id unconditionally, so a caller
+    // editing an asset's value MUST re-send classId or the assignment is wiped.
+    // AssetsCard does exactly this; lock the behaviour so a refactor can't silently
+    // drop the class assignment.
+    const db = freshDb();
+    const c = upsertClass(db, { name: 'Immo', color: '#7C9A8E', targetPct: 0.6 });
+    const a = upsertAsset(db, {
+      name: 'RP',
+      kind: 'property',
+      declaredValue: 300000,
+      share: 0.5,
+      valuedAt: '2026-06-14',
+      classId: c.id,
+    });
+    const updated = upsertAsset(db, {
+      id: a.id,
+      name: 'RP',
+      kind: 'property',
+      declaredValue: 320000,
+      share: 0.5,
+      valuedAt: '2026-06-14',
+      classId: c.id, // re-sent, as AssetsCard does on edit
+    });
+    expect(updated.declaredValue).toBe(320000);
+    expect(updated.classId).toBe(c.id);
+    db.close();
+  });
+
   it('deletes an asset', () => {
     const db = freshDb();
     const a = upsertAsset(db, {
