@@ -115,7 +115,7 @@ export interface Allocation {
 
 export interface ClassifiableHolding {
   id: string;
-  kind: 'account' | 'asset' | 'loan';
+  kind: 'account' | 'asset' | 'loan' | 'support';
   name: string;
   signedValue: number; // contribution to net worth (loans negative)
   classId: string | null;

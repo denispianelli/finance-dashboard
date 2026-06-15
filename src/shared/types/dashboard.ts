@@ -147,10 +147,17 @@ export interface NetWorthAsset {
   readonly contribution: number; // value * share
 }
 
+export interface NetWorthSupport {
+  readonly supportId: string;
+  readonly name: string;
+  readonly value: number;
+}
+
 /** Consolidated net worth: accounts + declared assets − loan CRD, all at the maintainer's share. */
 export interface NetWorth {
   readonly total: number;
   readonly accounts: NetWorthAccount[];
   readonly assets: NetWorthAsset[];
   readonly loans: NetWorthLoan[];
+  readonly supports: NetWorthSupport[];
 }

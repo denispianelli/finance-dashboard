@@ -79,6 +79,15 @@ import {
   handlePatrimoineDeleteClass,
   handlePatrimoineAssignClass,
 } from './handlers/patrimoine';
+import {
+  handleInvestmentListWrappers,
+  handleInvestmentGetSupportHistory,
+  handleInvestmentCreateWrapper,
+  handleInvestmentDeleteWrapper,
+  handleInvestmentCreateSupport,
+  handleInvestmentDeleteSupport,
+  handleInvestmentUpdateSupport,
+} from './handlers/investment';
 
 type Handler<C extends IpcChannel> = (
   payload: IpcPayload<C>,
@@ -137,6 +146,11 @@ const MUTATING_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'patrimoine:upsertClass',
   'patrimoine:deleteClass',
   'patrimoine:assignClass',
+  'investment:createWrapper',
+  'investment:deleteWrapper',
+  'investment:createSupport',
+  'investment:deleteSupport',
+  'investment:updateSupport',
 ]);
 
 function register<C extends IpcChannel>(channel: C, handler: Handler<C>): void {
@@ -215,4 +229,11 @@ export function registerAllHandlers(): void {
   register(CHANNELS.patrimoineUpsertClass, handlePatrimoineUpsertClass);
   register(CHANNELS.patrimoineDeleteClass, handlePatrimoineDeleteClass);
   register(CHANNELS.patrimoineAssignClass, handlePatrimoineAssignClass);
+  register(CHANNELS.investmentListWrappers, () => handleInvestmentListWrappers());
+  register(CHANNELS.investmentGetSupportHistory, handleInvestmentGetSupportHistory);
+  register(CHANNELS.investmentCreateWrapper, handleInvestmentCreateWrapper);
+  register(CHANNELS.investmentDeleteWrapper, handleInvestmentDeleteWrapper);
+  register(CHANNELS.investmentCreateSupport, handleInvestmentCreateSupport);
+  register(CHANNELS.investmentDeleteSupport, handleInvestmentDeleteSupport);
+  register(CHANNELS.investmentUpdateSupport, handleInvestmentUpdateSupport);
 }

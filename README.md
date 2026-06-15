@@ -49,6 +49,9 @@ The app:
   class (a default set is provided — rename, delete, or set targets freely) with a target
   percentage; the card shows each class's actual share, the gap to target, and reconciles the
   total with net worth to the cent.
+  **Placements**: per-support investment performance — money-weighted (TRI) and time-weighted
+  (TTWROR) returns — computed from user-declared valuations and flows, 100% local; an optional
+  price feed (ADR-018) is a later phase.
 
 **All on your machine. Source code is public so the privacy promise is verifiable.**
 

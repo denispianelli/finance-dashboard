@@ -4,16 +4,22 @@ import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 import type { AppOutletContext } from '../lib/outletContext';
 import type { LoanWithStats } from '@shared/types/patrimoine';
+import type { SupportWithPerf, WrapperWithSupports } from '@shared/types/investment';
 import { usePatrimoine } from '../hooks/usePatrimoine';
+import { usePlacements } from '../hooks/usePlacements';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Overline } from '../components/ui/overline';
 import { LoanCard } from '../components/patrimoine/LoanCard';
 import { AssetsCard } from '../components/patrimoine/AssetsCard';
 import { AllocationCard } from '../components/patrimoine/AllocationCard';
+import { PlacementsCard } from '../components/patrimoine/PlacementsCard';
 import { ClassManagerDialog } from '../components/patrimoine/ClassManagerDialog';
 import { AmortizationTableDialog } from '../components/patrimoine/AmortizationTableDialog';
 import { AddLoanDialog } from '../components/patrimoine/AddLoanDialog';
+import { WrapperDialog } from '../components/patrimoine/WrapperDialog';
+import { UpdateSupportDialog } from '../components/patrimoine/UpdateSupportDialog';
+import { SupportDetailDialog } from '../components/patrimoine/SupportDetailDialog';
 
 export function PatrimoinePage() {
   const { refreshToken, notifyDataChanged } = useOutletContext<AppOutletContext>();
@@ -32,9 +38,15 @@ export function PatrimoinePage() {
     deleteClass,
     assignClass,
   } = usePatrimoine(refreshToken);
+  const placements = usePlacements(refreshToken);
+
   const [viewing, setViewing] = useState<LoanWithStats | null>(null);
   const [adding, setAdding] = useState(false);
   const [managing, setManaging] = useState(false);
+  const [addingWrapper, setAddingWrapper] = useState(false);
+  const [addSupportTarget, setAddSupportTarget] = useState<WrapperWithSupports | null>(null);
+  const [updatingSupport, setUpdatingSupport] = useState<SupportWithPerf | null>(null);
+  const [detailSupport, setDetailSupport] = useState<SupportWithPerf | null>(null);
 
   const onChanged = () => {
     reload();
@@ -105,6 +117,22 @@ export function PatrimoinePage() {
         }}
       />
 
+      <PlacementsCard
+        wrappers={placements.wrappers}
+        onAddWrapper={() => {
+          setAddingWrapper(true);
+        }}
+        onAddSupport={setAddSupportTarget}
+        onUpdateSupport={setUpdatingSupport}
+        onOpenDetail={setDetailSupport}
+        onDeleteWrapper={(id) => {
+          void placements.deleteWrapper(id).then(notifyDataChanged);
+        }}
+        onDeleteSupport={(id) => {
+          void placements.deleteSupport(id).then(notifyDataChanged);
+        }}
+      />
+
       {viewing && (
         <AmortizationTableDialog
           loanId={viewing.id}
@@ -136,6 +164,51 @@ export function PatrimoinePage() {
         onAssignClass={(k, id, cid) => {
           void assignClass(k, id, cid).then(notifyDataChanged);
         }}
+      />
+
+      <WrapperDialog
+        key={addSupportTarget?.id ?? 'new-wrapper'}
+        open={addingWrapper || addSupportTarget !== null}
+        onOpenChange={(o) => {
+          if (!o) {
+            setAddingWrapper(false);
+            setAddSupportTarget(null);
+          }
+        }}
+        classes={classes}
+        existingWrapper={
+          addSupportTarget ? { id: addSupportTarget.id, name: addSupportTarget.name } : null
+        }
+        onCreateWrapper={(i) =>
+          placements.createWrapper(i).then((w) => {
+            notifyDataChanged();
+            return w;
+          })
+        }
+        onCreateSupport={(i) => {
+          void placements.createSupport(i).then(notifyDataChanged);
+        }}
+      />
+
+      <UpdateSupportDialog
+        open={updatingSupport !== null}
+        onOpenChange={(o) => {
+          if (!o) setUpdatingSupport(null);
+        }}
+        support={updatingSupport}
+        onSubmit={(i) => {
+          void placements.updateSupport(i).then(notifyDataChanged);
+          setUpdatingSupport(null);
+        }}
+      />
+
+      <SupportDetailDialog
+        open={detailSupport !== null}
+        onOpenChange={(o) => {
+          if (!o) setDetailSupport(null);
+        }}
+        support={detailSupport}
+        loadHistory={placements.getSupportHistory}
       />
     </div>
   );

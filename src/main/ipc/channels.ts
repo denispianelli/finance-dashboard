@@ -65,4 +65,11 @@ export const CHANNELS = {
   patrimoineUpsertClass: 'patrimoine:upsertClass',
   patrimoineDeleteClass: 'patrimoine:deleteClass',
   patrimoineAssignClass: 'patrimoine:assignClass',
+  investmentListWrappers: 'investment:listWrappers',
+  investmentGetSupportHistory: 'investment:getSupportHistory',
+  investmentCreateWrapper: 'investment:createWrapper',
+  investmentDeleteWrapper: 'investment:deleteWrapper',
+  investmentCreateSupport: 'investment:createSupport',
+  investmentDeleteSupport: 'investment:deleteSupport',
+  investmentUpdateSupport: 'investment:updateSupport',
 } as const satisfies Record<string, IpcChannel>;

@@ -163,7 +163,13 @@ describe('getNetWorth — empty', () => {
     const db = new DatabaseSync(':memory:');
     runMigrations(db);
     db.exec('DELETE FROM accounts'); // drop the seeded default account
-    expect(getNetWorth(db)).toEqual({ total: 0, accounts: [], assets: [], loans: [] });
+    expect(getNetWorth(db)).toEqual({
+      total: 0,
+      accounts: [],
+      assets: [],
+      loans: [],
+      supports: [],
+    });
     db.close();
   });
 });

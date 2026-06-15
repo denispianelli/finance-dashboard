@@ -28,7 +28,7 @@ interface ClassManagerDialogProps {
   holdings: ClassifiableHolding[];
   onUpsertClass: (input: UpsertAssetClassInput) => void;
   onDeleteClass: (id: string) => void;
-  onAssignClass: (kind: 'account' | 'asset' | 'loan', id: string, classId: string | null) => void;
+  onAssignClass: (kind: ClassifiableHolding['kind'], id: string, classId: string | null) => void;
 }
 
 export function ClassManagerDialog({

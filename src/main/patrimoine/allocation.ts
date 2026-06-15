@@ -40,6 +40,17 @@ export function getAllocation(db: DatabaseSync): Allocation {
   }[];
   for (const l of loans) add(l.class_id, round2(-crdAt(db, l.id, todayIso) * l.share));
 
+  const supports = db
+    .prepare(
+      `SELECT class_id,
+         COALESCE((SELECT value FROM support_valuations v
+                   WHERE v.support_id = investment_supports.id
+                   ORDER BY as_of DESC, created_at DESC LIMIT 1), 0) AS current_value
+       FROM investment_supports`,
+    )
+    .all() as unknown as { class_id: string | null; current_value: number }[];
+  for (const s of supports) add(s.class_id, round2(s.current_value));
+
   const total = round2([...values.values()].reduce((s, v) => s + v, 0));
 
   const slices: AllocationSlice[] = classes.map((c) => {

@@ -117,7 +117,7 @@ export function handlePatrimoineDeleteClass(payload: { id: string }): { ok: true
 }
 
 export function handlePatrimoineAssignClass(payload: {
-  kind: 'account' | 'asset' | 'loan';
+  kind: 'account' | 'asset' | 'loan' | 'support';
   id: string;
   classId: string | null;
 }): { ok: true } {

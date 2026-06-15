@@ -182,3 +182,57 @@ to "no network, ever". This amendment corrects the wording; it does not weaken t
 - "Gained/lost" (cash flow) and net worth (balances + assets − liabilities) remain distinct
   figures; the mortgage installment splits into interest (expense) and principal (transfer to
   equity, not an expense) — the accounting treatment gets its own design doc before build.
+
+## Amendment 3 (2026-06-15) — full investment tracking activated (positions + opt-in feed)
+
+### Context
+
+Amendment 2 §3 put position-level investment tracking in scope but **deferred** it ("level 1
+TRI/TTWROR from declared balances suffices; revisit only if it proves insufficient"), and §5
+reserved ADR-018 for a price feed under a strict "bulk, never per-asset" bar. While scoping the
+TRI/TTWROR brick the maintainer reopened both, with sound reasoning recorded here.
+
+**The privacy bar was protecting a constituency that does not exist.** The product has **zero
+external users** — one deliberate user, the maintainer. The "no data leaves" promise is, today, a
+promise to himself plus a public-repo positioning statement, not an obligation to a user base
+(Amendment 1/2). With that reframed, the only real remaining cost of a price feed is a negligible
+leak for **mainstream** instruments (an MSCI World ETF), which the maintainer accepts.
+
+**The maintainer wants the full tool now**, not the lightweight monthly-declared shortcut: the
+real positions-and-performance model, computed per support, the way Portfolio Performance does
+it. The effort/north-star scope guard remains; market positioning no longer does.
+
+### Decision
+
+1. **Activate level 2 (position-level, per-support tracking) and level 3 (opt-in price feed)
+   now.** The build is PP-style: **wrapper → support → flows → valuations → TRI/TTWROR per
+   support**, aggregated to wrapper and global. Each support carries an allocation `class_id`
+   (reuses the allocation brick, #232); investment supports become a net-worth contributor
+   (accounts + declared assets + **investment supports** − liabilities), replacing any ad-hoc
+   declared asset that duplicated a tracked wrapper (no double counting).
+
+2. **Two-phase build.** **Phase A** — supports/flows/valuations model + per-support manual entry
+   - TRI/TTWROR + a performance surface. 100% local, no network, **needs no further ADR** (it is
+     level-1 performance at support granularity, already in scope per Amendment 2 §3). **Phase B** —
+     share-quantity tracking + an **opt-in price feed** for feedable ISINs, so a quoted support
+     auto-values instead of being typed.
+
+3. **The price feed is governed by ADR-018** (now written, was reserved). It is opt-in,
+   off-by-default, main-process only. ADR-018 **supersedes** Amendment 2 §5's "never per-asset
+   queries" line: per-instrument quote queries are allowed (they transmit only a public
+   instrument identifier — never balances, amounts, or positions). The data-not-packets invariant
+   (ADR-002) is preserved: no financial data leaves the machine.
+
+4. **Still out / deferred, unchanged:** dividends (the maintainer's ETFs are accumulating —
+   revisit when a distributing holding appears), multi-currency (his share classes quote in EUR),
+   benchmark comparison, automatic property estimation, crypto, multi-user, PSD2, conversational
+   AI. Selling/arbitrage is modelled but without dedicated UI in v1 (accumulation-only today).
+
+### Consequences
+
+- ADR-002 amended to list the opt-in price feed (ADR-018) among allowed outbound calls; README
+  and CLAUDE.md scope/out-of-scope wording updated in the same change that ships each phase.
+- Phase A design doc: `docs/superpowers/specs/2026-06-15-investment-tracking-phase-a-design.md`.
+- The fonds euros (no public quote) and the AV unit-linked support (insurer-valued) stay
+  **declared-value** permanently; the feed only ever helps supports with a public ISIN — so the
+  declared-value path is first-class, not a fallback.
