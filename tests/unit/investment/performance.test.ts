@@ -83,4 +83,15 @@ describe('performance', () => {
     expect(perf.triAnnual).toBeNull();
     expect(perf.currentValue).toBe(1000);
   });
+
+  it('opening valuation of 0 ⇒ a same-date flow DOES count (imported-from-zero case)', () => {
+    const vals: DatedValue[] = [
+      { date: '2023-01-01', value: 0 }, // opening sentinel (support started empty)
+      { date: '2024-01-01', value: 1100 },
+    ];
+    const perf = computePerformance(vals, [{ date: '2023-01-01', amount: 1000 }]);
+    expect(perf.netInvested).toBeCloseTo(1000, 6); // the day-0 buy counts because opening value is 0
+    expect(perf.absoluteGain).toBeCloseTo(100, 6);
+    expect(perf.triAnnual).toBeCloseTo(0.1, 2);
+  });
 });

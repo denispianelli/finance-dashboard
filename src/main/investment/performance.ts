@@ -68,7 +68,15 @@ export function computePerformance(
   // flow together). So "added capital" is only the flows strictly AFTER the opening date —
   // consistent with TTWROR, whose sub-periods count flows `> v0.date`. Counting an
   // opening-date flow again would double-invest it and wreck netInvested / gain / TRI.
-  const contributions = openingDate === null ? flows : flows.filter((f) => f.date > openingDate);
+  //
+  // Exception: when the opening value is 0 (imported support starting from zero), the
+  // opening valuation embodies NO prior capital, so a same-date flow is the genuine first
+  // contribution and must be included. A non-zero opening still excludes same-date flows.
+  const openingIsZero = openingValue === 0;
+  const contributions =
+    openingDate === null
+      ? flows
+      : flows.filter((f) => f.date > openingDate || (openingIsZero && f.date === openingDate));
   const flowSum = contributions.reduce((s, f) => s + f.amount, 0);
   const netInvested = openingValue + flowSum;
   const absoluteGain = currentValue - netInvested;
