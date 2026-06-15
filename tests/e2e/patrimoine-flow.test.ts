@@ -102,7 +102,10 @@ test('a loan and declared asset fold into net worth and render on the Patrimoine
     await page.getByRole('link', { name: 'Patrimoine' }).click();
     await expect(page.getByText('Prêt E2E')).toBeVisible();
     await expect(page.getByText('Capital restant dû')).toBeVisible();
-    await expect(page.getByText('Bien immobilier')).toBeVisible();
+    // PropertyCard was replaced by AssetsCard (Task 6): kind 'property' now renders
+    // as 'Résidence principale' in the kind label, and the asset name separately.
+    await expect(page.getByText('Résidence principale')).toBeVisible();
+    await expect(page.getByText('Résidence E2E')).toBeVisible();
   } finally {
     await app.close();
   }
