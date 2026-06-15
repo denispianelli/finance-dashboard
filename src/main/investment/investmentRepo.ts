@@ -9,6 +9,7 @@ import type {
   DatedValue,
   DatedFlow,
   SupportHistory,
+  QuotableSupport,
 } from '@shared/types/investment';
 
 // ---------------------------------------------------------------------------
@@ -31,12 +32,13 @@ interface SupportRow {
   currency: string;
   sort_order: number;
   current_value: number;
+  current_value_source: string | null;
 }
 
 interface ValuationRow {
   date: string;
   value: number;
-  source: 'declared' | 'auto';
+  source: 'declared' | 'auto' | 'quote';
 }
 
 interface FlowRow {
@@ -67,6 +69,12 @@ function toSupport(r: SupportRow): SupportDTO {
     currency: r.currency,
     sortOrder: r.sort_order,
     currentValue: r.current_value,
+    currentValueSource:
+      r.current_value_source === 'auto' || r.current_value_source === 'quote'
+        ? r.current_value_source
+        : r.current_value_source === 'declared'
+          ? 'declared'
+          : null,
   };
 }
 
@@ -131,7 +139,10 @@ export function createSupport(db: DatabaseSync, input: CreateSupportInput): Supp
                  WHERE v.support_id = s.id
                  ORDER BY v.as_of DESC, v.created_at DESC LIMIT 1),
                 0
-              ) AS current_value
+              ) AS current_value,
+              (SELECT v.source FROM support_valuations v
+               WHERE v.support_id = s.id
+               ORDER BY v.as_of DESC, v.created_at DESC LIMIT 1) AS current_value_source
        FROM investment_supports s WHERE s.id = ?`,
     )
     .get(id) as unknown as SupportRow;
@@ -150,7 +161,10 @@ export function listSupportRows(db: DatabaseSync, wrapperId?: string): SupportDT
           WHERE v.support_id = s.id
           ORDER BY v.as_of DESC, v.created_at DESC LIMIT 1),
          0
-       ) AS current_value
+       ) AS current_value,
+       (SELECT v.source FROM support_valuations v
+        WHERE v.support_id = s.id
+        ORDER BY v.as_of DESC, v.created_at DESC LIMIT 1) AS current_value_source
   FROM investment_supports s`;
   const rows =
     wrapperId !== undefined
@@ -214,11 +228,11 @@ export function getSupportHistory(db: DatabaseSync, supportId: string): SupportH
     .all(supportId) as unknown as FlowRow[];
   return {
     valuations: valuations.map(
-      // Only surface 'auto' sentinels; declared valuations leave source absent (the default).
+      // Surface 'auto' and 'quote' explicitly; declared valuations leave source absent (the default).
       (r): DatedValue => ({
         date: r.date,
         value: r.value,
-        source: r.source === 'auto' ? 'auto' : undefined,
+        source: r.source === 'auto' || r.source === 'quote' ? r.source : undefined,
       }),
     ),
     flows: flows.map((r): DatedFlow => ({ date: r.date, amount: r.amount })),
@@ -237,4 +251,55 @@ export function latestValuation(db: DatabaseSync, supportId: string): number {
     )
     .get(supportId) as { value: number } | undefined;
   return row?.value ?? 0;
+}
+
+// ---------------------------------------------------------------------------
+// Quote feed helpers
+// ---------------------------------------------------------------------------
+
+/** Supports eligible for an auto quote: have an ISIN and a positive net share count. */
+export function listQuotableSupports(db: DatabaseSync): QuotableSupport[] {
+  const rows = db
+    .prepare(
+      `SELECT s.id, s.isin, s.quote_symbol AS quoteSymbol,
+              (SELECT COALESCE(SUM(CASE WHEN o.kind = 'buy' THEN o.quantity ELSE -o.quantity END), 0)
+               FROM support_operations o WHERE o.support_id = s.id) AS shares
+       FROM investment_supports s
+       WHERE s.isin IS NOT NULL`,
+    )
+    .all() as unknown as QuotableSupport[];
+  return rows.filter((r) => r.shares > 1e-6);
+}
+
+/** Cache the resolved EUR ticker on the support so a refresh only needs the quote host. */
+export function setQuoteSymbol(db: DatabaseSync, supportId: string, symbol: string): void {
+  db.prepare('UPDATE investment_supports SET quote_symbol = ? WHERE id = ?').run(symbol, supportId);
+}
+
+/** Upsert one 'quote' valuation per (support, date). A same-date declared value is never shadowed. */
+export function writeQuoteValuation(
+  db: DatabaseSync,
+  supportId: string,
+  asOf: string,
+  value: number,
+): 'written' | 'skipped_declared' {
+  const declared = db
+    .prepare(
+      "SELECT 1 FROM support_valuations WHERE support_id = ? AND as_of = ? AND source = 'declared' LIMIT 1",
+    )
+    .get(supportId, asOf);
+  if (declared !== undefined) return 'skipped_declared';
+  const existing = db
+    .prepare(
+      "SELECT id FROM support_valuations WHERE support_id = ? AND as_of = ? AND source = 'quote' LIMIT 1",
+    )
+    .get(supportId, asOf) as { id: string } | undefined;
+  if (existing !== undefined) {
+    db.prepare('UPDATE support_valuations SET value = ? WHERE id = ?').run(value, existing.id);
+  } else {
+    db.prepare(
+      "INSERT INTO support_valuations (id, support_id, as_of, value, source) VALUES (?, ?, ?, ?, 'quote')",
+    ).run(randomUUID(), supportId, asOf, value);
+  }
+  return 'written';
 }
