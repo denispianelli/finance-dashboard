@@ -54,6 +54,15 @@ import type {
   UpsertAssetClassInput,
   ClassifiableHolding,
 } from './patrimoine';
+import type {
+  WrapperDTO,
+  SupportDTO,
+  WrapperWithSupports,
+  SupportHistory,
+  CreateWrapperInput,
+  CreateSupportInput,
+  SupportUpdateInput,
+} from './investment';
 
 export interface PingPayload {
   now: number;
@@ -244,6 +253,19 @@ export interface IpcContract {
     payload: { kind: 'account' | 'asset' | 'loan' | 'support'; id: string; classId: string | null };
     response: { ok: true };
   };
+  'investment:listWrappers': {
+    payload: Record<string, never>;
+    response: { wrappers: WrapperWithSupports[] };
+  };
+  'investment:getSupportHistory': {
+    payload: { supportId: string };
+    response: { history: SupportHistory };
+  };
+  'investment:createWrapper': { payload: CreateWrapperInput; response: { wrapper: WrapperDTO } };
+  'investment:deleteWrapper': { payload: { id: string }; response: { ok: true } };
+  'investment:createSupport': { payload: CreateSupportInput; response: { support: SupportDTO } };
+  'investment:deleteSupport': { payload: { id: string }; response: { ok: true } };
+  'investment:updateSupport': { payload: SupportUpdateInput; response: { ok: true } };
 }
 
 export type IpcChannel = keyof IpcContract;
