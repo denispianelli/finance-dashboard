@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ipc } from '../ipc/client';
 import type {
+  WrapperDTO,
   WrapperWithSupports,
   CreateWrapperInput,
   CreateSupportInput,
@@ -28,9 +29,10 @@ export function usePlacements(refreshToken: number) {
   }, [refreshToken, tick]);
 
   const createWrapper = useCallback(
-    async (input: CreateWrapperInput) => {
-      await ipc.invoke('investment:createWrapper', input);
+    async (input: CreateWrapperInput): Promise<WrapperDTO> => {
+      const r = await ipc.invoke('investment:createWrapper', input);
       reload();
+      return r.wrapper;
     },
     [reload],
   );
