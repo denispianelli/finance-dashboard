@@ -90,6 +90,9 @@ import {
   handleInvestmentPickBourseCsv,
   handleInvestmentImportBourseCsv,
   handleInvestmentListOperations,
+  handleInvestmentGetQuoteSettings,
+  handleInvestmentSetQuotesEnabled,
+  handleInvestmentRefreshQuotes,
 } from './handlers/investment';
 
 type Handler<C extends IpcChannel> = (
@@ -243,4 +246,7 @@ export function registerAllHandlers(): void {
   register(CHANNELS.investmentPickBourseCsv, () => handleInvestmentPickBourseCsv());
   register(CHANNELS.investmentImportBourseCsv, handleInvestmentImportBourseCsv);
   register(CHANNELS.investmentListOperations, handleInvestmentListOperations);
+  register(CHANNELS.investmentGetQuoteSettings, () => handleInvestmentGetQuoteSettings());
+  register(CHANNELS.investmentSetQuotesEnabled, handleInvestmentSetQuotesEnabled);
+  register(CHANNELS.investmentRefreshQuotes, () => handleInvestmentRefreshQuotes());
 }

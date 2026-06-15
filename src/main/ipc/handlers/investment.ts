@@ -12,7 +12,15 @@ import type {
   DatedFlow,
   ImportBourseResult,
   OperationDTO,
+  QuoteSettings,
+  RefreshResult,
 } from '@shared/types/investment';
+import {
+  getQuotesEnabled,
+  setQuotesEnabled,
+  getLastQuoteRefreshAt,
+} from '../../investment/quoteState';
+import { refreshAllQuotes } from '../../investment/refreshQuotes';
 import {
   createWrapper,
   listWrapperRows,
@@ -139,4 +147,23 @@ export function handleInvestmentListOperations(payload: { supportId: string }): 
   operations: OperationDTO[];
 } {
   return { operations: listOperations(getDb(), payload.supportId) };
+}
+
+export function handleInvestmentGetQuoteSettings(): QuoteSettings {
+  return { enabled: getQuotesEnabled(), lastRefreshAt: getLastQuoteRefreshAt() };
+}
+
+export function handleInvestmentSetQuotesEnabled(payload: { enabled: boolean }): { ok: true } {
+  setQuotesEnabled(payload.enabled);
+  return { ok: true };
+}
+
+export async function handleInvestmentRefreshQuotes(): Promise<{ result: RefreshResult }> {
+  // ADR-018: never touch the network while the feed is off.
+  if (!getQuotesEnabled()) {
+    return {
+      result: { refreshed: 0, skipped: 0, failed: 0, lastRefreshAt: getLastQuoteRefreshAt() },
+    };
+  }
+  return { result: await refreshAllQuotes(getDb()) };
 }
