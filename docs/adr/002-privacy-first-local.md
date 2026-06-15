@@ -34,3 +34,19 @@ Any cloud-connected or telemetry-enabled approach — rejected outright as antit
 - No bank connection (PSD2 — incompatible with the privacy promise)
 - No cloud backup (user manages `.fbk` exports)
 - Public source code (AGPL) so the user can verify the privacy promise
+
+## Amendment (2026-06-15) — allowed outbound calls updated
+
+The "Decision" list above is updated to reflect two changes since 2026-05-14:
+
+- The **LLM model download** exception is **obsolete** — the embedded model was removed
+  (ADR-019); no model is ever downloaded.
+- A second opt-in outbound call now exists: an **opt-in, off-by-default market-price feed**
+  (**ADR-018**), main-process only. It transmits only a **public instrument identifier**
+  (ISIN/ticker) for a holding the user explicitly chose to value online — never balances,
+  amounts, positions, or account data.
+
+The invariant is unchanged in spirit (per ADR-009 Amendment 2 §5: about **data, not packets**):
+**no third party ever learns anything about the user's finances.** Both outbound calls (version
+check, price feed) are opt-in and off by default, so the literal "100% local" promise holds for
+anyone who leaves them off.
