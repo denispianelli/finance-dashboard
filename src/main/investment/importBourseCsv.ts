@@ -12,6 +12,11 @@ import { listSupportRows } from './investmentRepo';
 // Hash
 // ---------------------------------------------------------------------------
 
+// Dedup key for idempotent re-import. Scoped by wrapper so the same operation under two
+// wrappers is distinct. Known limitation (acceptable for a passive DCA investor): two genuinely
+// distinct fills on the same day, same label, same quantity AND same net would collide and the
+// second would be dropped as "already present". Add a within-(date,label) ordinal here if that
+// ever matters.
 const opHash = (wrapperId: string, o: ParsedOp): string =>
   createHash('sha256')
     .update([wrapperId, o.rawLabel, o.opDate, o.kind, String(o.quantity), String(o.net)].join('|'))
@@ -65,48 +70,57 @@ export function importBourseCsv(
   let imported = 0;
   let already = 0;
 
-  for (const o of ops) {
-    const supportId = resolveSupport(db, wrapperId, o, created);
-    touched.add(supportId);
+  // All-or-nothing: a throw mid-loop must not leave a partially-imported, inconsistent
+  // DB (matches saveLoan/insertStatement). Also far faster than autocommit per row.
+  db.exec('BEGIN');
+  try {
+    for (const o of ops) {
+      const supportId = resolveSupport(db, wrapperId, o, created);
+      touched.add(supportId);
 
-    const hash = opHash(wrapperId, o);
-    const dup = db.prepare('SELECT 1 FROM support_operations WHERE op_hash = ?').get(hash);
-    if (dup !== undefined) {
-      already += 1;
-      continue;
+      const hash = opHash(wrapperId, o);
+      const dup = db.prepare('SELECT 1 FROM support_operations WHERE op_hash = ?').get(hash);
+      if (dup !== undefined) {
+        already += 1;
+        continue;
+      }
+
+      const opId = randomUUID();
+      db.prepare(
+        `INSERT INTO support_operations
+           (id, support_id, op_date, kind, quantity, unit_price, gross, fees, net, currency, raw_label, op_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        opId,
+        supportId,
+        o.opDate,
+        o.kind,
+        o.quantity,
+        o.unitPrice,
+        o.gross,
+        o.fees,
+        o.net,
+        o.currency,
+        o.rawLabel,
+        hash,
+      );
+
+      // Flow: inversion of net (buy net < 0 → +contribution; sell net > 0 → −withdrawal)
+      db.prepare(
+        `INSERT INTO support_flows (id, support_id, flow_date, amount, note, operation_id)
+         VALUES (?, ?, ?, ?, NULL, ?)`,
+      ).run(randomUUID(), supportId, o.opDate, -o.net, opId);
+
+      imported += 1;
     }
 
-    const opId = randomUUID();
-    db.prepare(
-      `INSERT INTO support_operations
-         (id, support_id, op_date, kind, quantity, unit_price, gross, fees, net, currency, raw_label, op_hash)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(
-      opId,
-      supportId,
-      o.opDate,
-      o.kind,
-      o.quantity,
-      o.unitPrice,
-      o.gross,
-      o.fees,
-      o.net,
-      o.currency,
-      o.rawLabel,
-      hash,
-    );
-
-    // Flow: inversion of net (buy net < 0 → +contribution; sell net > 0 → −withdrawal)
-    db.prepare(
-      `INSERT INTO support_flows (id, support_id, flow_date, amount, note, operation_id)
-       VALUES (?, ?, ?, ?, NULL, ?)`,
-    ).run(randomUUID(), supportId, o.opDate, -o.net, opId);
-
-    imported += 1;
-  }
-
-  for (const supportId of touched) {
-    ensureBoundaryValuations(db, supportId);
+    for (const supportId of touched) {
+      ensureBoundaryValuations(db, supportId);
+    }
+    db.exec('COMMIT');
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
   }
 
   return {
@@ -190,6 +204,10 @@ function resolveSupport(
  * - Always insert one at the first operation date (opening basis for performance).
  * - If the position is closed (net shares ≈ 0), also insert one at the last operation date.
  * Both inserts are no-ops when the valuation already exists (idempotent).
+ *
+ * Assumes **forward-only** imports (Fortuneo exports are append-forward). Back-filling an OLDER
+ * period in a later import would leave the previous opening-0 mid-series; if that ever becomes a
+ * use case, delete prior import-origin 0-valuations before re-inserting.
  */
 function ensureBoundaryValuations(db: DatabaseSync, supportId: string): void {
   const agg = db
