@@ -33,6 +33,7 @@ export function upsertAsset(db: DatabaseSync, input: UpsertAssetInput): AssetDTO
      VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        name = excluded.name,
+       kind = excluded.kind,
        declared_value = excluded.declared_value,
        share = excluded.share,
        valued_at = excluded.valued_at,
