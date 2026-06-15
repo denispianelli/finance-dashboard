@@ -1,5 +1,5 @@
 import { type ComponentType, type ReactNode } from 'react';
-import { Database, FolderSync, Palette } from 'lucide-react';
+import { Database, FolderSync, LineChart, Palette } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -8,6 +8,7 @@ import { Overline } from '../components/ui/overline';
 import { cn } from '../lib/utils';
 import { SyncSettingsSection } from '../components/sync/SyncSettingsSection';
 import { BackupSettingsSection } from '../components/backup/BackupSettingsSection';
+import { QuoteSettingsSection } from '../components/patrimoine/QuoteSettingsSection';
 import { ipc } from '../ipc/client';
 
 // First draft per docs/superpowers/specs/archive/2026-06-03-settings-view-content-design.md.
@@ -21,8 +22,17 @@ export function SettingsPage() {
     <div className="flex max-w-[680px] flex-col gap-4">
       <DataSection />
       <SyncSection />
+      <QuotesSection />
       <AppearanceSection />
     </div>
+  );
+}
+
+function QuotesSection() {
+  return (
+    <Section icon={LineChart} overline="— Opt-in" title="Cours de marché">
+      <QuoteSettingsSection Row={Row} />
+    </Section>
   );
 }
 

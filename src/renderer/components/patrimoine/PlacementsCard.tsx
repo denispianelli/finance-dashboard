@@ -1,19 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Eye, Plus, RefreshCw, Trash2, Upload } from 'lucide-react';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import type { QuoteSettings, SupportWithPerf, WrapperWithSupports } from '@shared/types/investment';
+import type {
+  QuoteSettings,
+  RefreshResult,
+  SupportWithPerf,
+  WrapperWithSupports,
+} from '@shared/types/investment';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Overline } from '../ui/overline';
 import { Button } from '../ui/button';
 import { Money } from '../ui/money';
 import { formatPercent } from '../../lib/euro';
+import { formatTs } from '../../lib/formatDate';
 import { cn } from '../../lib/utils';
-
-function formatTs(iso: string | null): string {
-  if (iso === null) return '—';
-  return format(new Date(iso), "d MMM yyyy 'à' HH:mm", { locale: fr });
-}
 
 /** Colour class for a performance value: sage for gains, coral for losses. */
 function perfColor(value: number | null): string {
@@ -130,7 +129,7 @@ export function PlacementsCard({
   onDeleteSupport: (id: string) => void;
   onImport: () => void;
   getQuoteSettings: () => Promise<QuoteSettings>;
-  refreshQuotes: () => Promise<unknown>;
+  refreshQuotes: () => Promise<RefreshResult>;
 }) {
   const [confirmingWrapperId, setConfirmingWrapperId] = useState<string | null>(null);
   const [confirmingSupportId, setConfirmingSupportId] = useState<string | null>(null);
