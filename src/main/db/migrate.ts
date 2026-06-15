@@ -23,6 +23,7 @@ import sql021 from './migrations/021_loan_number.sql?raw';
 import sql022 from './migrations/022_loan_payment_link.sql?raw';
 import sql023 from './migrations/023_asset_classes.sql?raw';
 import sql024 from './migrations/024_seed_default_asset_classes.sql?raw';
+import sql025 from './migrations/025_investment_tracking.sql?raw';
 
 interface Migration {
   version: number;
@@ -58,6 +59,7 @@ const MIGRATIONS: Migration[] = [
   { version: 22, sql: sql022 },
   { version: 23, sql: sql023 },
   { version: 24, sql: sql024 },
+  { version: 25, sql: sql025 },
 ];
 
 /** Highest migration version this build knows — embedded in snapshot headers. */
