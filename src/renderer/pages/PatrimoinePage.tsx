@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 import type { AppOutletContext } from '../lib/outletContext';
 import type { LoanWithStats } from '@shared/types/patrimoine';
-import type { SupportWithPerf } from '@shared/types/investment';
+import type { SupportWithPerf, WrapperWithSupports } from '@shared/types/investment';
 import { usePatrimoine } from '../hooks/usePatrimoine';
 import { usePlacements } from '../hooks/usePlacements';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
@@ -44,6 +44,7 @@ export function PatrimoinePage() {
   const [adding, setAdding] = useState(false);
   const [managing, setManaging] = useState(false);
   const [addingWrapper, setAddingWrapper] = useState(false);
+  const [addSupportTarget, setAddSupportTarget] = useState<WrapperWithSupports | null>(null);
   const [updatingSupport, setUpdatingSupport] = useState<SupportWithPerf | null>(null);
   const [detailSupport, setDetailSupport] = useState<SupportWithPerf | null>(null);
 
@@ -121,6 +122,7 @@ export function PatrimoinePage() {
         onAddWrapper={() => {
           setAddingWrapper(true);
         }}
+        onAddSupport={setAddSupportTarget}
         onUpdateSupport={setUpdatingSupport}
         onOpenDetail={setDetailSupport}
         onDeleteWrapper={(id) => {
@@ -165,9 +167,18 @@ export function PatrimoinePage() {
       />
 
       <WrapperDialog
-        open={addingWrapper}
-        onOpenChange={setAddingWrapper}
+        key={addSupportTarget?.id ?? 'new-wrapper'}
+        open={addingWrapper || addSupportTarget !== null}
+        onOpenChange={(o) => {
+          if (!o) {
+            setAddingWrapper(false);
+            setAddSupportTarget(null);
+          }
+        }}
         classes={classes}
+        existingWrapper={
+          addSupportTarget ? { id: addSupportTarget.id, name: addSupportTarget.name } : null
+        }
         onCreateWrapper={(i) =>
           placements.createWrapper(i).then((w) => {
             notifyDataChanged();

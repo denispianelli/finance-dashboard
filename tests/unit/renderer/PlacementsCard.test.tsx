@@ -82,6 +82,7 @@ it('renders wrappers + supports; annualised when ≥1y, cumulative "depuis l\'or
     <PlacementsCard
       wrappers={WRAPPERS}
       onAddWrapper={noop}
+      onAddSupport={noop}
       onUpdateSupport={noop}
       onOpenDetail={noop}
       onDeleteWrapper={noop}
@@ -99,6 +100,7 @@ it('renders an empty state when there are no wrappers', () => {
     <PlacementsCard
       wrappers={[]}
       onAddWrapper={noop}
+      onAddSupport={noop}
       onUpdateSupport={noop}
       onOpenDetail={noop}
       onDeleteWrapper={noop}

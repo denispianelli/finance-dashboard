@@ -110,6 +110,7 @@ function SupportDeleteConfirm({
 export function PlacementsCard({
   wrappers,
   onAddWrapper,
+  onAddSupport,
   onUpdateSupport,
   onOpenDetail,
   onDeleteWrapper,
@@ -117,6 +118,7 @@ export function PlacementsCard({
 }: {
   wrappers: WrapperWithSupports[];
   onAddWrapper: () => void;
+  onAddSupport: (wrapper: WrapperWithSupports) => void;
   onUpdateSupport: (support: SupportWithPerf) => void;
   onOpenDetail: (support: SupportWithPerf) => void;
   onDeleteWrapper: (id: string) => void;
@@ -169,6 +171,16 @@ export function PlacementsCard({
                     {wrapper.name}
                   </span>
                   <Money value={wrapper.perf.currentValue} className="text-[13px]" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      onAddSupport(wrapper);
+                    }}
+                    aria-label={`Ajouter un support à ${wrapper.name}`}
+                  >
+                    <Plus size={13} strokeWidth={1.8} />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -242,6 +254,19 @@ export function PlacementsCard({
                       </div>
                     );
                   })}
+
+                  {wrapper.supports.length === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onAddSupport(wrapper);
+                      }}
+                      className="flex items-center gap-1.5 rounded-md py-1 font-sans text-[12px] text-paper-mute hover:text-paper-soft"
+                    >
+                      <Plus size={12} strokeWidth={1.8} />
+                      Aucun support — ajoute ton premier support
+                    </button>
+                  )}
                 </div>
               </div>
             );
