@@ -1,0 +1,128 @@
+import type { DatedValue, DatedFlow, Performance } from '@shared/types/investment';
+
+const MS_PER_DAY = 86_400_000;
+const days = (a: string, b: string): number => (Date.parse(b) - Date.parse(a)) / MS_PER_DAY;
+const years = (a: string, b: string): number => days(a, b) / 365;
+
+export interface Cashflow {
+  date: string;
+  amount: number;
+}
+
+/** Internal rate of return (annualised), or null if unsolvable. Newton-Raphson with a
+ *  bisection fallback on [-0.9999, 10]. Cashflows: investor perspective (invest negative). */
+export function irr(cfs: Cashflow[]): number | null {
+  if (cfs.length < 2) return null;
+  const first = cfs[0];
+  if (first === undefined) return null;
+  const t0 = first.date;
+  const npv = (r: number): number =>
+    cfs.reduce((s, cf) => s + cf.amount / Math.pow(1 + r, years(t0, cf.date)), 0);
+  const dnpv = (r: number): number =>
+    cfs.reduce((s, cf) => {
+      const y = years(t0, cf.date);
+      return s - (y * cf.amount) / Math.pow(1 + r, y + 1);
+    }, 0);
+
+  let r = 0.1;
+  for (let i = 0; i < 100; i++) {
+    const f = npv(r);
+    if (Math.abs(f) < 1e-7) return r;
+    const d = dnpv(r);
+    if (d === 0) break;
+    const next = r - f / d;
+    if (!Number.isFinite(next)) break;
+    r = Math.max(next, -0.9999);
+  }
+  let lo = -0.9999;
+  let hi = 10;
+  let flo = npv(lo);
+  const fhi = npv(hi);
+  if (flo * fhi > 0) return null;
+  for (let i = 0; i < 200; i++) {
+    const mid = (lo + hi) / 2;
+    const fmid = npv(mid);
+    if (Math.abs(fmid) < 1e-7) return mid;
+    if (flo * fmid < 0) hi = mid;
+    else {
+      lo = mid;
+      flo = fmid;
+    }
+  }
+  return (lo + hi) / 2;
+}
+
+/** Compute TRI + TTWROR + gains from a support's (declared) valuation and flow series. */
+export function computePerformance(
+  valuationsRaw: DatedValue[],
+  flowsRaw: DatedFlow[],
+): Performance {
+  const valuations = [...valuationsRaw].sort((a, b) => a.date.localeCompare(b.date));
+  const flows = [...flowsRaw].sort((a, b) => a.date.localeCompare(b.date));
+
+  const currentValue = valuations.at(-1)?.value ?? 0;
+  const openingValue = valuations[0]?.value ?? 0;
+  const flowSum = flows.reduce((s, f) => s + f.amount, 0);
+  const netInvested = openingValue + flowSum;
+  const absoluteGain = currentValue - netInvested;
+
+  const base: Performance = {
+    startDate: valuations[0]?.date ?? null,
+    endDate: valuations.at(-1)?.date ?? null,
+    currentValue,
+    netInvested,
+    absoluteGain,
+    ttworrCumulative: null,
+    ttworrAnnual: null,
+    triAnnual: null,
+    hasFullYear: false,
+  };
+  if (valuations.length < 2) return base;
+
+  // Safe: length >= 2 is guaranteed above; use at() to avoid non-null assertions.
+  const firstVal = valuations.at(0);
+  const lastVal = valuations.at(-1);
+  if (firstVal === undefined || lastVal === undefined) return base;
+  const startDate = firstVal.date;
+  const endDate = lastVal.date;
+  const totalDays = days(startDate, endDate);
+  const hasFullYear = totalDays >= 365;
+
+  // TTWROR — linked Modified Dietz across consecutive valuation sub-periods.
+  let product = 1;
+  for (let k = 1; k < valuations.length; k++) {
+    const v0 = valuations[k - 1];
+    const v1 = valuations[k];
+    // Both indices are within bounds (k starts at 1, k < length), but TS doesn't know that.
+    if (v0 === undefined || v1 === undefined) continue;
+    const span = days(v0.date, v1.date);
+    if (span <= 0) continue;
+    const sub = flows.filter((f) => f.date > v0.date && f.date <= v1.date);
+    const netFlow = sub.reduce((s, f) => s + f.amount, 0);
+    const weighted = sub.reduce((s, f) => s + f.amount * (days(f.date, v1.date) / span), 0);
+    const denom = v0.value + weighted;
+    const r = denom === 0 ? 0 : (v1.value - v0.value - netFlow) / denom;
+    product *= 1 + r;
+  }
+  const ttworrCumulative = product - 1;
+  const ttworrAnnual = hasFullYear ? Math.pow(product, 365 / totalDays) - 1 : null;
+
+  const cfs: Cashflow[] = [
+    { date: startDate, amount: -openingValue },
+    ...flows.map((f) => ({ date: f.date, amount: -f.amount })),
+    { date: endDate, amount: currentValue },
+  ].filter((cf) => cf.amount !== 0);
+  const triAnnual = hasFullYear ? irr(cfs) : null;
+
+  return {
+    startDate,
+    endDate,
+    currentValue,
+    netInvested,
+    absoluteGain,
+    ttworrCumulative,
+    ttworrAnnual,
+    triAnnual,
+    hasFullYear,
+  };
+}
