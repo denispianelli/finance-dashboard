@@ -64,11 +64,16 @@ export function reorderClass(db: DatabaseSync, id: string, sortOrder: number): v
   db.prepare('UPDATE asset_classes SET sort_order = ? WHERE id = ?').run(sortOrder, id);
 }
 
-const TABLE_BY_KIND = { account: 'accounts', asset: 'assets', loan: 'loans' } as const;
+const TABLE_BY_KIND = {
+  account: 'accounts',
+  asset: 'assets',
+  loan: 'loans',
+  support: 'investment_supports',
+} as const;
 
 export function assignClass(
   db: DatabaseSync,
-  args: { kind: 'account' | 'asset' | 'loan'; id: string; classId: string | null },
+  args: { kind: 'account' | 'asset' | 'loan' | 'support'; id: string; classId: string | null },
 ): void {
   const table = TABLE_BY_KIND[args.kind];
   db.prepare(`UPDATE ${table} SET class_id = ? WHERE id = ?`).run(args.classId, args.id);
@@ -90,6 +95,20 @@ export function listHoldings(db: DatabaseSync): ClassifiableHolding[] {
   const loans = db
     .prepare('SELECT id, name, share, class_id FROM loans ORDER BY name')
     .all() as unknown as { id: string; name: string; share: number; class_id: string | null }[];
+  const supports = db
+    .prepare(
+      `SELECT id, name, class_id,
+         COALESCE((SELECT value FROM support_valuations v
+                   WHERE v.support_id = investment_supports.id
+                   ORDER BY as_of DESC, created_at DESC LIMIT 1), 0) AS current_value
+       FROM investment_supports ORDER BY name`,
+    )
+    .all() as unknown as {
+    id: string;
+    name: string;
+    class_id: string | null;
+    current_value: number;
+  }[];
 
   return [
     ...accounts.map((a) => ({
@@ -112,6 +131,13 @@ export function listHoldings(db: DatabaseSync): ClassifiableHolding[] {
       name: l.name,
       signedValue: 0,
       classId: l.class_id,
+    })),
+    ...supports.map((s) => ({
+      id: s.id,
+      kind: 'support' as const,
+      name: s.name,
+      signedValue: Math.round(s.current_value * 100) / 100,
+      classId: s.class_id,
     })),
   ];
 }

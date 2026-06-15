@@ -4,6 +4,7 @@ import { INCOME_ROW, EXPENSE_ROW } from './transferFilter';
 import { getAccountSummaries } from './queries';
 import { listLoans } from '../patrimoine/loanRepo';
 import { listAssets } from '../patrimoine/assetRepo';
+import { listSupportRows } from '../investment/investmentRepo';
 
 interface CashflowRow {
   period: string;
@@ -75,11 +76,17 @@ export function getNetWorth(db: DatabaseSync): NetWorth {
     share: a.share,
     contribution: round2(a.declaredValue * a.share),
   }));
+  const supports = listSupportRows(db).map((s) => ({
+    supportId: s.id,
+    name: s.name,
+    value: round2(s.currentValue),
+  }));
 
   const total = round2(
     accountsTotal +
       assets.reduce((s, a) => s + a.contribution, 0) +
-      loans.reduce((s, l) => s + l.contribution, 0),
+      loans.reduce((s, l) => s + l.contribution, 0) +
+      supports.reduce((s, x) => s + x.value, 0),
   );
 
   return {
@@ -87,5 +94,6 @@ export function getNetWorth(db: DatabaseSync): NetWorth {
     accounts: accounts.map((a) => ({ accountId: a.id, name: a.name, balance: a.balance })),
     assets,
     loans,
+    supports,
   };
 }

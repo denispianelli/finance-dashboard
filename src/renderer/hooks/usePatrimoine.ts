@@ -93,7 +93,7 @@ export function usePatrimoine(refreshToken: number) {
   );
 
   const assignClass = useCallback(
-    async (kind: 'account' | 'asset' | 'loan', id: string, classId: string | null) => {
+    async (kind: 'account' | 'asset' | 'loan' | 'support', id: string, classId: string | null) => {
       await ipc.invoke('patrimoine:assignClass', { kind, id, classId });
       reload();
     },

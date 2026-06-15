@@ -1,19 +1,21 @@
-import { Banknote, Home, Wallet } from 'lucide-react';
+import { Banknote, Home, TrendingUp, Wallet } from 'lucide-react';
 import type { AssetClass, ClassifiableHolding } from '@shared/types/patrimoine';
 import { formatEuro } from '../../lib/euro';
 
 const INPUT =
   'h-8 rounded-md border border-line-2 bg-ink-3 px-2 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
 
-function kindIcon(kind: 'account' | 'asset' | 'loan') {
+function kindIcon(kind: ClassifiableHolding['kind']) {
   if (kind === 'account') return <Wallet size={13} strokeWidth={1.6} />;
   if (kind === 'asset') return <Home size={13} strokeWidth={1.6} />;
+  if (kind === 'support') return <TrendingUp size={13} strokeWidth={1.6} />;
   return <Banknote size={13} strokeWidth={1.6} />;
 }
 
-function kindLabel(kind: 'account' | 'asset' | 'loan') {
+function kindLabel(kind: ClassifiableHolding['kind']) {
   if (kind === 'account') return 'Compte';
   if (kind === 'asset') return 'Bien';
+  if (kind === 'support') return 'Support';
   return 'Prêt';
 }
 
@@ -24,7 +26,7 @@ export function HoldingAssignmentList({
 }: {
   holdings: ClassifiableHolding[];
   classes: AssetClass[];
-  onAssign: (kind: 'account' | 'asset' | 'loan', id: string, classId: string | null) => void;
+  onAssign: (kind: ClassifiableHolding['kind'], id: string, classId: string | null) => void;
 }) {
   if (holdings.length === 0) {
     return (

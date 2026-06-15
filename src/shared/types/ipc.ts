@@ -241,7 +241,7 @@ export interface IpcContract {
   'patrimoine:upsertClass': { payload: UpsertAssetClassInput; response: { class: AssetClass } };
   'patrimoine:deleteClass': { payload: { id: string }; response: { ok: true } };
   'patrimoine:assignClass': {
-    payload: { kind: 'account' | 'asset' | 'loan'; id: string; classId: string | null };
+    payload: { kind: 'account' | 'asset' | 'loan' | 'support'; id: string; classId: string | null };
     response: { ok: true };
   };
 }
