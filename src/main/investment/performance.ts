@@ -103,24 +103,37 @@ export function computePerformance(
   const totalDays = days(startDate, endDate);
   const hasFullYear = totalDays >= 365;
 
-  // TTWROR — linked Modified Dietz across consecutive valuation sub-periods.
-  let product = 1;
-  for (let k = 1; k < valuations.length; k++) {
-    const v0 = valuations[k - 1];
-    const v1 = valuations[k];
-    // Both indices are within bounds (k starts at 1, k < length), but TS doesn't know that.
-    if (v0 === undefined || v1 === undefined) continue;
-    const span = days(v0.date, v1.date);
-    if (span <= 0) continue;
-    const sub = flows.filter((f) => f.date > v0.date && f.date <= v1.date);
-    const netFlow = sub.reduce((s, f) => s + f.amount, 0);
-    const weighted = sub.reduce((s, f) => s + f.amount * (days(f.date, v1.date) / span), 0);
-    const denom = v0.value + weighted;
-    const r = denom === 0 ? 0 : (v1.value - v0.value - netFlow) / denom;
-    product *= 1 + r;
+  // TTWROR — time-weighted, linked Modified Dietz, computed ONLY over user-DECLARED
+  // valuations. The CSV-import sentinels (source 'auto', the open/close 0-valuations) are
+  // excluded: a time-weighted return needs real value points, and chaining over 0-sentinels
+  // makes it explode (e.g. a fully-sold line shows a nonsense 261%). With < 2 declared
+  // valuations TTWROR is simply not available (null) — show TRI + realized gain instead.
+  const declared = valuations.filter((v) => v.source !== 'auto');
+  let ttworrCumulative: number | null = null;
+  let ttworrAnnual: number | null = null;
+  if (declared.length >= 2) {
+    let product = 1;
+    for (let k = 1; k < declared.length; k++) {
+      const v0 = declared[k - 1];
+      const v1 = declared[k];
+      if (v0 === undefined || v1 === undefined) continue;
+      const span = days(v0.date, v1.date);
+      if (span <= 0) continue;
+      const sub = flows.filter((f) => f.date > v0.date && f.date <= v1.date);
+      const netFlow = sub.reduce((s, f) => s + f.amount, 0);
+      const weighted = sub.reduce((s, f) => s + f.amount * (days(f.date, v1.date) / span), 0);
+      const denom = v0.value + weighted;
+      const r = denom === 0 ? 0 : (v1.value - v0.value - netFlow) / denom;
+      product *= 1 + r;
+    }
+    ttworrCumulative = product - 1;
+    const dStart = declared[0]?.date;
+    const dEnd = declared[declared.length - 1]?.date;
+    if (dStart !== undefined && dEnd !== undefined) {
+      const dDays = days(dStart, dEnd);
+      ttworrAnnual = dDays >= 365 ? Math.pow(product, 365 / dDays) - 1 : null;
+    }
   }
-  const ttworrCumulative = product - 1;
-  const ttworrAnnual = hasFullYear ? Math.pow(product, 365 / totalDays) - 1 : null;
 
   const cfs: Cashflow[] = [
     { date: startDate, amount: -openingValue },

@@ -39,17 +39,23 @@ function aggregatePerformance(
   const dates = [...dateSet].sort((a, b) => a.localeCompare(b));
   const combined: DatedValue[] = dates.map((d) => {
     let value = 0;
+    let anyDeclared = false;
     for (const h of histories) {
       // Latest valuation of this support with date <= d (carry-forward).
       // Valuations are sorted ascending from getSupportHistory.
-      let last: number | undefined;
+      let last: DatedValue | undefined;
       for (const v of h.valuations) {
-        if (v.date <= d) last = v.value;
+        if (v.date <= d) last = v;
         else break;
       }
-      if (last !== undefined) value += last;
+      if (last !== undefined) {
+        value += last.value;
+        if (last.source !== 'auto') anyDeclared = true;
+      }
     }
-    return { date: d, value };
+    // A combined point is 'declared' only if a real declared valuation backs it; otherwise it's
+    // an auto sentinel and must not drive the aggregate TTWROR.
+    return { date: d, value, source: anyDeclared ? 'declared' : 'auto' };
   });
   return computePerformance(combined, allFlows);
 }
@@ -57,13 +63,23 @@ function aggregatePerformance(
 export function handleInvestmentListWrappers(): { wrappers: WrapperWithSupports[] } {
   const db = getDb();
   const wrappers = listWrapperRows(db);
+  const sharesStmt = db.prepare(
+    "SELECT COALESCE(SUM(CASE WHEN kind = 'buy' THEN quantity ELSE -quantity END), 0) AS shares FROM support_operations WHERE support_id = ?",
+  );
   const result: WrapperWithSupports[] = wrappers.map((w) => {
     const supports = listSupportRows(db, w.id);
     const histories = supports.map((s) => getSupportHistory(db, s.id));
-    const withPerf: SupportWithPerf[] = supports.map((s, i) => ({
-      ...s,
-      perf: computePerformance(histories[i]?.valuations ?? [], histories[i]?.flows ?? []),
-    }));
+    const withPerf: SupportWithPerf[] = supports.map((s, i) => {
+      const hist = histories[i] ?? { valuations: [], flows: [] };
+      const declaredCount = hist.valuations.filter((v) => v.source !== 'auto').length;
+      const shares = (sharesStmt.get(s.id) as { shares: number } | undefined)?.shares ?? 0;
+      return {
+        ...s,
+        perf: computePerformance(hist.valuations, hist.flows),
+        // Open position (shares > 0) with no real declared value yet → prompt, don't show 0/garbage.
+        needsValuation: shares > 1e-6 && declaredCount === 0,
+      };
+    });
     return { ...w, supports: withPerf, perf: aggregatePerformance(histories) };
   });
   return { wrappers: result };

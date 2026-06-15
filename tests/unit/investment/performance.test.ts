@@ -4,6 +4,25 @@ import { computePerformance, irr } from '../../../src/main/investment/performanc
 import type { DatedValue } from '@shared/types/investment';
 
 describe('performance', () => {
+  it('excludes auto sentinels from TTWROR (operations-only/closed support → null, not garbage)', () => {
+    // A fully-sold line: only the import's auto 0-valuations exist (no real interim value).
+    // TTWROR must be null (not the nonsense 261%); TRI (realized money-weighted) still shows.
+    const vals: DatedValue[] = [
+      { date: '2023-01-01', value: 0, source: 'auto' },
+      { date: '2024-06-01', value: 0, source: 'auto' },
+    ];
+    const flows = [
+      { date: '2023-01-01', amount: 500 }, // bought (contribution)
+      { date: '2024-06-01', amount: -560 }, // sold for 560 (withdrawal) → realized gain 60
+    ];
+    const perf = computePerformance(vals, flows);
+    expect(perf.ttworrCumulative).toBeNull();
+    expect(perf.ttworrAnnual).toBeNull();
+    expect(perf.absoluteGain).toBeCloseTo(60, 6);
+    expect(perf.triAnnual).not.toBeNull();
+    expect(perf.triAnnual ?? 0).toBeGreaterThan(0);
+  });
+
   it('first update entering value AND a same-date flow does not double-count the opening capital', () => {
     // The typical first monthly update: "it's worth 5000, of which I contributed 5000".
     // A flow on the opening date must NOT be added on top of the opening valuation.

@@ -133,7 +133,9 @@ export function ImportBourseDialog({
                 Choisir un fichier CSV
               </Button>
               {csvPath && (
-                <p className="font-mono text-[12px] text-paper-soft">{basename(csvPath)}</p>
+                <p className="break-all font-mono text-[12px] text-paper-soft">
+                  {basename(csvPath)}
+                </p>
               )}
             </div>
 

@@ -239,7 +239,7 @@ function insert0IfAbsent(db: DatabaseSync, supportId: string, date: string): voi
 
   if (!exists) {
     db.prepare(
-      'INSERT INTO support_valuations (id, support_id, as_of, value) VALUES (?, ?, ?, 0)',
+      "INSERT INTO support_valuations (id, support_id, as_of, value, source) VALUES (?, ?, ?, 0, 'auto')",
     ).run(randomUUID(), supportId, date);
   }
 }

@@ -21,6 +21,9 @@ export interface SupportDTO {
 export interface DatedValue {
   date: string; // ISO yyyy-mm-dd
   value: number;
+  /** 'declared' = user-entered; 'auto' = system sentinel (CSV import open/close 0). Only
+   *  declared valuations drive TTWROR. Absent ⇒ treated as declared (manual entries). */
+  source?: 'declared' | 'auto';
 }
 export interface DatedFlow {
   date: string; // ISO yyyy-mm-dd
@@ -60,6 +63,10 @@ export interface SupportUpdateInput {
 
 export interface SupportWithPerf extends SupportDTO {
   perf: Performance;
+  /** True for an OPEN position (net shares > 0) with no user-declared valuation yet — its
+   *  value/perf can't be computed until the user declares a current value (or the price feed
+   *  does). The UI shows a "déclare la valeur actuelle" prompt instead of a misleading 0/perf. */
+  needsValuation: boolean;
 }
 export interface WrapperWithSupports extends WrapperDTO {
   supports: SupportWithPerf[];
