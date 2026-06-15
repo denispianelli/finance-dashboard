@@ -21,6 +21,7 @@ function SupportPerf({ perf }: { perf: SupportWithPerf['perf'] }) {
     <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 font-mono tabular-nums text-[11px]">
       <span className={perfColor(perf.absoluteGain)}>
         <Money value={perf.absoluteGain} className="text-[11px]" />
+        {perf.absoluteReturn !== null && <> ({formatPercent(perf.absoluteReturn)})</>}
       </span>
       {perf.triAnnual !== null && (
         <span className={perfColor(perf.triAnnual)}>TRI {formatPercent(perf.triAnnual)} /an</span>

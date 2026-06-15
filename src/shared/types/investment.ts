@@ -37,6 +37,7 @@ export interface Performance {
   currentValue: number;
   netInvested: number; // opening value + Σ flows
   absoluteGain: number; // currentValue − netInvested
+  absoluteReturn: number | null; // cumulative gain / gross invested (not annualised); null if nothing invested
   ttworrCumulative: number | null; // since inception
   ttworrAnnual: number | null; // null when < 1 year of history
   triAnnual: number | null; // IRR; null when < 1 year or unsolvable

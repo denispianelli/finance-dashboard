@@ -80,6 +80,13 @@ export function computePerformance(
   const flowSum = contributions.reduce((s, f) => s + f.amount, 0);
   const netInvested = openingValue + flowSum;
   const absoluteGain = currentValue - netInvested;
+  // Cumulative return on the money actually put in (gross contributions). Always available
+  // and never annualised — the honest headline for short positions where TRI/TTWROR can't
+  // be shown yet.
+  const grossInvested =
+    (openingValue > 0 ? openingValue : 0) +
+    contributions.reduce((s, f) => s + (f.amount > 0 ? f.amount : 0), 0);
+  const absoluteReturn = grossInvested > 0 ? absoluteGain / grossInvested : null;
 
   const base: Performance = {
     startDate: valuations[0]?.date ?? null,
@@ -87,6 +94,7 @@ export function computePerformance(
     currentValue,
     netInvested,
     absoluteGain,
+    absoluteReturn,
     ttworrCumulative: null,
     ttworrAnnual: null,
     triAnnual: null,
@@ -148,6 +156,7 @@ export function computePerformance(
     currentValue,
     netInvested,
     absoluteGain,
+    absoluteReturn,
     ttworrCumulative,
     ttworrAnnual,
     triAnnual,

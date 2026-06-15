@@ -16,6 +16,7 @@ const perf: Performance = {
   currentValue: 1000,
   netInvested: 1000,
   absoluteGain: 0,
+  absoluteReturn: 0.05,
   ttworrCumulative: 0,
   ttworrAnnual: null,
   triAnnual: null,
