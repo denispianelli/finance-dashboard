@@ -13,6 +13,9 @@ import {
 function freshDb(): DatabaseSync {
   const db = new DatabaseSync(':memory:');
   runMigrations(db);
+  // Migration 024 seeds default classes; drop them so these CRUD/count tests start
+  // from a known-empty table.
+  db.exec('DELETE FROM asset_classes');
   return db;
 }
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
-import type { AssetDTO, UpsertAssetInput } from '@shared/types/patrimoine';
+import type { AssetClass, AssetDTO, UpsertAssetInput } from '@shared/types/patrimoine';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Overline } from '../ui/overline';
@@ -9,27 +9,19 @@ import { Money } from '../ui/money';
 const INPUT =
   'h-8 rounded-md border border-line-2 bg-ink-3 px-2 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
 
-const KINDS = [
-  { value: 'property', label: 'Résidence principale' },
-  { value: 'realestate', label: 'Autre bien immobilier' },
-  { value: 'av', label: 'Assurance-vie' },
-  { value: 'pea', label: 'PEA' },
-  { value: 'cto', label: 'Compte-titres' },
-  { value: 'autre', label: 'Autre' },
-] as const;
-
-type KindValue = (typeof KINDS)[number]['value'];
-
-function kindLabel(k: string): string {
-  return KINDS.find((x) => x.value === k)?.label ?? k;
-}
+// A declared asset's `kind` is vestigial (kept for data, no longer surfaced): an
+// asset is categorised by its allocation CLASS, not a separate type label. New
+// assets get this stable default; edits preserve whatever was stored.
+const DEFAULT_KIND = 'declared';
 
 export function AssetsCard({
   assets,
+  classes,
   onSave,
   onDelete,
 }: {
   assets: AssetDTO[];
+  classes: AssetClass[];
   onSave: (input: UpsertAssetInput) => void;
   onDelete: (id: string) => void;
 }) {
@@ -39,15 +31,18 @@ export function AssetsCard({
 
   // Draft fields shared by add and edit forms
   const [draftName, setDraftName] = useState('');
-  const [draftKind, setDraftKind] = useState<KindValue>('property');
+  const [draftClassId, setDraftClassId] = useState<string | null>(null);
   const [draftValue, setDraftValue] = useState(0);
   const [draftSharePct, setDraftSharePct] = useState(100);
+
+  const classOf = (id: string | null): AssetClass | undefined =>
+    id === null ? undefined : classes.find((c) => c.id === id);
 
   function openAdd() {
     setEditingId(null);
     setConfirmingDeleteId(null);
     setDraftName('');
-    setDraftKind('property');
+    setDraftClassId(classes[0]?.id ?? null);
     setDraftValue(0);
     setDraftSharePct(100);
     setAdding(true);
@@ -57,8 +52,7 @@ export function AssetsCard({
     setAdding(false);
     setConfirmingDeleteId(null);
     setDraftName(asset.name);
-    const matchedKind = KINDS.find((x) => x.value === asset.kind);
-    setDraftKind(matchedKind?.value ?? 'autre');
+    setDraftClassId(asset.classId);
     setDraftValue(asset.declaredValue);
     setDraftSharePct(Math.round(asset.share * 100));
     setEditingId(asset.id);
@@ -75,12 +69,11 @@ export function AssetsCard({
     const input: UpsertAssetInput = {
       ...(isEdit && editingId ? { id: editingId } : {}),
       name: draftName.trim() || 'Actif',
-      kind: draftKind,
+      kind: existingAsset?.kind ?? DEFAULT_KIND,
       declaredValue: draftValue,
       share: draftSharePct / 100,
       valuedAt: new Date().toISOString().slice(0, 10),
-      // Preserve existing classId on edit so we don't wipe allocation assignment
-      ...(isEdit ? { classId: existingAsset?.classId ?? null } : {}),
+      classId: draftClassId,
     };
     onSave(input);
     cancelForm();
@@ -91,6 +84,21 @@ export function AssetsCard({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') save();
     if (e.key === 'Escape') cancelForm();
+  };
+
+  const formProps = {
+    draftName,
+    draftClassId,
+    draftValue,
+    draftSharePct,
+    classes,
+    onChangeName: setDraftName,
+    onChangeClassId: setDraftClassId,
+    onChangeValue: setDraftValue,
+    onChangeSharePct: setDraftSharePct,
+    onSave: save,
+    onCancel: cancelForm,
+    onKeyDown: handleKeyDown,
   };
 
   return (
@@ -122,22 +130,7 @@ export function AssetsCard({
         <div className="flex flex-col gap-3">
           {assets.map((asset) => {
             if (editingId === asset.id) {
-              return (
-                <AssetForm
-                  key={asset.id}
-                  draftName={draftName}
-                  draftKind={draftKind}
-                  draftValue={draftValue}
-                  draftSharePct={draftSharePct}
-                  onChangeName={setDraftName}
-                  onChangeKind={setDraftKind}
-                  onChangeValue={setDraftValue}
-                  onChangeSharePct={setDraftSharePct}
-                  onSave={save}
-                  onCancel={cancelForm}
-                  onKeyDown={handleKeyDown}
-                />
-              );
+              return <AssetForm key={asset.id} {...formProps} />;
             }
 
             if (confirmingDeleteId === asset.id) {
@@ -169,11 +162,23 @@ export function AssetsCard({
               );
             }
 
+            const cls = classOf(asset.classId);
             return (
               <div key={asset.id} className="flex items-center gap-3">
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="font-sans text-[11px] text-paper-dim">
-                    {kindLabel(asset.kind)}
+                  <span className="flex items-center gap-1.5 font-sans text-[11px] text-paper-dim">
+                    {cls ? (
+                      <>
+                        <span
+                          className="inline-block h-2 w-2 shrink-0 rounded-[2px]"
+                          style={{ background: cls.color }}
+                          aria-hidden
+                        />
+                        {cls.name}
+                      </>
+                    ) : (
+                      'Non classé'
+                    )}
                   </span>
                   <span className="truncate font-sans text-[13px] text-paper">{asset.name}</span>
                 </div>
@@ -214,21 +219,7 @@ export function AssetsCard({
             );
           })}
 
-          {adding && (
-            <AssetForm
-              draftName={draftName}
-              draftKind={draftKind}
-              draftValue={draftValue}
-              draftSharePct={draftSharePct}
-              onChangeName={setDraftName}
-              onChangeKind={setDraftKind}
-              onChangeValue={setDraftValue}
-              onChangeSharePct={setDraftSharePct}
-              onSave={save}
-              onCancel={cancelForm}
-              onKeyDown={handleKeyDown}
-            />
-          )}
+          {adding && <AssetForm {...formProps} />}
         </div>
       )}
     </Card>
@@ -237,11 +228,12 @@ export function AssetsCard({
 
 function AssetForm({
   draftName,
-  draftKind,
+  draftClassId,
   draftValue,
   draftSharePct,
+  classes,
   onChangeName,
-  onChangeKind,
+  onChangeClassId,
   onChangeValue,
   onChangeSharePct,
   onSave,
@@ -249,11 +241,12 @@ function AssetForm({
   onKeyDown,
 }: {
   draftName: string;
-  draftKind: KindValue;
+  draftClassId: string | null;
   draftValue: number;
   draftSharePct: number;
+  classes: AssetClass[];
   onChangeName: (v: string) => void;
-  onChangeKind: (v: KindValue) => void;
+  onChangeClassId: (v: string | null) => void;
   onChangeValue: (v: number) => void;
   onChangeSharePct: (v: number) => void;
   onSave: () => void;
@@ -276,21 +269,27 @@ function AssetForm({
         />
       </label>
       <label className="flex flex-col gap-1 font-sans text-[12px] text-paper-soft">
-        Type
+        Classe
         <select
           className={INPUT}
-          value={draftKind}
+          value={draftClassId ?? ''}
           onChange={(e) => {
-            onChangeKind(e.target.value as KindValue);
+            onChangeClassId(e.target.value === '' ? null : e.target.value);
           }}
           onKeyDown={onKeyDown}
         >
-          {KINDS.map((k) => (
-            <option key={k.value} value={k.value}>
-              {k.label}
+          <option value="">Non classé</option>
+          {classes.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
             </option>
           ))}
         </select>
+        {classes.length === 0 && (
+          <span className="font-sans text-[11px] text-paper-dim">
+            Crée tes classes dans « Gérer les classes » sur la carte Allocation.
+          </span>
+        )}
       </label>
       <label className="flex flex-col gap-1 font-sans text-[12px] text-paper-soft">
         Valeur déclarée (€)

@@ -47,10 +47,7 @@ test('allocation dialog: create a class, assign the default account, see the sli
     // Navigate to the Patrimoine page.
     await page.getByRole('link', { name: 'Patrimoine' }).click();
 
-    // The Allocation card starts empty — no classes yet.
-    await expect(page.getByText('Aucune classe')).toBeVisible();
-
-    // Open the class manager dialog.
+    // Default classes are seeded (migration 024); open the class manager.
     await page.getByRole('button', { name: /gérer les classes/i }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByRole('heading', { name: /classes d'actifs/i })).toBeVisible();
@@ -58,16 +55,15 @@ test('allocation dialog: create a class, assign the default account, see the sli
     // Add a new class (initially named "Nouvelle classe").
     await page.getByRole('button', { name: /ajouter une classe/i }).click();
 
-    // There should now be exactly one class row. Find its name input and rename it.
-    // Use the first visible textbox inside the dialog (the Classes section).
+    // The newly added class appends after the seeded defaults, so it's the LAST
+    // class row. Rename it to "Cash".
     const dialogEl = page.getByRole('dialog');
-    const firstNameInput = dialogEl.getByRole('textbox').first();
-    await firstNameInput.fill('Cash');
-    await firstNameInput.press('Enter');
+    const newNameInput = dialogEl.getByRole('textbox').last();
+    await newNameInput.fill('Cash');
+    await newNameInput.press('Enter');
 
-    // Set the target to 100 %.
-    // The target input is a number input (type=number) with placeholder "—".
-    const targetInput = dialogEl.locator('input[type="number"]').first();
+    // Set its target to 100 % (the last number input belongs to the same row).
+    const targetInput = dialogEl.locator('input[type="number"]').last();
     await targetInput.fill('100');
     await targetInput.press('Enter');
 
@@ -90,9 +86,6 @@ test('allocation dialog: create a class, assign the default account, see the sli
     // The Allocation card should now show the "Cash" class name as a slice label.
     // Wait for the UI to re-render after assignClass IPC resolves.
     await expect(page.getByText('Cash')).toBeVisible({ timeout: 5000 });
-
-    // Also assert the "Aucune classe" empty state is gone.
-    await expect(page.getByText('Aucune classe')).not.toBeVisible();
   } finally {
     await app.close();
   }
@@ -106,7 +99,8 @@ test('allocation: class created via IPC appears in the card without a balance', 
     const { class: cls } = await ipcInvoke<{ class: { id: string; name: string } }>(
       page,
       'patrimoine:upsertClass',
-      { name: 'Obligations', color: '#6E8FA6', targetPct: 0.4 },
+      // Use a name that doesn't substring-collide with any seeded default class.
+      { name: 'Crypto', color: '#6E8FA6', targetPct: 0.4 },
     );
 
     await ipcInvoke(page, 'patrimoine:assignClass', {
@@ -120,7 +114,7 @@ test('allocation: class created via IPC appears in the card without a balance', 
 
     // The page loads allocation on mount; with a fresh DB the account balance is 0
     // but the class slice still renders (value 0 € is shown, pct 0 %).
-    await expect(page.getByText('Obligations')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Crypto')).toBeVisible({ timeout: 5000 });
   } finally {
     await app.close();
   }

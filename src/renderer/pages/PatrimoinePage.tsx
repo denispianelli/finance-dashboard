@@ -96,6 +96,7 @@ export function PatrimoinePage() {
 
       <AssetsCard
         assets={assets}
+        classes={classes}
         onSave={(input) => {
           void upsertAsset(input).then(notifyDataChanged);
         }}

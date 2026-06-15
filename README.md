@@ -45,9 +45,10 @@ The app:
   insurance part counts as an "Intérêts d'emprunt" expense while the capital repayment is
   neutralized (forced savings, net-worth-neutral). The match is auto-detected against the
   amortization schedule and is reviewable on the loan card and badged in the transaction list.
-  **Allocation**: every holding (account, declared asset, or loan) can be assigned to a
-  user-defined asset class with a target percentage; the card shows each class's actual share,
-  the gap to target, and reconciles the total with net worth to the cent.
+  **Allocation**: every holding (account, declared asset, or loan) is assigned to an asset
+  class (a default set is provided — rename, delete, or set targets freely) with a target
+  percentage; the card shows each class's actual share, the gap to target, and reconciles the
+  total with net worth to the cent.
 
 **All on your machine. Source code is public so the privacy promise is verifiable.**
 

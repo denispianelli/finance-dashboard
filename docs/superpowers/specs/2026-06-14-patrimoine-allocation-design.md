@@ -6,6 +6,19 @@
 **Privacy:** unchanged — 100% local, no I/O in renderer, no data leaves the machine (ADR-002).
 All examples below use synthetic figures.
 
+> **Amendment 1 (2026-06-15, post-validation).** After first in-app use, two changes —
+> informed by how Portfolio Performance handles classification:
+>
+> 1. **Classify assets directly by class, not by a separate "type".** The declared-asset form
+>    drops the `kind`/type dropdown; you pick the asset's **class** there. `assets.kind` stays in
+>    the DB as a vestigial label (defaulted to `'declared'`), no longer surfaced — the class is
+>    the single categorisation concept. This removes the type-vs-class confusion (a type label
+>    looked like it should drive the allocation but didn't).
+> 2. **Seed default classes** (migration 024): Liquidités, Actions, Obligations / Fonds €,
+>    Immobilier, Autres — so the assign dropdown is never empty out of the box. They are plain
+>    rows: rename / delete / set targets freely (`INSERT OR IGNORE`, deletable). This supersedes
+>    the original "no seed rows" line below.
+
 ## Goal
 
 Let the maintainer see how their **net** patrimoine splits across **user-defined asset
