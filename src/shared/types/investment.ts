@@ -69,3 +69,43 @@ export interface SupportHistory {
   valuations: DatedValue[];
   flows: DatedFlow[];
 }
+
+export type OperationKind = 'buy' | 'sell';
+
+/** One parsed CSV operation (before persistence). */
+export interface ParsedOp {
+  opDate: string; // ISO yyyy-mm-dd
+  kind: OperationKind;
+  quantity: number; // > 0
+  unitPrice: number | null;
+  gross: number | null;
+  fees: number | null;
+  net: number; // signed: buy < 0, sell > 0
+  currency: string;
+  rawLabel: string;
+}
+
+export interface SkippedRow {
+  line: number;
+  raw: string;
+  reason: string;
+}
+
+export interface ParseBourseResult {
+  ops: ParsedOp[];
+  skipped: SkippedRow[];
+}
+
+/** A persisted operation (for the support detail audit table). */
+export interface OperationDTO extends ParsedOp {
+  id: string;
+  supportId: string;
+}
+
+export interface ImportBourseResult {
+  operationsImported: number;
+  alreadyPresent: number;
+  skippedRows: number;
+  createdSupports: SupportDTO[];
+  supportsTouched: number;
+}
