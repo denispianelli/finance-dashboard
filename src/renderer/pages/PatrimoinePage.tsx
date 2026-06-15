@@ -9,16 +9,32 @@ import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Overline } from '../components/ui/overline';
 import { LoanCard } from '../components/patrimoine/LoanCard';
-import { PropertyCard } from '../components/patrimoine/PropertyCard';
+import { AssetsCard } from '../components/patrimoine/AssetsCard';
+import { AllocationCard } from '../components/patrimoine/AllocationCard';
+import { ClassManagerDialog } from '../components/patrimoine/ClassManagerDialog';
 import { AmortizationTableDialog } from '../components/patrimoine/AmortizationTableDialog';
 import { AddLoanDialog } from '../components/patrimoine/AddLoanDialog';
 
 export function PatrimoinePage() {
   const { refreshToken, notifyDataChanged } = useOutletContext<AppOutletContext>();
-  const { loans, assets, reload, deleteLoan, upsertAsset, deleteAsset, detectPayments } =
-    usePatrimoine(refreshToken);
+  const {
+    loans,
+    assets,
+    allocation,
+    classes,
+    holdings,
+    reload,
+    deleteLoan,
+    upsertAsset,
+    deleteAsset,
+    detectPayments,
+    upsertClass,
+    deleteClass,
+    assignClass,
+  } = usePatrimoine(refreshToken);
   const [viewing, setViewing] = useState<LoanWithStats | null>(null);
   const [adding, setAdding] = useState(false);
+  const [managing, setManaging] = useState(false);
 
   const onChanged = () => {
     reload();
@@ -71,8 +87,16 @@ export function PatrimoinePage() {
         )}
       </Card>
 
-      <PropertyCard
-        asset={assets[0] ?? null}
+      <AllocationCard
+        allocation={allocation}
+        onManage={() => {
+          setManaging(true);
+        }}
+      />
+
+      <AssetsCard
+        assets={assets}
+        classes={classes}
         onSave={(input) => {
           void upsertAsset(input).then(notifyDataChanged);
         }}
@@ -98,6 +122,21 @@ export function PatrimoinePage() {
           onCreated={onChanged}
         />
       )}
+      <ClassManagerDialog
+        open={managing}
+        onOpenChange={setManaging}
+        classes={classes}
+        holdings={holdings}
+        onUpsertClass={(i) => {
+          void upsertClass(i).then(notifyDataChanged);
+        }}
+        onDeleteClass={(id) => {
+          void deleteClass(id).then(notifyDataChanged);
+        }}
+        onAssignClass={(k, id, cid) => {
+          void assignClass(k, id, cid).then(notifyDataChanged);
+        }}
+      />
     </div>
   );
 }

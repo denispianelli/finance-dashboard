@@ -10,31 +10,43 @@ interface AssetRow {
   share: number;
   valued_at: string;
   notes: string | null;
+  class_id: string | null;
 }
 
 function toDto(r: AssetRow): AssetDTO {
   return {
     id: r.id,
     name: r.name,
-    kind: 'property',
+    kind: r.kind,
     declaredValue: r.declared_value,
     share: r.share,
     valuedAt: r.valued_at,
     notes: r.notes,
+    classId: r.class_id,
   };
 }
 
 export function upsertAsset(db: DatabaseSync, input: UpsertAssetInput): AssetDTO {
   const id = input.id ?? randomUUID();
   db.prepare(
-    `INSERT INTO assets (id, name, kind, declared_value, share, valued_at)
-     VALUES (?, ?, ?, ?, ?, ?)
+    `INSERT INTO assets (id, name, kind, declared_value, share, valued_at, class_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        name = excluded.name,
+       kind = excluded.kind,
        declared_value = excluded.declared_value,
        share = excluded.share,
-       valued_at = excluded.valued_at`,
-  ).run(id, input.name, input.kind, input.declaredValue, input.share, input.valuedAt);
+       valued_at = excluded.valued_at,
+       class_id = excluded.class_id`,
+  ).run(
+    id,
+    input.name,
+    input.kind,
+    input.declaredValue,
+    input.share,
+    input.valuedAt,
+    input.classId ?? null,
+  );
   const row = db.prepare('SELECT * FROM assets WHERE id = ?').get(id) as unknown as AssetRow;
   return toDto(row);
 }

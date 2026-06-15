@@ -25,7 +25,7 @@ interface HoverState {
 /** The kit's stroke-dasharray ring with a two-line centre (overline + serif total).
  *  Hovering a slice raises it slightly and shows a kit-style tooltip (label,
  *  amount, share) — same visual language as the recharts ChartTooltipContent. */
-function Donut({
+export function Donut({
   segments,
   centerTop,
   centerMain,

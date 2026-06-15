@@ -1,10 +1,21 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ipc } from '../ipc/client';
-import type { LoanWithStats, AssetDTO, UpsertAssetInput } from '@shared/types/patrimoine';
+import type {
+  LoanWithStats,
+  AssetDTO,
+  UpsertAssetInput,
+  Allocation,
+  AssetClass,
+  ClassifiableHolding,
+  UpsertAssetClassInput,
+} from '@shared/types/patrimoine';
 
 export function usePatrimoine(refreshToken: number) {
   const [loans, setLoans] = useState<LoanWithStats[]>([]);
   const [assets, setAssets] = useState<AssetDTO[]>([]);
+  const [allocation, setAllocation] = useState<Allocation | null>(null);
+  const [classes, setClasses] = useState<AssetClass[]>([]);
+  const [holdings, setHoldings] = useState<ClassifiableHolding[]>([]);
   const [tick, setTick] = useState(0);
 
   const reload = useCallback(() => {
@@ -16,10 +27,16 @@ export function usePatrimoine(refreshToken: number) {
     void Promise.all([
       ipc.invoke('patrimoine:listLoans', {}),
       ipc.invoke('patrimoine:listAssets', {}),
-    ]).then(([l, a]) => {
+      ipc.invoke('patrimoine:getAllocation', {}),
+      ipc.invoke('patrimoine:listClasses', {}),
+      ipc.invoke('patrimoine:listHoldings', {}),
+    ]).then(([l, a, alloc, cls, hold]) => {
       if (!alive) return;
       setLoans(l.loans);
       setAssets(a.assets);
+      setAllocation(alloc.allocation);
+      setClasses(cls.classes);
+      setHoldings(hold.holdings);
     });
     return () => {
       alive = false;
@@ -59,5 +76,43 @@ export function usePatrimoine(refreshToken: number) {
     [reload],
   );
 
-  return { loans, assets, reload, deleteLoan, upsertAsset, deleteAsset, detectPayments };
+  const upsertClass = useCallback(
+    async (input: UpsertAssetClassInput) => {
+      await ipc.invoke('patrimoine:upsertClass', input);
+      reload();
+    },
+    [reload],
+  );
+
+  const deleteClass = useCallback(
+    async (id: string) => {
+      await ipc.invoke('patrimoine:deleteClass', { id });
+      reload();
+    },
+    [reload],
+  );
+
+  const assignClass = useCallback(
+    async (kind: 'account' | 'asset' | 'loan', id: string, classId: string | null) => {
+      await ipc.invoke('patrimoine:assignClass', { kind, id, classId });
+      reload();
+    },
+    [reload],
+  );
+
+  return {
+    loans,
+    assets,
+    allocation,
+    classes,
+    holdings,
+    reload,
+    deleteLoan,
+    upsertAsset,
+    deleteAsset,
+    detectPayments,
+    upsertClass,
+    deleteClass,
+    assignClass,
+  };
 }

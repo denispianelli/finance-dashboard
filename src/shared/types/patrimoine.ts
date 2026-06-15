@@ -65,20 +65,60 @@ export interface LoanWithStats {
 export interface AssetDTO {
   id: string;
   name: string;
-  kind: 'property';
+  kind: string; // display label: 'property' | 'av' | 'pea' | 'autre' | …
   declaredValue: number;
   share: number;
   valuedAt: string;
   notes: string | null;
+  classId: string | null;
 }
 
 export interface UpsertAssetInput {
   id?: string;
   name: string;
-  kind: 'property';
+  kind: string;
   declaredValue: number;
   share: number;
   valuedAt: string;
+  classId?: string | null;
+}
+
+export interface AssetClass {
+  id: string;
+  name: string;
+  color: string;
+  targetPct: number | null;
+  sortOrder: number;
+}
+
+export interface UpsertAssetClassInput {
+  id?: string;
+  name: string;
+  color: string;
+  targetPct: number | null;
+}
+
+export interface AllocationSlice {
+  classId: string | null; // null = « Non classé » bucket
+  name: string;
+  color: string;
+  value: number; // euros, net of CRD for the class
+  pct: number; // value / total (can be < 0)
+  targetPct: number | null; // 0..1 or null
+  gap: number | null; // pct − targetPct, null when no target
+}
+
+export interface Allocation {
+  total: number; // reconciles with getNetWorth().total
+  slices: AllocationSlice[]; // sorted by sortOrder, « Non classé » last
+}
+
+export interface ClassifiableHolding {
+  id: string;
+  kind: 'account' | 'asset' | 'loan';
+  name: string;
+  signedValue: number; // contribution to net worth (loans negative)
+  classId: string | null;
 }
 
 export type ParseLoanResponse =

@@ -49,6 +49,10 @@ import type {
   UpsertAssetInput,
   ParseLoanResponse,
   ExistingLoanMatch,
+  Allocation,
+  AssetClass,
+  UpsertAssetClassInput,
+  ClassifiableHolding,
 } from './patrimoine';
 
 export interface PingPayload {
@@ -225,6 +229,21 @@ export interface IpcContract {
   'patrimoine:deleteAsset': { payload: { id: string }; response: { ok: true } };
   'patrimoine:detectPayments': { payload: { loanId: string }; response: { matched: number } };
   'patrimoine:unlinkPayment': { payload: { transactionId: string }; response: { ok: true } };
+  'patrimoine:getAllocation': {
+    payload: Record<string, never>;
+    response: { allocation: Allocation };
+  };
+  'patrimoine:listClasses': { payload: Record<string, never>; response: { classes: AssetClass[] } };
+  'patrimoine:listHoldings': {
+    payload: Record<string, never>;
+    response: { holdings: ClassifiableHolding[] };
+  };
+  'patrimoine:upsertClass': { payload: UpsertAssetClassInput; response: { class: AssetClass } };
+  'patrimoine:deleteClass': { payload: { id: string }; response: { ok: true } };
+  'patrimoine:assignClass': {
+    payload: { kind: 'account' | 'asset' | 'loan'; id: string; classId: string | null };
+    response: { ok: true };
+  };
 }
 
 export type IpcChannel = keyof IpcContract;
