@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { SupportHistory, SupportWithPerf } from '@shared/types/investment';
+import type { OperationDTO, SupportHistory, SupportWithPerf } from '@shared/types/investment';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Money } from '../ui/money';
 import { formatPercent } from '../../lib/euro';
@@ -116,16 +116,94 @@ function HistoryPanel({
   );
 }
 
+function OperationsPanel({
+  supportId,
+  loadOperations,
+}: {
+  supportId: string;
+  loadOperations: (supportId: string) => Promise<OperationDTO[]>;
+}) {
+  const [ops, setOps] = useState<OperationDTO[] | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    void loadOperations(supportId).then((o) => {
+      if (alive) setOps(o);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [supportId, loadOperations]);
+
+  if (!ops || ops.length === 0) return null;
+
+  return (
+    <section>
+      <p className="mb-1.5 font-sans text-[11px] font-semibold uppercase tracking-widest text-paper-dim">
+        Opérations
+      </p>
+      <table className="w-full font-mono text-[12px] tabular-nums text-paper">
+        <thead className="sticky top-0 bg-ink-1 text-paper-dim">
+          <tr className="border-b border-line-2 text-left">
+            <th className="px-2 py-1.5 font-sans text-[11px] font-medium">Date</th>
+            <th className="px-2 py-1.5 font-sans text-[11px] font-medium">Type</th>
+            <th className="px-2 py-1.5 text-right font-sans text-[11px] font-medium">Qté</th>
+            <th className="px-2 py-1.5 text-right font-sans text-[11px] font-medium">Prix</th>
+            <th className="px-2 py-1.5 text-right font-sans text-[11px] font-medium">Frais</th>
+            <th className="px-2 py-1.5 text-right font-sans text-[11px] font-medium">
+              Montant net
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {ops.map((op) => (
+            <tr key={op.id} className="border-b border-line-1">
+              <td className="px-2 py-1 font-mono">{op.opDate}</td>
+              <td className="px-2 py-1 font-sans text-[12px]">
+                {op.kind === 'buy' ? 'Achat' : 'Vente'}
+              </td>
+              <td className="px-2 py-1 text-right">{op.quantity}</td>
+              <td className="px-2 py-1 text-right">
+                {op.unitPrice !== null ? (
+                  <Money value={op.unitPrice} className="text-[12px]" />
+                ) : (
+                  <span className="text-paper-dim">—</span>
+                )}
+              </td>
+              <td className="px-2 py-1 text-right">
+                {op.fees !== null ? (
+                  <Money value={op.fees} className="text-[12px]" />
+                ) : (
+                  <span className="text-paper-dim">—</span>
+                )}
+              </td>
+              <td className="px-2 py-1 text-right">
+                <Money
+                  value={op.net}
+                  kind={op.net >= 0 ? 'income' : 'expense'}
+                  className="text-[12px]"
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
 export function SupportDetailDialog({
   open,
   onOpenChange,
   support,
   loadHistory,
+  loadOperations,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   support: SupportWithPerf | null;
   loadHistory: (supportId: string) => Promise<SupportHistory>;
+  loadOperations: (supportId: string) => Promise<OperationDTO[]>;
 }) {
   if (!support) return null;
 
@@ -195,7 +273,14 @@ export function SupportDetailDialog({
 
           {/* History tables — keyed on support.id to re-mount on support change */}
           <div className="max-h-[40vh] overflow-y-auto">
-            <HistoryPanel key={support.id} supportId={support.id} loadHistory={loadHistory} />
+            <div className="flex flex-col gap-5">
+              <HistoryPanel key={support.id} supportId={support.id} loadHistory={loadHistory} />
+              <OperationsPanel
+                key={`ops-${support.id}`}
+                supportId={support.id}
+                loadOperations={loadOperations}
+              />
+            </div>
           </div>
         </div>
       </DialogContent>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { Eye, Plus, RefreshCw, Trash2, Upload } from 'lucide-react';
 import type { SupportWithPerf, WrapperWithSupports } from '@shared/types/investment';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Overline } from '../ui/overline';
@@ -115,6 +115,7 @@ export function PlacementsCard({
   onOpenDetail,
   onDeleteWrapper,
   onDeleteSupport,
+  onImport,
 }: {
   wrappers: WrapperWithSupports[];
   onAddWrapper: () => void;
@@ -123,6 +124,7 @@ export function PlacementsCard({
   onOpenDetail: (support: SupportWithPerf) => void;
   onDeleteWrapper: (id: string) => void;
   onDeleteSupport: (id: string) => void;
+  onImport: () => void;
 }) {
   const [confirmingWrapperId, setConfirmingWrapperId] = useState<string | null>(null);
   const [confirmingSupportId, setConfirmingSupportId] = useState<string | null>(null);
@@ -134,10 +136,16 @@ export function PlacementsCard({
           <Overline>— IV</Overline>
           <CardTitle>Placements</CardTitle>
         </div>
-        <Button variant="secondary" size="sm" onClick={onAddWrapper}>
-          <Plus size={13} strokeWidth={1.8} />
-          Ajouter une enveloppe
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={onImport}>
+            <Upload size={13} strokeWidth={1.8} />
+            Importer un relevé (CSV)
+          </Button>
+          <Button variant="secondary" size="sm" onClick={onAddWrapper}>
+            <Plus size={13} strokeWidth={1.8} />
+            Ajouter une enveloppe
+          </Button>
+        </div>
       </CardHeader>
 
       <p className="-mt-1 font-sans text-[12px] text-paper-mute">

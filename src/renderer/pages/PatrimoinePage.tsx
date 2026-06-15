@@ -20,6 +20,7 @@ import { AddLoanDialog } from '../components/patrimoine/AddLoanDialog';
 import { WrapperDialog } from '../components/patrimoine/WrapperDialog';
 import { UpdateSupportDialog } from '../components/patrimoine/UpdateSupportDialog';
 import { SupportDetailDialog } from '../components/patrimoine/SupportDetailDialog';
+import { ImportBourseDialog } from '../components/patrimoine/ImportBourseDialog';
 
 export function PatrimoinePage() {
   const { refreshToken, notifyDataChanged } = useOutletContext<AppOutletContext>();
@@ -47,6 +48,7 @@ export function PatrimoinePage() {
   const [addSupportTarget, setAddSupportTarget] = useState<WrapperWithSupports | null>(null);
   const [updatingSupport, setUpdatingSupport] = useState<SupportWithPerf | null>(null);
   const [detailSupport, setDetailSupport] = useState<SupportWithPerf | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const onChanged = () => {
     reload();
@@ -131,6 +133,9 @@ export function PatrimoinePage() {
         onDeleteSupport={(id) => {
           void placements.deleteSupport(id).then(notifyDataChanged);
         }}
+        onImport={() => {
+          setImporting(true);
+        }}
       />
 
       {viewing && (
@@ -209,6 +214,26 @@ export function PatrimoinePage() {
         }}
         support={detailSupport}
         loadHistory={placements.getSupportHistory}
+        loadOperations={placements.listOperations}
+      />
+
+      <ImportBourseDialog
+        open={importing}
+        onOpenChange={setImporting}
+        wrappers={placements.wrappers}
+        onPickFile={placements.pickBourseCsv}
+        onCreateWrapper={(i) =>
+          placements.createWrapper(i).then((w) => {
+            notifyDataChanged();
+            return w;
+          })
+        }
+        onImport={(p, wid) =>
+          placements.importBourseCsv(p, wid).then((r) => {
+            notifyDataChanged();
+            return r;
+          })
+        }
       />
     </div>
   );

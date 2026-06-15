@@ -87,6 +87,7 @@ it('renders wrappers + supports; annualised when ≥1y, cumulative "depuis l\'or
       onOpenDetail={noop}
       onDeleteWrapper={noop}
       onDeleteSupport={noop}
+      onImport={noop}
     />,
   );
   expect(screen.getByText('PEA')).toBeInTheDocument();
@@ -105,6 +106,7 @@ it('renders an empty state when there are no wrappers', () => {
       onOpenDetail={noop}
       onDeleteWrapper={noop}
       onDeleteSupport={noop}
+      onImport={noop}
     />,
   );
   expect(screen.getByText(/aucune enveloppe|aucun placement/i)).toBeInTheDocument();
