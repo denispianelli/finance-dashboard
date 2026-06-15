@@ -1,16 +1,11 @@
 import { useState } from 'react';
-import { Eye, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { Eye, Plus, RefreshCw, Trash2, Upload } from 'lucide-react';
 import type { SupportWithPerf, WrapperWithSupports } from '@shared/types/investment';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Overline } from '../ui/overline';
 import { Button } from '../ui/button';
 import { Money } from '../ui/money';
 import { formatPercent } from '../../lib/euro';
-
-/** Format a fraction as a percentage, or return a dash when null. */
-function formatPct(value: number | null): string {
-  return value === null ? '—' : formatPercent(value);
-}
 
 /** Colour class for a performance value: sage for gains, coral for losses. */
 function perfColor(value: number | null): string {
@@ -19,28 +14,27 @@ function perfColor(value: number | null): string {
 }
 
 function SupportPerf({ perf }: { perf: SupportWithPerf['perf'] }) {
-  if (perf.hasFullYear) {
-    // Annualised figures
-    return (
-      <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 font-mono tabular-nums text-[11px]">
-        {perf.triAnnual !== null && (
-          <span className={perfColor(perf.triAnnual)}>TRI {formatPct(perf.triAnnual)} /an</span>
-        )}
-        <span className={perfColor(perf.ttworrAnnual)}>
-          TTWROR {formatPct(perf.ttworrAnnual)} /an
-        </span>
-      </span>
-    );
-  }
-
-  // Less than 1 year — cumulative
-  if (perf.ttworrCumulative === null) {
-    return <span className="font-sans text-[11px] text-paper-mute">pas encore de perf</span>;
-  }
-
+  // Each metric is shown only when available: the realized/latent gain (always), the
+  // money-weighted TRI (≥ 1 year), and the time-weighted TTWROR (only when real declared
+  // valuations back it — annualised ≥ 1 year, else cumulative). No "—" placeholders.
   return (
-    <span className={`font-mono tabular-nums text-[11px] ${perfColor(perf.ttworrCumulative)}`}>
-      {formatPct(perf.ttworrCumulative)} depuis l&apos;origine
+    <span className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 font-mono tabular-nums text-[11px]">
+      <span className={perfColor(perf.absoluteGain)}>
+        <Money value={perf.absoluteGain} className="text-[11px]" />
+        {perf.absoluteReturn !== null && <> ({formatPercent(perf.absoluteReturn)})</>}
+      </span>
+      {perf.triAnnual !== null && (
+        <span className={perfColor(perf.triAnnual)}>TRI {formatPercent(perf.triAnnual)} /an</span>
+      )}
+      {perf.ttworrAnnual !== null ? (
+        <span className={perfColor(perf.ttworrAnnual)}>
+          TTWROR {formatPercent(perf.ttworrAnnual)} /an
+        </span>
+      ) : perf.ttworrCumulative !== null ? (
+        <span className={perfColor(perf.ttworrCumulative)}>
+          TTWROR {formatPercent(perf.ttworrCumulative)} depuis l&apos;origine
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -115,6 +109,7 @@ export function PlacementsCard({
   onOpenDetail,
   onDeleteWrapper,
   onDeleteSupport,
+  onImport,
 }: {
   wrappers: WrapperWithSupports[];
   onAddWrapper: () => void;
@@ -123,6 +118,7 @@ export function PlacementsCard({
   onOpenDetail: (support: SupportWithPerf) => void;
   onDeleteWrapper: (id: string) => void;
   onDeleteSupport: (id: string) => void;
+  onImport: () => void;
 }) {
   const [confirmingWrapperId, setConfirmingWrapperId] = useState<string | null>(null);
   const [confirmingSupportId, setConfirmingSupportId] = useState<string | null>(null);
@@ -134,10 +130,16 @@ export function PlacementsCard({
           <Overline>— IV</Overline>
           <CardTitle>Placements</CardTitle>
         </div>
-        <Button variant="secondary" size="sm" onClick={onAddWrapper}>
-          <Plus size={13} strokeWidth={1.8} />
-          Ajouter une enveloppe
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={onImport}>
+            <Upload size={13} strokeWidth={1.8} />
+            Importer un relevé (CSV)
+          </Button>
+          <Button variant="secondary" size="sm" onClick={onAddWrapper}>
+            <Plus size={13} strokeWidth={1.8} />
+            Ajouter une enveloppe
+          </Button>
+        </div>
       </CardHeader>
 
       <p className="-mt-1 font-sans text-[12px] text-paper-mute">
@@ -222,8 +224,22 @@ export function PlacementsCard({
                         <span className="min-w-0 flex-1 truncate font-sans text-[12px] text-paper-soft">
                           {support.name}
                         </span>
-                        <Money value={support.currentValue} className="text-[12px]" />
-                        <SupportPerf perf={support.perf} />
+                        {support.needsValuation ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onUpdateSupport(support);
+                            }}
+                            className="font-sans text-[11px] text-brass hover:underline"
+                          >
+                            déclare la valeur actuelle
+                          </button>
+                        ) : (
+                          <>
+                            <Money value={support.currentValue} className="text-[12px]" />
+                            <SupportPerf perf={support.perf} />
+                          </>
+                        )}
                         <div className="flex shrink-0 gap-0.5">
                           <Button
                             variant="ghost"

@@ -21,6 +21,9 @@ export interface SupportDTO {
 export interface DatedValue {
   date: string; // ISO yyyy-mm-dd
   value: number;
+  /** 'declared' = user-entered; 'auto' = system sentinel (CSV import open/close 0). Only
+   *  declared valuations drive TTWROR. Absent ⇒ treated as declared (manual entries). */
+  source?: 'declared' | 'auto';
 }
 export interface DatedFlow {
   date: string; // ISO yyyy-mm-dd
@@ -34,6 +37,7 @@ export interface Performance {
   currentValue: number;
   netInvested: number; // opening value + Σ flows
   absoluteGain: number; // currentValue − netInvested
+  absoluteReturn: number | null; // cumulative gain / gross invested (not annualised); null if nothing invested
   ttworrCumulative: number | null; // since inception
   ttworrAnnual: number | null; // null when < 1 year of history
   triAnnual: number | null; // IRR; null when < 1 year or unsolvable
@@ -60,6 +64,10 @@ export interface SupportUpdateInput {
 
 export interface SupportWithPerf extends SupportDTO {
   perf: Performance;
+  /** True for an OPEN position (net shares > 0) with no user-declared valuation yet — its
+   *  value/perf can't be computed until the user declares a current value (or the price feed
+   *  does). The UI shows a "déclare la valeur actuelle" prompt instead of a misleading 0/perf. */
+  needsValuation: boolean;
 }
 export interface WrapperWithSupports extends WrapperDTO {
   supports: SupportWithPerf[];
@@ -68,4 +76,44 @@ export interface WrapperWithSupports extends WrapperDTO {
 export interface SupportHistory {
   valuations: DatedValue[];
   flows: DatedFlow[];
+}
+
+export type OperationKind = 'buy' | 'sell';
+
+/** One parsed CSV operation (before persistence). */
+export interface ParsedOp {
+  opDate: string; // ISO yyyy-mm-dd
+  kind: OperationKind;
+  quantity: number; // > 0
+  unitPrice: number | null;
+  gross: number | null;
+  fees: number | null;
+  net: number; // signed: buy < 0, sell > 0
+  currency: string;
+  rawLabel: string;
+}
+
+export interface SkippedRow {
+  line: number;
+  raw: string;
+  reason: string;
+}
+
+export interface ParseBourseResult {
+  ops: ParsedOp[];
+  skipped: SkippedRow[];
+}
+
+/** A persisted operation (for the support detail audit table). */
+export interface OperationDTO extends ParsedOp {
+  id: string;
+  supportId: string;
+}
+
+export interface ImportBourseResult {
+  operationsImported: number;
+  alreadyPresent: number;
+  skippedRows: number;
+  createdSupports: SupportDTO[];
+  supportsTouched: number;
 }

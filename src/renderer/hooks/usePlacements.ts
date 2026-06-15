@@ -7,6 +7,8 @@ import type {
   CreateSupportInput,
   SupportUpdateInput,
   SupportHistory,
+  ImportBourseResult,
+  OperationDTO,
 } from '@shared/types/investment';
 
 export function usePlacements(refreshToken: number) {
@@ -75,6 +77,27 @@ export function usePlacements(refreshToken: number) {
     [],
   );
 
+  const pickBourseCsv = useCallback(
+    (): Promise<{ cancelled: true } | { cancelled: false; path: string }> =>
+      ipc.invoke('investment:pickBourseCsv', {}),
+    [],
+  );
+
+  const importBourseCsv = useCallback(
+    async (path: string, wrapperId: string): Promise<ImportBourseResult> => {
+      const r = await ipc.invoke('investment:importBourseCsv', { path, wrapperId });
+      reload();
+      return r.result;
+    },
+    [reload],
+  );
+
+  const listOperations = useCallback(
+    (supportId: string): Promise<OperationDTO[]> =>
+      ipc.invoke('investment:listOperations', { supportId }).then((r) => r.operations),
+    [],
+  );
+
   return {
     wrappers,
     reload,
@@ -84,5 +107,8 @@ export function usePlacements(refreshToken: number) {
     deleteSupport,
     updateSupport,
     getSupportHistory,
+    pickBourseCsv,
+    importBourseCsv,
+    listOperations,
   };
 }

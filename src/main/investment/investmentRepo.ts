@@ -36,6 +36,7 @@ interface SupportRow {
 interface ValuationRow {
   date: string;
   value: number;
+  source: 'declared' | 'auto';
 }
 
 interface FlowRow {
@@ -203,7 +204,7 @@ export function applyUpdate(db: DatabaseSync, input: SupportUpdateInput): void {
 export function getSupportHistory(db: DatabaseSync, supportId: string): SupportHistory {
   const valuations = db
     .prepare(
-      'SELECT as_of AS date, value FROM support_valuations WHERE support_id = ? ORDER BY as_of ASC',
+      'SELECT as_of AS date, value, source FROM support_valuations WHERE support_id = ? ORDER BY as_of ASC',
     )
     .all(supportId) as unknown as ValuationRow[];
   const flows = db
@@ -212,7 +213,14 @@ export function getSupportHistory(db: DatabaseSync, supportId: string): SupportH
     )
     .all(supportId) as unknown as FlowRow[];
   return {
-    valuations: valuations.map((r): DatedValue => ({ date: r.date, value: r.value })),
+    valuations: valuations.map(
+      // Only surface 'auto' sentinels; declared valuations leave source absent (the default).
+      (r): DatedValue => ({
+        date: r.date,
+        value: r.value,
+        source: r.source === 'auto' ? 'auto' : undefined,
+      }),
+    ),
     flows: flows.map((r): DatedFlow => ({ date: r.date, amount: r.amount })),
   };
 }

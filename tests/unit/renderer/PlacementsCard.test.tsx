@@ -16,6 +16,7 @@ const fullYear: Performance = {
   currentValue: 5300,
   netInvested: 5000,
   absoluteGain: 300,
+  absoluteReturn: 0.05,
   ttworrCumulative: 0.06,
   ttworrAnnual: 0.03,
   triAnnual: 0.031,
@@ -27,6 +28,7 @@ const shortHist: Performance = {
   currentValue: 1050,
   netInvested: 1000,
   absoluteGain: 50,
+  absoluteReturn: 0.05,
   ttworrCumulative: 0.05,
   ttworrAnnual: null,
   triAnnual: null,
@@ -50,6 +52,7 @@ const WRAPPERS: WrapperWithSupports[] = [
         sortOrder: 0,
         currentValue: 5300,
         perf: fullYear,
+        needsValuation: false,
       },
     ],
   },
@@ -70,6 +73,7 @@ const WRAPPERS: WrapperWithSupports[] = [
         sortOrder: 0,
         currentValue: 1050,
         perf: shortHist,
+        needsValuation: false,
       },
     ],
   },
@@ -87,6 +91,7 @@ it('renders wrappers + supports; annualised when ≥1y, cumulative "depuis l\'or
       onOpenDetail={noop}
       onDeleteWrapper={noop}
       onDeleteSupport={noop}
+      onImport={noop}
     />,
   );
   expect(screen.getByText('PEA')).toBeInTheDocument();
@@ -105,6 +110,7 @@ it('renders an empty state when there are no wrappers', () => {
       onOpenDetail={noop}
       onDeleteWrapper={noop}
       onDeleteSupport={noop}
+      onImport={noop}
     />,
   );
   expect(screen.getByText(/aucune enveloppe|aucun placement/i)).toBeInTheDocument();
