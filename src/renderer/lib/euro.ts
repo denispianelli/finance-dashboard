@@ -34,3 +34,13 @@ export function formatCompact(amount: number): string {
     ? `${sign}${String(Math.round(abs / 1000))}k`
     : `${sign}${String(Math.round(abs))}`;
 }
+
+/** Format a 0..1 fraction as a French percentage, e.g. 0.625 → "62,5 %".
+ *  Uses Number.prototype.toLocaleString (not `new Intl.NumberFormat`, which is lint-blocked). */
+export function formatPercent(fraction: number, maxDigits = 1): string {
+  const pct = (fraction * 100).toLocaleString('fr-FR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: maxDigits,
+  });
+  return `${pct}${NBSP}%`; // non-breaking space (U+00A0) before %
+}
