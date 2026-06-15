@@ -52,6 +52,8 @@ The app:
   **Placements**: per-support investment performance — money-weighted (TRI) and time-weighted
   (TTWROR) returns — computed from user-declared valuations and flows, 100% local; an optional
   price feed (ADR-018) is a later phase.
+  Importing a Fortuneo bourse CSV auto-populates a wrapper's operations, flows, and shares
+  (100% local; idempotent re-import; valuations declared or via the Phase B feed).
 
 **All on your machine. Source code is public so the privacy promise is verifiable.**
 
