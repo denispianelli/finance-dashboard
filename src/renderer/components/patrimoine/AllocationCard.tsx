@@ -26,10 +26,20 @@ export function AllocationCard({
           <Overline>— II</Overline>
           <CardTitle>Allocation</CardTitle>
         </div>
-        <Button variant="secondary" size="sm" onClick={onManage}>
-          <Settings2 size={13} strokeWidth={1.8} />
-          Gérer les classes
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* Exact net total — reconciles to the cent with the sidebar net worth.
+              The donut centre shows the compact form; this is the verification path. */}
+          {allocation !== null && (
+            <span className="flex items-baseline gap-1.5 font-sans text-[11px] text-paper-mute">
+              Net
+              <Money value={allocation.total} className="text-[12px] text-paper" />
+            </span>
+          )}
+          <Button variant="secondary" size="sm" onClick={onManage}>
+            <Settings2 size={13} strokeWidth={1.8} />
+            Gérer les classes
+          </Button>
+        </div>
       </CardHeader>
 
       {isEmpty ? (
