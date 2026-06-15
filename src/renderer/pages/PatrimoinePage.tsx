@@ -10,15 +10,31 @@ import { Button } from '../components/ui/button';
 import { Overline } from '../components/ui/overline';
 import { LoanCard } from '../components/patrimoine/LoanCard';
 import { PropertyCard } from '../components/patrimoine/PropertyCard';
+import { AllocationCard } from '../components/patrimoine/AllocationCard';
+import { ClassManagerDialog } from '../components/patrimoine/ClassManagerDialog';
 import { AmortizationTableDialog } from '../components/patrimoine/AmortizationTableDialog';
 import { AddLoanDialog } from '../components/patrimoine/AddLoanDialog';
 
 export function PatrimoinePage() {
   const { refreshToken, notifyDataChanged } = useOutletContext<AppOutletContext>();
-  const { loans, assets, reload, deleteLoan, upsertAsset, deleteAsset, detectPayments } =
-    usePatrimoine(refreshToken);
+  const {
+    loans,
+    assets,
+    allocation,
+    classes,
+    holdings,
+    reload,
+    deleteLoan,
+    upsertAsset,
+    deleteAsset,
+    detectPayments,
+    upsertClass,
+    deleteClass,
+    assignClass,
+  } = usePatrimoine(refreshToken);
   const [viewing, setViewing] = useState<LoanWithStats | null>(null);
   const [adding, setAdding] = useState(false);
+  const [managing, setManaging] = useState(false);
 
   const onChanged = () => {
     reload();
@@ -71,6 +87,13 @@ export function PatrimoinePage() {
         )}
       </Card>
 
+      <AllocationCard
+        allocation={allocation}
+        onManage={() => {
+          setManaging(true);
+        }}
+      />
+
       <PropertyCard
         asset={assets[0] ?? null}
         onSave={(input) => {
@@ -98,6 +121,24 @@ export function PatrimoinePage() {
           onCreated={onChanged}
         />
       )}
+      <ClassManagerDialog
+        open={managing}
+        onOpenChange={setManaging}
+        classes={classes}
+        holdings={holdings}
+        onUpsertClass={(i) => {
+          void upsertClass(i);
+          notifyDataChanged();
+        }}
+        onDeleteClass={(id) => {
+          void deleteClass(id);
+          notifyDataChanged();
+        }}
+        onAssignClass={(k, id, cid) => {
+          void assignClass(k, id, cid);
+          notifyDataChanged();
+        }}
+      />
     </div>
   );
 }

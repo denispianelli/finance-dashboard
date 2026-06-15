@@ -50,7 +50,7 @@ export function PropertyCard({
     <Card>
       <CardHeader>
         <div className="flex items-center gap-3.5">
-          <Overline>— II</Overline>
+          <Overline>— III</Overline>
           <CardTitle>Bien immobilier</CardTitle>
         </div>
         {asset && !editing && !confirmingDelete && (
