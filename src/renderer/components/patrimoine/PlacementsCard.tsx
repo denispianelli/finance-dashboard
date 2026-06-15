@@ -140,6 +140,11 @@ export function PlacementsCard({
         </Button>
       </CardHeader>
 
+      <p className="-mt-1 font-sans text-[12px] text-paper-mute">
+        Investissements suivis en performance (TRI / TTWROR) — PEA, AV, CTO. Pour un bien que tu
+        valorises simplement (résidence…), utilise « Biens ».
+      </p>
+
       {wrappers.length === 0 ? (
         <p className="py-6 text-center font-sans text-sm text-paper-mute">
           Aucune enveloppe — ajoute ton PEA, ton assurance-vie…

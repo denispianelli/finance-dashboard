@@ -106,20 +106,25 @@ export function AssetsCard({
       <CardHeader>
         <div className="flex items-center gap-3.5">
           <Overline>— III</Overline>
-          <CardTitle>Actifs déclarés</CardTitle>
+          <CardTitle>Biens</CardTitle>
         </div>
         {!formOpen && (
           <Button variant="secondary" size="sm" onClick={openAdd}>
             <Plus size={14} strokeWidth={1.8} />
-            Ajouter un actif
+            Ajouter un bien
           </Button>
         )}
       </CardHeader>
 
+      <p className="-mt-1 font-sans text-[12px] text-paper-mute">
+        Valorisés à la main, sans suivi de performance — résidence, immobilier. Pour un placement
+        suivi en performance (PEA, AV…), utilise « Placements ».
+      </p>
+
       {assets.length === 0 && !formOpen ? (
         <div className="flex flex-col items-center gap-3 py-6">
           <p className="text-center font-sans text-[13px] text-paper-mute">
-            Aucun actif déclaré — ajoute la valeur de ton bien, ton assurance-vie…
+            Aucun bien — déclare ta résidence, un bien immobilier…
           </p>
           <Button variant="secondary" size="sm" onClick={openAdd}>
             <Plus size={14} strokeWidth={1.8} />
