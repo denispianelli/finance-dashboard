@@ -158,6 +158,10 @@ const MUTATING_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'investment:deleteSupport',
   'investment:updateSupport',
   'investment:importBourseCsv',
+  // Deliberately NOT mutating for sync: 'investment:refreshQuotes' (quote valuations regenerate
+  // on each machine's own opt-in refresh — syncing them would churn a snapshot on every app open)
+  // and 'investment:setQuotesEnabled' (the price-feed opt-in is a per-machine network-consent
+  // preference, not shared data).
 ]);
 
 function register<C extends IpcChannel>(channel: C, handler: Handler<C>): void {
