@@ -1,11 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Eye, Plus, RefreshCw, Trash2, Upload } from 'lucide-react';
-import type { SupportWithPerf, WrapperWithSupports } from '@shared/types/investment';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import type { QuoteSettings, SupportWithPerf, WrapperWithSupports } from '@shared/types/investment';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Overline } from '../ui/overline';
 import { Button } from '../ui/button';
 import { Money } from '../ui/money';
 import { formatPercent } from '../../lib/euro';
+import { cn } from '../../lib/utils';
+
+function formatTs(iso: string | null): string {
+  if (iso === null) return '—';
+  return format(new Date(iso), "d MMM yyyy 'à' HH:mm", { locale: fr });
+}
 
 /** Colour class for a performance value: sage for gains, coral for losses. */
 function perfColor(value: number | null): string {
@@ -110,6 +118,8 @@ export function PlacementsCard({
   onDeleteWrapper,
   onDeleteSupport,
   onImport,
+  getQuoteSettings,
+  refreshQuotes,
 }: {
   wrappers: WrapperWithSupports[];
   onAddWrapper: () => void;
@@ -119,9 +129,17 @@ export function PlacementsCard({
   onDeleteWrapper: (id: string) => void;
   onDeleteSupport: (id: string) => void;
   onImport: () => void;
+  getQuoteSettings: () => Promise<QuoteSettings>;
+  refreshQuotes: () => Promise<unknown>;
 }) {
   const [confirmingWrapperId, setConfirmingWrapperId] = useState<string | null>(null);
   const [confirmingSupportId, setConfirmingSupportId] = useState<string | null>(null);
+  const [quoteSettings, setQuoteSettings] = useState<QuoteSettings | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    void getQuoteSettings().then(setQuoteSettings);
+  }, [getQuoteSettings]);
 
   return (
     <Card>
@@ -131,6 +149,33 @@ export function PlacementsCard({
           <CardTitle>Placements</CardTitle>
         </div>
         <div className="flex items-center gap-2">
+          {quoteSettings?.enabled === true && (
+            <div className="flex flex-col items-end gap-0.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={refreshing}
+                onClick={() => {
+                  setRefreshing(true);
+                  void refreshQuotes()
+                    .then(() =>
+                      getQuoteSettings().then((s) => {
+                        setQuoteSettings(s);
+                      }),
+                    )
+                    .finally(() => {
+                      setRefreshing(false);
+                    });
+                }}
+              >
+                <RefreshCw className={cn('mr-1.5 h-3.5 w-3.5', refreshing && 'animate-spin')} />
+                Rafraîchir les cours
+              </Button>
+              <span className="font-sans text-[11px] text-paper-dim">
+                Dernière mise à jour {formatTs(quoteSettings.lastRefreshAt)}
+              </span>
+            </div>
+          )}
           <Button variant="secondary" size="sm" onClick={onImport}>
             <Upload size={13} strokeWidth={1.8} />
             Importer un relevé (CSV)
@@ -237,6 +282,11 @@ export function PlacementsCard({
                         ) : (
                           <>
                             <Money value={support.currentValue} className="text-[12px]" />
+                            {support.currentValueSource === 'quote' && (
+                              <span className="text-[10px] uppercase tracking-wide text-paper-dim">
+                                cours auto
+                              </span>
+                            )}
                             <SupportPerf perf={support.perf} />
                           </>
                         )}

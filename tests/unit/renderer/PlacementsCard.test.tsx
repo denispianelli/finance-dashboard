@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { PlacementsCard } from '../../../src/renderer/components/patrimoine/PlacementsCard';
-import type { WrapperWithSupports, Performance } from '@shared/types/investment';
+import type { QuoteSettings, WrapperWithSupports, Performance } from '@shared/types/investment';
 
 vi.mock('electron', () => ({}));
 
@@ -83,6 +83,11 @@ const WRAPPERS: WrapperWithSupports[] = [
 
 const noop = (): void => undefined;
 
+const disabledQuoteSettings: QuoteSettings = { enabled: false, lastRefreshAt: null };
+const getQuoteSettingsDisabled = () => Promise.resolve(disabledQuoteSettings);
+const refreshQuotes = () =>
+  Promise.resolve({ refreshed: 0, skipped: 0, failed: 0, lastRefreshAt: null });
+
 it('renders wrappers + supports; annualised when ≥1y, cumulative "depuis l\'origine" when short', () => {
   render(
     <PlacementsCard
@@ -94,6 +99,8 @@ it('renders wrappers + supports; annualised when ≥1y, cumulative "depuis l\'or
       onDeleteWrapper={noop}
       onDeleteSupport={noop}
       onImport={noop}
+      getQuoteSettings={getQuoteSettingsDisabled}
+      refreshQuotes={refreshQuotes}
     />,
   );
   expect(screen.getByText('PEA')).toBeInTheDocument();
@@ -113,7 +120,57 @@ it('renders an empty state when there are no wrappers', () => {
       onDeleteWrapper={noop}
       onDeleteSupport={noop}
       onImport={noop}
+      getQuoteSettings={getQuoteSettingsDisabled}
+      refreshQuotes={refreshQuotes}
     />,
   );
   expect(screen.getByText(/aucune enveloppe|aucun placement/i)).toBeInTheDocument();
+});
+
+it('renders "cours auto" marker for a support with currentValueSource === "quote" when quotes are enabled', async () => {
+  const enabledSettings: QuoteSettings = { enabled: true, lastRefreshAt: null };
+  const getQuoteSettingsEnabled = () => Promise.resolve(enabledSettings);
+
+  const wrappersWithQuote: WrapperWithSupports[] = [
+    {
+      id: 'w1',
+      name: 'PEA',
+      type: 'pea',
+      sortOrder: 0,
+      perf: fullYear,
+      supports: [
+        {
+          id: 's1',
+          wrapperId: 'w1',
+          name: 'MSCI World',
+          isin: 'LU0274208692',
+          classId: null,
+          currency: 'EUR',
+          sortOrder: 0,
+          currentValue: 5300,
+          currentValueSource: 'quote',
+          perf: fullYear,
+          needsValuation: false,
+        },
+      ],
+    },
+  ];
+
+  render(
+    <PlacementsCard
+      wrappers={wrappersWithQuote}
+      onAddWrapper={noop}
+      onAddSupport={noop}
+      onUpdateSupport={noop}
+      onOpenDetail={noop}
+      onDeleteWrapper={noop}
+      onDeleteSupport={noop}
+      onImport={noop}
+      getQuoteSettings={getQuoteSettingsEnabled}
+      refreshQuotes={refreshQuotes}
+    />,
+  );
+
+  // Wait for the getQuoteSettings effect to resolve and re-render
+  expect(await screen.findByText('cours auto')).toBeInTheDocument();
 });

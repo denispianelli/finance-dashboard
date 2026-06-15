@@ -136,6 +136,8 @@ export function PatrimoinePage() {
         onImport={() => {
           setImporting(true);
         }}
+        getQuoteSettings={placements.getQuoteSettings}
+        refreshQuotes={placements.refreshQuotes}
       />
 
       {viewing && (
