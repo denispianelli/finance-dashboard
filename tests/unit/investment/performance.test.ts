@@ -4,6 +4,34 @@ import { computePerformance, irr } from '../../../src/main/investment/performanc
 import type { DatedValue } from '@shared/types/investment';
 
 describe('performance', () => {
+  it('first update entering value AND a same-date flow does not double-count the opening capital', () => {
+    // The typical first monthly update: "it's worth 5000, of which I contributed 5000".
+    // A flow on the opening date must NOT be added on top of the opening valuation.
+    const vals: DatedValue[] = [
+      { date: '2023-01-01', value: 5000 },
+      { date: '2024-01-01', value: 5300 }, // +6% over 1 year, no further contribution
+    ];
+    const perf = computePerformance(vals, [{ date: '2023-01-01', amount: 5000 }]);
+    expect(perf.netInvested).toBeCloseTo(5000, 6); // not 10000
+    expect(perf.absoluteGain).toBeCloseTo(300, 6); // not -4700
+    expect(perf.triAnnual).toBeCloseTo(0.06, 2); // ~+6%/yr, not -44%
+    expect(perf.ttworrAnnual).toBeCloseTo(0.06, 2); // no flow after opening ⇒ TRI ≈ TTWROR
+  });
+
+  it('a genuine mid-period contribution still counts toward invested capital', () => {
+    const vals: DatedValue[] = [
+      { date: '2023-01-01', value: 1000 },
+      { date: '2024-01-01', value: 2200 },
+    ];
+    // opening 1000 (with its same-date 1000 flow, excluded) + a real +1000 mid-year.
+    const perf = computePerformance(vals, [
+      { date: '2023-01-01', amount: 1000 },
+      { date: '2023-07-01', amount: 1000 },
+    ]);
+    expect(perf.netInvested).toBeCloseTo(2000, 6); // 1000 opening + 1000 mid-year
+    expect(perf.absoluteGain).toBeCloseTo(200, 6);
+  });
+
   it('lump sum, no flows: TRI annual = CAGR, and TRI≈TTWROR', () => {
     const vals: DatedValue[] = [
       { date: '2022-01-01', value: 10000 },

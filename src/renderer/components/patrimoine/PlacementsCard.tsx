@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { Eye, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import type { SupportWithPerf, WrapperWithSupports } from '@shared/types/investment';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Overline } from '../ui/overline';
@@ -217,16 +217,6 @@ export function PlacementsCard({
                             aria-label={`Mettre à jour ${support.name}`}
                           >
                             <RefreshCw size={12} strokeWidth={1.8} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              onUpdateSupport(support);
-                            }}
-                            aria-label={`Modifier ${support.name}`}
-                          >
-                            <Pencil size={12} strokeWidth={1.8} />
                           </Button>
                           <Button
                             variant="ghost"

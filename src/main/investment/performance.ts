@@ -62,7 +62,14 @@ export function computePerformance(
 
   const currentValue = valuations.at(-1)?.value ?? 0;
   const openingValue = valuations[0]?.value ?? 0;
-  const flowSum = flows.reduce((s, f) => s + f.amount, 0);
+  const openingDate = valuations[0]?.date ?? null;
+  // The opening valuation already embodies any capital present at the start, including a
+  // flow recorded on that same date (the typical first monthly update enters value AND
+  // flow together). So "added capital" is only the flows strictly AFTER the opening date —
+  // consistent with TTWROR, whose sub-periods count flows `> v0.date`. Counting an
+  // opening-date flow again would double-invest it and wreck netInvested / gain / TRI.
+  const contributions = openingDate === null ? flows : flows.filter((f) => f.date > openingDate);
+  const flowSum = contributions.reduce((s, f) => s + f.amount, 0);
   const netInvested = openingValue + flowSum;
   const absoluteGain = currentValue - netInvested;
 
@@ -109,7 +116,7 @@ export function computePerformance(
 
   const cfs: Cashflow[] = [
     { date: startDate, amount: -openingValue },
-    ...flows.map((f) => ({ date: f.date, amount: -f.amount })),
+    ...contributions.map((f) => ({ date: f.date, amount: -f.amount })),
     { date: endDate, amount: currentValue },
   ].filter((cf) => cf.amount !== 0);
   const triAnnual = hasFullYear ? irr(cfs) : null;
