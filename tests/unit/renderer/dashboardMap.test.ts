@@ -79,6 +79,7 @@ describe('toAccount', () => {
       name: 'Compte courant',
       bank: 'lcl',
       balance: '70,00',
+      balanceValue: 70,
       type: 'checking',
     });
   });

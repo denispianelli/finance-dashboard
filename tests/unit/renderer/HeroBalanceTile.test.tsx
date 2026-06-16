@@ -5,8 +5,22 @@ import { HeroBalanceTile } from '@renderer/components/dashboard/HeroBalanceTile'
 import type { Account } from '@renderer/lib/dashboardMap';
 
 const accounts: Account[] = [
-  { id: 'a', name: 'Compte courant', bank: 'LCL', balance: '3 240 €', type: 'checking' },
-  { id: 'b', name: 'Livret A', bank: 'LCL', balance: '18 600 €', type: 'savings' },
+  {
+    id: 'a',
+    name: 'Compte courant',
+    bank: 'LCL',
+    balance: '3 240 €',
+    balanceValue: 3240,
+    type: 'checking',
+  },
+  {
+    id: 'b',
+    name: 'Livret A',
+    bank: 'LCL',
+    balance: '18 600 €',
+    balanceValue: 18600,
+    type: 'savings',
+  },
 ];
 
 describe('HeroBalanceTile', () => {
@@ -29,6 +43,7 @@ describe('HeroBalanceTile', () => {
       name: `Compte ${String(i)}`,
       bank: 'LCL',
       balance: '0 €',
+      balanceValue: 0,
       type: 'checking',
     }));
     render(<HeroBalanceTile balance={0} series={[0]} accounts={many} />);

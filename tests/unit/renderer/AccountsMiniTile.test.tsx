@@ -6,8 +6,22 @@ import { AccountsMiniTile } from '@renderer/components/dashboard/AccountsMiniTil
 import type { Account } from '@renderer/lib/dashboardMap';
 
 const accounts: Account[] = [
-  { id: 'a', name: 'Compte courant', bank: 'LCL', balance: '3 240 €', type: 'checking' },
-  { id: 'b', name: 'Livret A', bank: 'LCL', balance: '18 600 €', type: 'savings' },
+  {
+    id: 'a',
+    name: 'Compte courant',
+    bank: 'LCL',
+    balance: '3 240 €',
+    balanceValue: 3240,
+    type: 'checking',
+  },
+  {
+    id: 'b',
+    name: 'Livret A',
+    bank: 'LCL',
+    balance: '18 600 €',
+    balanceValue: 18600,
+    type: 'savings',
+  },
 ];
 
 describe('AccountsMiniTile', () => {

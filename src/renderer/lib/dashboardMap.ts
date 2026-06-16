@@ -45,6 +45,7 @@ export function toAccount(summary: AccountSummary): Account {
     bank: summary.bankId ?? '—',
     // null = no statement anchors a real balance yet → "—" (ADR-014).
     balance: summary.balance === null ? '—' : formatBalance(summary.balance),
+    balanceValue: summary.balance,
     type: summary.type,
   };
 }

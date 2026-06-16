@@ -19,7 +19,7 @@ import {
 } from '../ui/dialog';
 import { useAccounts } from '../../hooks/useAccounts';
 import { cn } from '../../lib/utils';
-import { AccountIconTile } from '../../lib/accountIcon';
+import { AccountCard } from './AccountCard';
 
 const INPUT =
   'h-9 rounded-md border border-line-2 bg-ink-3 px-2.5 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
@@ -83,7 +83,12 @@ export function AccountManager({ onMutated }: { onMutated?: () => void }) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {accounts.map((a) => (
-          <AccountCard key={a.id} account={a} onUpdate={updateAccount} onDelete={deleteAccount} />
+          <AccountManageCard
+            key={a.id}
+            account={a}
+            onUpdate={updateAccount}
+            onDelete={deleteAccount}
+          />
         ))}
         <button
           type="button"
@@ -163,7 +168,7 @@ function AccountForm({
   );
 }
 
-function AccountCard({
+function AccountManageCard({
   account,
   onUpdate,
   onDelete,
@@ -194,50 +199,37 @@ function AccountCard({
   }
 
   return (
-    <div className="group tile tile-hover flex min-h-[124px] flex-col gap-3 p-5">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-3">
-          <AccountIconTile type={account.type} size={36} />
-          <span className="truncate font-sans text-sm text-paper">{account.name}</span>
-        </div>
-        <div className="flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-          <button
-            type="button"
-            aria-label={`Renommer ${account.name}`}
-            onClick={() => {
-              setEditing(true);
-            }}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-paper-dim hover:bg-surface-2 hover:text-paper"
-          >
-            <Pencil size={13} strokeWidth={1.6} />
-          </button>
-          <button
-            type="button"
-            aria-label={`Supprimer ${account.name}`}
-            onClick={() => {
-              setConfirmingDelete(true);
-            }}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-paper-dim hover:bg-surface-2 hover:text-coral"
-          >
-            <Trash2 size={13} strokeWidth={1.6} />
-          </button>
-        </div>
-      </div>
-
-      {account.balance === null ? (
-        <span className="font-mono text-[24px] tabular-nums text-paper-dim">—</span>
-      ) : (
-        <Money
-          value={account.balance}
-          kind={account.balance < 0 ? 'expense' : 'plain'}
-          className="text-[24px] font-semibold"
-        />
-      )}
-
-      <span className="mt-auto font-sans text-[12px] text-paper-mute">
-        {account.bankId ?? 'Sans banque'}
-      </span>
-
+    <>
+      <AccountCard
+        type={account.type}
+        name={account.name}
+        balance={account.balance}
+        bank={account.bankId}
+        actions={
+          <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <button
+              type="button"
+              aria-label={`Renommer ${account.name}`}
+              onClick={() => {
+                setEditing(true);
+              }}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-paper-dim hover:bg-surface-2 hover:text-paper"
+            >
+              <Pencil size={13} strokeWidth={1.6} />
+            </button>
+            <button
+              type="button"
+              aria-label={`Supprimer ${account.name}`}
+              onClick={() => {
+                setConfirmingDelete(true);
+              }}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-paper-dim hover:bg-surface-2 hover:text-coral"
+            >
+              <Trash2 size={13} strokeWidth={1.6} />
+            </button>
+          </div>
+        }
+      />
       <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -267,6 +259,6 @@ function AccountCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
