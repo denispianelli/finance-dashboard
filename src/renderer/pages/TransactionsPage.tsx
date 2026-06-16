@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Calendar, Search, SlidersHorizontal } from 'lucide-react';
 import { ipc } from '@renderer/ipc/client';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
@@ -30,7 +30,7 @@ const NONE = '__none__';
 const ROW_ESTIMATE = 76;
 
 const TYPES: { value: TxType; label: string }[] = [
-  { value: 'all', label: 'Tous' },
+  { value: 'all', label: 'Tout' },
   { value: 'income', label: 'Revenus' },
   { value: 'expense', label: 'Dépenses' },
   { value: 'transfer', label: 'Transferts' },
@@ -47,7 +47,8 @@ const PERIOD_OPTIONS: { value: PeriodPreset; label: string }[] = [
   { value: 'year', label: 'Cette année' },
 ];
 
-const SEG_BTN = 'h-7 rounded-md px-2.5 font-sans text-xs font-medium transition-colors';
+const SEG_BTN =
+  'h-[30px] rounded-full px-3.5 font-sans text-[12.5px] font-medium transition-colors';
 
 function Segmented<T extends string>({
   options,
@@ -59,7 +60,7 @@ function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="inline-flex gap-1 rounded-lg border border-line-2 bg-ink-2 p-1">
+    <div className="inline-flex gap-[3px] rounded-full border border-line-2 bg-surface p-1">
       {options.map((o) => (
         <button
           key={o.value}
@@ -69,7 +70,7 @@ function Segmented<T extends string>({
           }}
           className={cn(
             SEG_BTN,
-            value === o.value ? 'bg-ink-3 text-paper' : 'text-paper-mute hover:text-paper',
+            value === o.value ? 'bg-brass text-accent-ink' : 'text-paper-mute hover:text-paper',
           )}
         >
           {o.label}
@@ -148,7 +149,7 @@ export function TransactionsPage() {
   const [type, setType] = useState<TxType>('all');
   const [category, setCategory] = useState<string>('all');
   const [query, setQuery] = useState('');
-  const [period, setPeriod] = useState<PeriodPreset>('30d');
+  const [period, setPeriod] = useState<PeriodPreset>('all');
 
   // Anchor: the latest transaction date (or today if none).
   const anchor = useMemo(() => {
@@ -182,21 +183,14 @@ export function TransactionsPage() {
   }, [filtered]);
 
   // Whether any filter is active (for the Reset button).
-  const anyFilterActive =
-    selectedAccountId !== null ||
-    type !== 'all' ||
-    query !== '' ||
-    category !== 'all' ||
-    period !== 'all';
+  // Account is auto-selected by useDashboard (per-account view), not a chosen filter.
+  const anyFilterActive = type !== 'all' || query !== '' || category !== 'all' || period !== 'all';
 
   function resetFilters() {
     setType('all');
     setQuery('');
     setCategory('all');
     setPeriod('all');
-    // selectAccount accepts a string; pass empty string to deselect all
-    // (AccountTabs treats '' as "no account selected").
-    selectAccount('');
   }
 
   // Eyebrow: selected account name or fallback.
@@ -285,6 +279,8 @@ export function TransactionsPage() {
               ...categories.map((c) => ({ value: c.id, label: c.name })),
             ]}
             className="min-w-[150px]"
+            icon={SlidersHorizontal}
+            triggerLabel={category === 'all' ? 'Catégorie' : undefined}
           />
 
           <Select
@@ -295,6 +291,7 @@ export function TransactionsPage() {
             }}
             options={PERIOD_OPTIONS}
             className="min-w-[160px]"
+            icon={Calendar}
           />
 
           {anyFilterActive && (

@@ -81,11 +81,11 @@ function stubIpc(transactions: DashboardTransaction[] = TX): void {
 }
 
 beforeEach(() => {
-  // Freeze "today" so the fixtures (dated 2026-05-14) always fall inside the
-  // page's default last-30-days window. Without this the suite is a time bomb:
-  // it passes until the real clock moves >30 days past the fixture date, then
-  // the default filter hides every row. Fake only Date — real timers stay live
-  // so testing-library's findByText polling still works.
+  // Freeze "today" so period-preset calculations are deterministic. The page's
+  // default period is now 'all', so this is harmless but kept for preset tests
+  // that select date-windowed options (Ce mois-ci, 30 derniers jours, etc.).
+  // Fake only Date — real timers stay live so testing-library's findByText
+  // polling still works.
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-05-20T12:00:00Z'));
   mockInvoke.mockReset();
@@ -209,15 +209,8 @@ describe('TransactionsPage', () => {
     const user = userEvent.setup();
     renderPage();
 
-    // Both rows visible when period is '30d' (default) — anchor = 2026-05-14,
-    // 30d from = 2026-04-14, so 'OldTx' (2026-03-01) should already be hidden.
+    // Default period is 'all' — both rows visible.
     await screen.findByText('NewTx');
-    expect(screen.queryByText('OldTx')).not.toBeInTheDocument();
-
-    // Switch to 'Toute la période' — both should appear.
-    await user.click(screen.getByLabelText('Période'));
-    await user.click(screen.getByRole('option', { name: 'Toute la période' }));
-    expect(screen.getByText('NewTx')).toBeInTheDocument();
     expect(screen.getByText('OldTx')).toBeInTheDocument();
 
     // Switch to 'Ce mois-ci' — only 2026-05 row should appear.
@@ -225,6 +218,12 @@ describe('TransactionsPage', () => {
     await user.click(screen.getByRole('option', { name: 'Ce mois-ci' }));
     expect(screen.getByText('NewTx')).toBeInTheDocument();
     expect(screen.queryByText('OldTx')).not.toBeInTheDocument();
+
+    // Switch back to 'Toute la période' — both should appear again.
+    await user.click(screen.getByLabelText('Période'));
+    await user.click(screen.getByRole('option', { name: 'Toute la période' }));
+    expect(screen.getByText('NewTx')).toBeInTheDocument();
+    expect(screen.getByText('OldTx')).toBeInTheDocument();
   });
 
   it('shows a filtered-empty state when nothing matches', async () => {
@@ -278,12 +277,12 @@ describe('TransactionsPage', () => {
     expect(mockInvoke).toHaveBeenCalledWith('transactions:delete', { transactionId: 'a' });
   });
 
-  it('shows the Période dropdown defaulting to 30 derniers jours', async () => {
+  it('shows the Période dropdown defaulting to Toute la période', async () => {
     renderPage();
     await screen.findByText('Carrefour');
-    // The period trigger should show the current label for '30d'.
+    // The period trigger should show the current label for 'all'.
     expect(screen.getByLabelText('Période')).toBeInTheDocument();
     // The trigger text should show the current selection.
-    expect(screen.getByText('30 derniers jours')).toBeInTheDocument();
+    expect(screen.getByText('Toute la période')).toBeInTheDocument();
   });
 });

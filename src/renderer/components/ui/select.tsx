@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Check, ChevronDown } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 import { cn } from '@renderer/lib/utils';
 
@@ -18,6 +19,10 @@ interface SelectProps {
   className?: string;
   align?: 'start' | 'end';
   disabled?: boolean;
+  /** Optional icon rendered before the label in the trigger. */
+  icon?: LucideIcon;
+  /** When provided, the trigger displays this text instead of the selected option's label. */
+  triggerLabel?: string;
 }
 
 const TRIGGER =
@@ -36,6 +41,8 @@ export function Select({
   className,
   align = 'start',
   disabled,
+  icon: Icon,
+  triggerLabel,
 }: SelectProps) {
   const [open, setOpen] = React.useState(false);
   const selected = options.find((o) => o.value === value);
@@ -47,7 +54,10 @@ export function Select({
         disabled={disabled}
         className={cn(TRIGGER, disabled && 'cursor-not-allowed opacity-50', className)}
       >
-        <span className="truncate">{selected?.label ?? ''}</span>
+        {Icon !== undefined && (
+          <Icon size={15} strokeWidth={1.7} className="shrink-0 text-paper-mute" />
+        )}
+        <span className="truncate">{triggerLabel ?? selected?.label ?? ''}</span>
         <ChevronDown size={13} strokeWidth={1.8} className="ml-auto shrink-0 text-paper-mute" />
       </PopoverTrigger>
       <PopoverContent
