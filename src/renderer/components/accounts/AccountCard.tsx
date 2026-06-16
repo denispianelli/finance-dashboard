@@ -54,8 +54,14 @@ export function AccountCard({
   );
 
   if (onSelect !== undefined) {
+    // Filter mode: flex-1 + min-width so cards share one row (reference layout),
+    // NOT w-full (which would stack them).
     return (
-      <button type="button" onClick={onSelect} className={cn(rootClass, 'w-full text-left')}>
+      <button
+        type="button"
+        onClick={onSelect}
+        className={cn(rootClass, 'min-w-[168px] flex-1 text-left')}
+      >
         {inner}
       </button>
     );

@@ -25,8 +25,11 @@ interface SelectProps {
   triggerLabel?: string;
 }
 
+// Canonical FIELD control (matches the design source): 42px tall, r-sm radius,
+// glass surface bg, 14px padding, 13.5px text. Callers can override (e.g. a
+// compact h-8 in dense headers) via className — cn() uses tailwind-merge.
 const TRIGGER =
-  'inline-flex h-7 items-center gap-1.5 rounded-md border border-line-2 bg-ink-2 pl-2.5 pr-2 font-sans text-xs text-paper outline-none transition-colors hover:border-line-3 focus-visible:ring-1 focus-visible:ring-brass data-[state=open]:border-line-3';
+  'inline-flex h-[42px] items-center gap-2 rounded-sm border border-line-2 bg-surface px-[14px] font-sans text-[13.5px] text-paper outline-none transition-colors hover:border-line-3 focus-visible:ring-1 focus-visible:ring-brass data-[state=open]:border-line-3';
 
 /**
  * Glass dropdown (replaces native <select>): a styled trigger + a Popover

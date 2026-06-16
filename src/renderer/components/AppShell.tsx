@@ -16,9 +16,8 @@ export function AppShell() {
   const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebarCollapse();
 
   return (
-    <div className="relative flex h-full">
-      <div className="aurora-bg" aria-hidden />
-      <div className="relative z-10 flex h-full w-full min-w-0">
+    <div className="flex h-full">
+      <div className="flex h-full w-full min-w-0">
         <Sidebar
           onImport={() => {
             setImportOpen(true);

@@ -253,9 +253,9 @@ export function TransactionsPage() {
           {/* Search input with icon */}
           <div className="relative flex min-w-[200px] flex-1 items-center">
             <Search
-              size={14}
+              size={16}
               strokeWidth={1.8}
-              className="pointer-events-none absolute left-2.5 text-paper-mute"
+              className="pointer-events-none absolute left-[14px] text-paper-mute"
             />
             <input
               type="search"
@@ -265,7 +265,7 @@ export function TransactionsPage() {
               onChange={(e) => {
                 setQuery(e.target.value);
               }}
-              className="h-7 w-full rounded-md border border-line-2 bg-ink-2 pl-8 pr-2 font-sans text-xs text-paper placeholder:text-paper-dim outline-none focus:border-line-3"
+              className="h-[42px] w-full rounded-sm border border-line-2 bg-surface pl-[40px] pr-[14px] font-sans text-[13.5px] text-paper placeholder:text-paper-dim outline-none focus:border-line-3"
             />
           </div>
 
