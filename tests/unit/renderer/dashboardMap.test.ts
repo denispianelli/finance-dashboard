@@ -79,6 +79,8 @@ describe('toAccount', () => {
       name: 'Compte courant',
       bank: 'lcl',
       balance: '70,00',
+      balanceValue: 70,
+      type: 'checking',
     });
   });
   it('shows an em dash for the balance when no statement anchors it (null)', () => {

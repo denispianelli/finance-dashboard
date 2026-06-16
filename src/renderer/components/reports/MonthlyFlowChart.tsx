@@ -23,9 +23,11 @@ export function MonthlyFlowChart({ data, title }: MonthlyFlowChartProps) {
   return (
     <div className="flex flex-col gap-3.5 rounded-lg border border-line-2 bg-ink-2 px-[22px] py-5">
       <div className="flex flex-wrap items-center justify-between gap-y-2">
-        <div className="flex min-w-0 items-center gap-3.5">
-          <Overline>— I</Overline>
-          <span className="font-sans text-sm font-medium tracking-[-0.012em]">{title}</span>
+        <div className="flex min-w-0 flex-col gap-1">
+          <Overline>Flux</Overline>
+          <span className="font-sans text-base font-semibold tracking-[-0.015em] text-paper">
+            {title}
+          </span>
         </div>
         <div className="flex gap-4 font-sans text-[11px] text-paper-mute">
           <span className="inline-flex items-center gap-1.5">

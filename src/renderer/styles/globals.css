@@ -1,15 +1,21 @@
-/* Self-hosted fonts — bundled via @fontsource, no CDN / no network request.
-   Keeps the app fully local (privé par défaut) and lets the CSP stay 'self'. */
-@import "@fontsource/geist-sans/300.css";
-@import "@fontsource/geist-sans/400.css";
-@import "@fontsource/geist-sans/500.css";
-@import "@fontsource/geist-sans/600.css";
-@import "@fontsource/geist-sans/700.css";
-@import "@fontsource/geist-mono/400.css";
-@import "@fontsource/geist-mono/500.css";
-@import "@fontsource/geist-mono/600.css";
-@import "@fontsource/instrument-serif/400.css";
-@import "@fontsource/instrument-serif/400-italic.css";
+/* ============================================================================
+   globals.css — Aurora token block + helpers (glass surfaces, light theme,
+   .aurora-bg glow, .tile glass class, motion). Mirrors existing variable NAMES so all
+   Tailwind utilities (bg-ink-2, text-paper, bg-brass, border-line-2, text-coral…)
+   keep working — now in AURORA values.
+
+   Uses self-hosted @fontsource Geist imports only (no CDN, no network requests).
+   ========================================================================== */
+
+@import '@fontsource/geist-sans/300.css';
+@import '@fontsource/geist-sans/400.css';
+@import '@fontsource/geist-sans/500.css';
+@import '@fontsource/geist-sans/600.css';
+@import '@fontsource/geist-sans/700.css';
+@import '@fontsource/geist-mono/400.css';
+@import '@fontsource/geist-mono/500.css';
+@import '@fontsource/geist-mono/600.css';
+/* Serif typeface retired in Aurora — Geist Sans handles all display type. */
 
 @tailwind base;
 @tailwind components;
@@ -17,194 +23,255 @@
 
 @layer base {
   :root {
-    /* shadcn HSL contract — keep in sync with identity tokens below */
-    --background:             225 28% 6%;
-    --foreground:             42 28% 92%;
-    --card:                   222 27% 9%;
-    --card-foreground:        42 28% 92%;
-    --muted:                  222 18% 15%;
-    --muted-foreground:       45 10% 56%;
-    --border:                 224 16% 19%;
-    --input:                  224 16% 19%;
-    --primary:                41 56% 61%;
-    --primary-foreground:     225 28% 6%;
-    --secondary:              222 18% 15%;
-    --secondary-foreground:   42 28% 92%;
-    --accent:                 222 18% 15%;
-    --accent-foreground:      42 28% 92%;
-    --destructive:            7 70% 64%;
-    --destructive-foreground: 42 28% 92%;
-    --ring:                   41 56% 61%;
-    --radius:                 0.5rem;
-    --radius-xs:   2px;
-    --radius-sm:   4px;
-    --radius-md:   6px;
-    --radius-lg:   8px;
-    --radius-xl:   12px;
+    /* ---- Aurora-native brand accent (lime "voltage") --------------------- */
+    --accent-brand: #c2f74e;
+    --accent-2: #d7fb84;
+    --accent-ink: #0e1305; /* ink that sits ON the accent        */
+    --accent-glow: 194 247 78; /* rgb triplet for rgba() glows       */
 
-    /* Semantic palette (HSL — used by ImportModal / TransactionReviewTable via hsl(var())) */
-    --sage:       122 29% 60%;
-    --sage-soft:  134 22% 56% / 0.12;
-    --coral:      8 68% 63%;
-    --coral-soft: 8 65% 64% / 0.12;
-    --flag:       41 68% 62%;
-    --flag-soft:  41 68% 62% / 0.14;
+    /* ---- shadcn HSL contract — flipped to Aurora ------------------------- */
+    /* NOTE: shadcn --accent is a *surface* (hover fill), NOT the brand color.
+       The brand color is --primary / --brass below. */
+    --background: 222 22% 5%;
+    --foreground: 220 14% 96%;
+    --card: 222 22% 8%;
+    --card-foreground: 220 14% 96%;
+    --muted: 222 12% 14%;
+    --muted-foreground: 218 8% 56%;
+    --border: 220 10% 22%;
+    --input: 220 10% 22%;
+    --primary: 76 91% 64%; /* lime */
+    --primary-foreground: 84 60% 6%;
+    --secondary: 222 12% 14%;
+    --secondary-foreground: 220 14% 96%;
+    --accent: 222 12% 14%; /* surface (shadcn), not brand */
+    --accent-foreground: 220 14% 96%;
+    --destructive: 351 94% 71%;
+    --destructive-foreground: 220 14% 96%;
+    --ring: 76 91% 64%;
+    --radius: 0.75rem;
+    --radius-xs: 8px;
+    --radius-sm: 12px;
+    --radius-md: 16px;
+    --radius-lg: 20px;
+    --radius-xl: 28px;
+    --radius-full: 9999px;
 
-    /* Identity tokens — ink canvas */
-    --ink-0:  #07080B;
-    --ink-1:  #0B0D12;
-    --ink-2:  #11141B;
-    --ink-3:  #181C25;
-    --ink-4:  #21262F;
-    --line-1: #1C2029;
-    --line-2: #2A2F3A;
-    --line-3: #3A3F4A;
-    /* RGB channels of the line colours, so Tailwind's `/NN` opacity modifier
-       works (the hex vars above stay for raw SVG-stroke usage). */
-    --line-1-rgb: 28 32 41;
-    --line-2-rgb: 42 47 58;
-    --line-3-rgb: 58 63 74;
+    /* ---- Semantic palette (HSL channels for hsl(var()) call sites) ------- */
+    --sage: 154 64% 54%;
+    --sage-soft: 154 64% 54% / 0.13;
+    --coral: 351 94% 71%;
+    --coral-soft: 351 94% 71% / 0.13;
+    --flag: 41 90% 60%;
+    --flag-soft: 41 90% 60% / 0.14;
 
-    /* Identity tokens — warm cream text */
-    --paper:      #F2EFE6;
-    --paper-soft: #C9C4B6;
-    --paper-mute: #8B8775;
-    --paper-dim:  #5B5849;
+    /* ---- Aurora glass surfaces (new) ------------------------------------- */
+    --bg: #0a0b0f;
+    --panel: #0c0e13;
+    --surface: rgba(255, 255, 255, 0.045);
+    --surface-2: rgba(255, 255, 255, 0.07);
+    --surface-solid: #15171e;
+    --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 42%);
+    --bg-grad-1: rgb(var(--accent-glow) / 0.1);
+    --bg-grad-2: rgba(120, 130, 255, 0.06);
 
-    /* Identity tokens — brass accent */
-    --brass:       #D4B062;
-    --brass-hi:    #E4C277;
-    --brass-lo:    #A8893F;
-    --brass-soft:  rgba(212, 176, 98, 0.12);
-    --brass-ghost: rgba(212, 176, 98, 0.06);
+    /* ---- Identity tokens — surfaces (legacy names → Aurora) -------------- */
+    --ink-0: #060709;
+    --ink-1: #0a0b0f; /* app background */
+    --ink-2: #101218; /* solid card (glass-free fallback) */
+    --ink-3: #171a22; /* inputs / raised */
+    --ink-4: #1f232c; /* active / hover-on-raised */
+    --line-1: #14161c;
+    --line-2: #232733;
+    --line-3: #313643;
+    --line-1-rgb: 20 22 28;
+    --line-2-rgb: 35 39 51;
+    --line-3-rgb: 49 54 67;
 
-    /* Fonts */
-    --font-serif: "Instrument Serif", Cambria, "Times New Roman", serif;
-    --font-sans:  "Geist Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --font-mono:  "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    /* ---- Identity tokens — text (cool grey, was warm cream) -------------- */
+    --paper: #f4f5f7;
+    --paper-soft: #a6acb8;
+    --paper-mute: #6b7280;
+    --paper-dim: #4a4f5a;
+    --text: var(--paper);
+    --text-2: var(--paper-soft);
+    --text-3: var(--paper-mute);
+    --text-4: var(--paper-dim);
 
-    /* Shadows */
-    --shadow-1: 0 1px 0 0 rgba(255,255,255,0.02) inset, 0 1px 2px 0 rgba(0,0,0,0.4);
-    --shadow-2: 0 4px 16px -4px rgba(0,0,0,0.5), 0 2px 4px -2px rgba(0,0,0,0.4);
-    --shadow-xl: 0 12px 32px -8px rgba(0,0,0,0.6); /* modals */
+    /* ---- Brand accent (legacy "brass" name → Aurora accent) ------------- */
+    --brass: var(--accent-brand);
+    --brass-hi: var(--accent-2);
+    --brass-lo: #a8d63f;
+    --brass-soft: rgb(var(--accent-glow) / 0.14);
+    --brass-ghost: rgb(var(--accent-glow) / 0.06);
 
-    /* Extra radius */
-    --radius-full: 9999px; /* dots, status pills, brand mark */
+    /* ---- Fonts (serif retired → aliased to Geist) ----------------------- */
+    --font-sans:
+      'Geist Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --font-display: var(--font-sans);
+    --font-serif: var(--font-sans);
 
-    /* Typography — weights */
-    --fw-light:    300;
-    --fw-regular:  400;
-    --fw-medium:   500;
+    /* ---- Shadows (deeper, diffuse — read on glass) ---------------------- */
+    --shadow-1: 0 6px 16px -10px rgba(0, 0, 0, 0.6);
+    --shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.8);
+    --shadow-2: 0 18px 40px -22px rgba(0, 0, 0, 0.8);
+    --shadow-lg: 0 28px 54px -26px rgba(0, 0, 0, 0.85);
+    --shadow-pop: 0 24px 48px -16px rgba(0, 0, 0, 0.75);
+    --shadow-xl: var(--shadow-pop);
+    --glow-accent: 0 10px 28px -10px rgb(var(--accent-glow) / 0.6);
+
+    /* ---- Typography (figures are now bold Geist, not serif italic) ------ */
+    --fw-light: 300;
+    --fw-regular: 400;
+    --fw-medium: 500;
     --fw-semibold: 600;
-    --fw-bold:     700;
+    --fw-bold: 700;
+    --text-hero: 34px;
+    --text-display: 30px;
+    --text-title-lg: 26px;
+    --text-title: 24px;
+    --text-body: 14px;
+    --text-sm: 13px;
+    --text-xs: 12px;
+    --text-2xs: 11px;
+    --text-overline: 11px;
+    --text-label: 10px;
+    --text-mono-md: 12px;
+    --text-mono-sm: 11px;
+    --leading-none: 1;
+    --leading-tight: 1.05;
+    --leading-snug: 1.3;
+    --leading-normal: 1.5;
+    --tracking-figure: -0.03em;
+    --tracking-title: -0.015em;
+    --tracking-tight: -0.005em;
+    --tracking-overline: 0.14em;
+    --tracking-label: 0.12em;
+    --tracking-loose: 0.06em;
+    --type-hero: var(--fw-semibold) var(--text-hero) / var(--leading-tight) var(--font-display);
+    --type-title: var(--fw-semibold) var(--text-title) / var(--leading-tight) var(--font-display);
+    --type-body: var(--fw-regular) var(--text-sm) / var(--leading-normal) var(--font-sans);
+    --type-mono: var(--fw-regular) var(--text-mono-md) / var(--leading-normal) var(--font-mono);
 
-    /* Typography — display (Instrument Serif italic), the signature figures */
-    --text-hero:     32px; /* KPI figures, big balances        */
-    --text-display:  28px; /* net-worth / report headline      */
-    --text-title-lg: 26px; /* page title (xl)                  */
-    --text-title:    22px; /* page title                       */
-
-    /* Typography — body / UI (Geist Sans) */
-    --text-body: 14px; /* default app body size  */
-    --text-sm:   13px; /* card content, rows     */
-    --text-xs:   12px; /* secondary controls     */
-    --text-2xs:  11px; /* chips, captions        */
-
-    /* Typography — overlines / labels (Geist Sans, uppercase, tracked) */
-    --text-overline: 9px;  /* group marks — 0.18em   */
-    --text-label:    10px; /* field labels — 0.12em  */
-
-    /* Typography — mono / data (Geist Mono, tabular) */
-    --text-mono-md: 12px; /* settings values, balances */
-    --text-mono-sm: 11px; /* sub-labels, refs, version */
-
-    /* Typography — line heights */
-    --leading-none:   1;
-    --leading-tight:  1.05; /* hero serif figures & titles */
-    --leading-snug:   1.3;  /* serif insight quotes        */
-    --leading-normal: 1.5;  /* body copy                   */
-
-    /* Typography — letter-spacing */
-    --tracking-figure:   -0.02em;  /* hero serif figures          */
-    --tracking-title:    -0.012em; /* card titles                 */
-    --tracking-tight:    -0.005em; /* mono amounts, button labels */
-    --tracking-overline: 0.18em;   /* overlines                   */
-    --tracking-label:    0.12em;   /* labels                      */
-    --tracking-loose:    0.06em;   /* account-tab names, sub-meta */
-
-    /* Typography — composed shorthands (CSS font shorthand) */
-    --type-hero:  italic var(--fw-regular) var(--text-hero) / var(--leading-tight) var(--font-serif);
-    --type-title: italic var(--fw-regular) var(--text-title) / var(--leading-tight) var(--font-serif);
-    --type-body:  var(--fw-regular) var(--text-sm) / var(--leading-normal) var(--font-sans);
-    --type-mono:  var(--fw-regular) var(--text-mono-md) / var(--leading-normal) var(--font-mono);
-
-    /* Spacing scale (4px base; the app leans on 14/18/22px gutters) */
+    /* ---- Spacing & component metrics (sidebar/topbar grew a touch) ------- */
     --space-0_5: 2px;
-    --space-1:   4px;
+    --space-1: 4px;
     --space-1_5: 6px;
-    --space-2:   8px;
+    --space-2: 8px;
     --space-2_5: 10px;
-    --space-3:   12px;
-    --space-3_5: 14px; /* default card gap / grid gutter */
-    --space-4:   16px;
-    --space-4_5: 18px; /* card vertical padding          */
-    --space-5:   20px;
-    --space-5_5: 22px; /* card horizontal padding        */
-    --space-6:   24px;
-    --space-7:   28px;
-    --space-8:   32px;
-
-    /* Component metrics */
+    --space-3: 12px;
+    --space-3_5: 14px;
+    --space-4: 16px;
+    --space-4_5: 18px;
+    --space-5: 20px;
+    --space-5_5: 22px;
+    --space-6: 24px;
+    --space-7: 28px;
+    --space-8: 32px;
     --card-pad-x: 22px;
     --card-pad-y: 20px;
-    --card-gap:   14px;
-    --control-h:    36px; /* default button / field height */
-    --control-h-sm: 28px; /* chips, small buttons         */
-    --row-h:        57px; /* virtualized tx row estimate  */
-    --sidebar-w:           232px;
-    --sidebar-w-collapsed: 60px;
-    --topbar-h:            70px;
+    --card-gap: 16px;
+    --control-h: 42px;
+    --control-h-sm: 34px;
+    --row-h: 60px;
+    --sidebar-w: 248px;
+    --sidebar-w-collapsed: 76px;
+    --topbar-h: 78px;
 
-    /* Ready-to-use semantic color values */
-    --color-income:       hsl(var(--sage));
-    --color-expense:      hsl(var(--coral));
-    --color-flag:         hsl(var(--flag));
-    --color-income-soft:  hsl(var(--sage-soft));
-    --color-expense-soft: hsl(var(--coral-soft));
-    --color-flag-soft:    hsl(var(--flag-soft));
+    /* ---- Ready-to-use semantic colors ----------------------------------- */
+    --income: #34e09a;
+    --expense: #fb6f84;
+    --flag-color: #f5b53d;
+    --color-income: var(--income);
+    --color-expense: var(--expense);
+    --color-flag: var(--flag-color);
+    --color-income-soft: rgba(52, 224, 154, 0.13);
+    --color-expense-soft: rgba(251, 111, 132, 0.13);
+    --color-flag-soft: rgba(245, 181, 61, 0.14);
 
-    /* Category swatch palette — MIRRORS lib/categoryOptions.ts CATEGORY_COLORS
-       (the persisted source of truth). Keep both in sync. Used for chart
-       palettes / category dots; never persisted from a token string. */
-    --cat-1:  #7ab890;
-    --cat-2:  #6fa582;
-    --cat-3:  #8aa8c7;
-    --cat-4:  #6e9bc4;
-    --cat-5:  #5fb0c9;
-    --cat-6:  #6fa8b5;
-    --cat-7:  #e0936a;
-    --cat-8:  #e07365;
-    --cat-9:  #d98ab0;
-    --cat-10: #b59adb;
-    --cat-11: #8d7dc4;
+    /* ---- Category swatch palette (vivid, on glass) ---------------------- */
+    --cat-1: #34e09a;
+    --cat-2: #7bd88f;
+    --cat-3: #5fd0f5;
+    --cat-4: #5fbfd0;
+    --cat-5: #7bb0e0;
+    --cat-6: #b9a3ff;
+    --cat-7: #e07bd8;
+    --cat-8: #fb6f84;
+    --cat-9: #f5a35f;
+    --cat-10: #c2f74e;
+    --cat-11: #8b93a7;
     --cat-12: #a07dc4;
     --cat-13: #b58a6a;
     --cat-14: #7e8aa0;
     --cat-15: #6e6e78;
   }
 
+  /* ---- Light theme (switch via data-theme="light" on <html>) ------------ */
+  :root[data-theme='light'] {
+    color-scheme: light;
+    --background: 60 11% 95%;
+    --foreground: 222 18% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 18% 9%;
+    --muted: 60 6% 92%;
+    --muted-foreground: 218 8% 36%;
+    --border: 222 12% 88%;
+    --input: 222 12% 88%;
+    --secondary: 60 6% 92%;
+    --secondary-foreground: 222 18% 9%;
+    --accent: 60 6% 92%;
+    --accent-foreground: 222 18% 9%;
+    --bg: #f3f3f0;
+    --panel: #fbfbf9;
+    --surface: rgba(255, 255, 255, 0.72);
+    --surface-2: #ffffff;
+    --surface-solid: #ffffff;
+    --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 50%);
+    --ink-0: #fff;
+    --ink-1: #f3f3f0;
+    --ink-2: #fff;
+    --ink-3: #f0f0ec;
+    --ink-4: #e7e7e2;
+    --line-1: #ecece8;
+    --line-2: #e2e2dc;
+    --line-3: #d6d6cf;
+    --line-1-rgb: 236 236 232;
+    --line-2-rgb: 226 226 220;
+    --line-3-rgb: 214 214 207;
+    --paper: #14161c;
+    --paper-soft: #545a64;
+    --paper-mute: #868c96;
+    --paper-dim: #abafb7; /* paper-dim/-mute are ghost/disabled tiers — never essential text on light */
+    /* --primary (lime) stays a button FILL only; never use as text on light — ~1:1 contrast */
+    --income: #12a661;
+    --expense: #e03a56;
+    --flag-color: #cc8a14;
+    --color-income-soft: rgba(18, 166, 97, 0.12);
+    --color-expense-soft: rgba(224, 58, 86, 0.12);
+    --color-flag-soft: rgba(204, 138, 20, 0.14);
+    --shadow-1: 0 6px 16px -12px rgba(20, 22, 30, 0.18);
+    --shadow: 0 16px 36px -20px rgba(20, 22, 30, 0.22);
+    --shadow-2: 0 16px 36px -20px rgba(20, 22, 30, 0.22);
+    --shadow-lg: 0 24px 48px -24px rgba(20, 22, 30, 0.24);
+    --shadow-pop: 0 24px 48px -16px rgba(20, 22, 30, 0.22);
+    --shadow-xl: var(--shadow-pop);
+    --brass-soft: rgb(var(--accent-glow) / 0.2);
+    --brass-ghost: rgb(var(--accent-glow) / 0.1);
+  }
+
   html,
   body,
   #root {
     height: 100%;
-    background: var(--ink-1);
-    color: var(--paper);
+    background: var(--bg);
+    color: var(--text);
   }
-
   * {
-    --tw-ring-offset-color: var(--ink-1);
+    --tw-ring-offset-color: var(--bg);
+    box-sizing: border-box;
   }
-
   body {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -212,22 +279,109 @@
     font-size: 14px;
     line-height: 1.5;
   }
-
+  ::selection {
+    background: rgb(var(--accent-glow) / 0.3);
+  }
   .nav-item:hover {
-    background: var(--ink-3);
-    color: var(--paper);
+    background: var(--surface);
+    color: var(--text);
+  }
+}
+
+@layer components {
+  /* The signature surface. Use `.tile` for cards; add `.tile-hover` for
+     interactive ones. Pad with your own utilities (e.g. p-[20px_22px]). */
+  .tile {
+    position: relative;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--line-2);
+    background: var(--surface);
+    backdrop-filter: blur(18px) saturate(1.2);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .tile::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--sheen);
+    pointer-events: none;
+  }
+  .tile > * {
+    position: relative;
+  }
+  .tile-hover {
+    transition:
+      transform 0.25s cubic-bezier(0.22, 0.61, 0.36, 1),
+      border-color 0.25s,
+      box-shadow 0.25s;
+  }
+  .tile-hover:hover {
+    transform: translateY(-3px);
+    border-color: var(--line-3);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Aurora glow — place one fixed instance behind the app (z-0); content z-10. */
+  .aurora-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(60% 50% at 12% -8%, var(--bg-grad-1), transparent 70%),
+      radial-gradient(48% 44% at 100% 8%, var(--bg-grad-2), transparent 70%),
+      radial-gradient(70% 60% at 88% 110%, rgb(var(--accent-glow) / 0.06), transparent 70%);
   }
 }
 
 @layer utilities {
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--line-3); }
-  ::-webkit-scrollbar-track { background: transparent; }
+  /* Accent tint helpers — translucent lime built from the --accent-glow triplet
+     so active states follow the current accent. Mirror the design handoff's
+     .bg-accent-soft / .bg-accent-tint / .border-accent-50 (written here in the
+     codebase's modern `rgb(<triplet> / a)` form). */
+  .bg-accent-soft {
+    background: rgb(var(--accent-glow) / 0.08);
+  }
+  .bg-accent-tint {
+    background: rgb(var(--accent-glow) / 0.12);
+  }
+  .border-accent-50 {
+    border-color: rgb(var(--accent-glow) / 0.5);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(var(--line-2-rgb) / 0.8);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--line-3);
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
 
-/* Chart entrance: bars grow up from the baseline (recharts-style). The donut
-   sweep is driven in JS via a stroke-dasharray transition. */
+/* ---- Motion — transform-only from-states so content never stays hidden --- */
+@keyframes rise {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
 @keyframes bar-grow {
   from {
     transform: scaleY(0);
@@ -236,9 +390,16 @@
     transform: scaleY(1);
   }
 }
+.anim-rise {
+  animation: rise 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
 
 @media (prefers-reduced-motion: reduce) {
+  .anim-rise,
   [data-chart-bar] {
     animation: none !important;
+  }
+  .tile-hover {
+    transition: none;
   }
 }

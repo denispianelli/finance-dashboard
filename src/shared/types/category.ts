@@ -6,6 +6,9 @@ export interface CategoryDTO {
   readonly parentId: string | null;
   readonly isDefault: boolean;
   readonly position: number;
+  /** Number of transactions assigned to this category. Set by listCategories;
+   *  omitted by other constructors (treat as 0). */
+  readonly txCount?: number;
 }
 
 export interface RenameCategoryInput {

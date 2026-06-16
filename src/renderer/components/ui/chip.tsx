@@ -18,10 +18,10 @@ export function Chip({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        'inline-flex h-6 items-center gap-1.5 rounded-sm border px-[9px] font-sans text-[11px] font-medium transition-colors',
+        'inline-flex h-[30px] items-center gap-[7px] rounded-full border px-[11px] font-sans text-[12.5px] font-medium transition-colors',
         active
-          ? 'border-[rgba(212,176,98,0.4)] bg-brass-soft text-paper'
-          : 'border-line-2 bg-ink-3 text-paper-soft hover:bg-ink-4',
+          ? 'border-transparent bg-brass text-accent-ink'
+          : 'border-line-2 bg-surface text-paper-soft hover:bg-surface-2',
       )}
     >
       {dotColor ? (

@@ -5,7 +5,7 @@ export function Overline({ children, className }: { children: ReactNode; classNa
   return (
     <span
       className={cn(
-        'font-sans text-[9px] font-semibold uppercase tracking-[0.18em] text-brass',
+        'font-sans text-[11px] font-semibold uppercase tracking-[0.14em] text-paper-mute',
         className,
       )}
     >

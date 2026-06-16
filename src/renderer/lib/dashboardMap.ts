@@ -1,5 +1,6 @@
 import type { AccountSummary, DashboardTransaction } from '@shared/types/dashboard';
 import type { Account } from '@renderer/components/dashboard/AccountTabs';
+export type { Account };
 import type { TxRow } from '@renderer/components/dashboard/TxTable';
 import type { MoneyKind } from '@renderer/components/ui/money';
 import { isTransferTx } from './filterTransactions';
@@ -44,6 +45,8 @@ export function toAccount(summary: AccountSummary): Account {
     bank: summary.bankId ?? '—',
     // null = no statement anchors a real balance yet → "—" (ADR-014).
     balance: summary.balance === null ? '—' : formatBalance(summary.balance),
+    balanceValue: summary.balance,
+    type: summary.type,
   };
 }
 

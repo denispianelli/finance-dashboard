@@ -9,7 +9,9 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-brass text-ink-1 hover:bg-brass-hi',
+        // accent-ink (not ink-1): stays dark on the lime fill in BOTH themes.
+        // ink-1 is theme-flipped (near-white in light) → white-on-lime bug.
+        default: 'bg-brass text-accent-ink hover:bg-brass-hi',
         destructive:
           'border border-line-2 bg-transparent text-coral hover:border-coral hover:bg-coral-soft',
         outline: 'border border-line-2 bg-ink-3 text-paper hover:bg-ink-4',

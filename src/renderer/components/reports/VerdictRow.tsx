@@ -32,7 +32,7 @@ function Pastille({
         <Label>{label}</Label>
       </div>
       <span
-        className="whitespace-nowrap font-serif text-[34px] italic leading-none tracking-[-0.02em] [font-variant-numeric:lining-nums_tabular-nums]"
+        className="whitespace-nowrap font-sans font-semibold text-[34px] leading-none tracking-[-0.02em] [font-variant-numeric:lining-nums_tabular-nums]"
         style={{ color: color ?? 'var(--paper)' }}
       >
         {value}
