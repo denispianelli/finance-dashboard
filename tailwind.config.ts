@@ -17,7 +17,17 @@ const config: Config = {
           'Roboto',
           'sans-serif',
         ],
-        serif: ['"Instrument Serif"', 'Cambria', '"Times New Roman"', 'serif'],
+        // Serif is retired in Aurora; alias to Geist so any residual `font-serif`
+        // call site renders the sans face (figures are bold Geist now).
+        serif: [
+          '"Geist Sans"',
+          'ui-sans-serif',
+          'system-ui',
+          '-apple-system',
+          '"Segoe UI"',
+          'Roboto',
+          'sans-serif',
+        ],
         mono: ['"Geist Mono"', 'ui-monospace', 'Menlo', 'Consolas', 'monospace'],
       },
       // Identity type scale (see globals.css --text-*). Keys are chosen to NOT
@@ -56,6 +66,13 @@ const config: Config = {
         1: 'var(--shadow-1)',
         2: 'var(--shadow-2)',
         modal: 'var(--shadow-xl)',
+        glass: 'var(--shadow)',
+        'glass-lg': 'var(--shadow-lg)',
+        pop: 'var(--shadow-pop)',
+        'glow-accent': 'var(--glow-accent)',
+      },
+      backdropBlur: {
+        glass: '18px',
       },
       borderRadius: {
         xs: 'var(--radius-xs)',
@@ -64,6 +81,11 @@ const config: Config = {
         lg: 'var(--radius-lg)',
         xl: 'var(--radius-xl)',
         full: 'var(--radius-full)',
+        'r-xs': 'var(--radius-xs)',
+        'r-sm': 'var(--radius-sm)',
+        'r-md': 'var(--radius-md)',
+        'r-lg': 'var(--radius-lg)',
+        'r-xl': 'var(--radius-xl)',
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -144,6 +166,26 @@ const config: Config = {
           14: 'var(--cat-14)',
           15: 'var(--cat-15)',
         },
+        // ---- Aurora-native handles (additive) ----
+        accentBrand: 'var(--accent-brand)',
+        accent2: 'var(--accent-2)',
+        'accent-ink': 'var(--accent-ink)',
+        bg: 'var(--bg)',
+        panel: 'var(--panel)',
+        surface: {
+          DEFAULT: 'var(--surface)',
+          2: 'var(--surface-2)',
+          solid: 'var(--surface-solid)',
+        },
+        text: {
+          DEFAULT: 'var(--text)',
+          2: 'var(--text-2)',
+          3: 'var(--text-3)',
+          4: 'var(--text-4)',
+        },
+        income: 'var(--income)',
+        expense: 'var(--expense)',
+        flagc: 'var(--flag-color)',
       },
     },
   },
