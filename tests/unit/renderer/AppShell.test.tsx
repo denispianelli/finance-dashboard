@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { MemoryRouter, Route, Routes, useOutletContext } from 'react-router-dom';
 import type { AppOutletContext } from '@renderer/lib/outletContext';
+import { ThemeProvider } from '@renderer/components/ThemeProvider';
 
 vi.mock('@renderer/hooks/useNetWorthSummary', () => ({
   useNetWorthSummary: () => ({ netWorth: 0, monthDelta: null }),
@@ -45,13 +46,15 @@ function TokenProbe() {
 
 function renderShell() {
   return render(
-    <MemoryRouter initialEntries={['/']}>
-      <Routes>
-        <Route element={<AppShell />}>
-          <Route index element={<TokenProbe />} />
-        </Route>
-      </Routes>
-    </MemoryRouter>,
+    <ThemeProvider>
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<AppShell />}>
+            <Route index element={<TokenProbe />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </ThemeProvider>,
   );
 }
 
