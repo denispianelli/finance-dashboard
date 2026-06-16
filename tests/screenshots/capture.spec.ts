@@ -1,8 +1,7 @@
 import { test, _electron as electron, type ElectronApplication, type Page } from '@playwright/test';
-import { mkdtempSync, rmSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 /**
  * Screenshot harness (NOT a test — no assertions). Launches the real packaged
@@ -13,9 +12,55 @@ import { fileURLToPath } from 'node:url';
  */
 
 const OUT_DIR = join(process.cwd(), '.screenshots');
-const FIXTURE = fileURLToPath(new URL('../e2e/fixtures/statement.ofx', import.meta.url));
 
 const VIEWPORT = { width: 1440, height: 900 };
+
+/**
+ * Build a 12-month OFX statement so the balance chart and the reports trends
+ * actually render (a single-month fixture leaves the area chart as one dot).
+ * Deterministic amounts — varied labels for category spread. Returns the path
+ * to a freshly-written temp .ofx.
+ */
+function writeYearFixture(): string {
+  const lines: string[] = [];
+  let balance = 0;
+  // Anchor "now" at June 2026 (the app's fixture epoch); walk 12 months back→fwd.
+  const months: string[] = [];
+  for (let m = 0; m < 12; m++) {
+    const d = new Date(Date.UTC(2025, 6 + m, 1)); // 2025-07 .. 2026-06
+    months.push(`${String(d.getUTCFullYear())}${String(d.getUTCMonth() + 1).padStart(2, '0')}`);
+  }
+  const tx = (ym: string, day: string, amt: number, fitid: string, name: string): void => {
+    balance += amt;
+    lines.push(
+      `<STMTTRN><DTPOSTED>${ym}${day}<TRNAMT>${amt.toFixed(2)}<FITID>${fitid}<NAME>${name}</STMTTRN>`,
+    );
+  };
+  months.forEach((ym, i) => {
+    tx(ym, '03', 2500, `Y-${ym}-SAL`, 'SALAIRE');
+    tx(ym, '05', -800, `Y-${ym}-LOY`, 'LOYER');
+    tx(ym, '12', -(300 + (i % 5) * 30), `Y-${ym}-CSE`, 'COURSES');
+    tx(ym, '15', -13.49, `Y-${ym}-NFX`, 'NETFLIX');
+    tx(ym, '20', -(45 + (i % 4) * 20), `Y-${ym}-RES`, 'RESTAURANT');
+    tx(ym, '24', -(60 + (i % 3) * 15), `Y-${ym}-ESS`, 'ESSENCE');
+  });
+  const last = months[months.length - 1] ?? '202606';
+  const ofx = [
+    '<OFX>',
+    '<SIGNONMSGSRSV1><SONRS><FI><ORG>LCL</FI></SONRS></SIGNONMSGSRSV1>',
+    '<BANKMSGSRSV1><STMTTRNRS><STMTRS>',
+    '<BANKACCTFROM><BANKID>30002<ACCTID>1<ACCTTYPE>CHECKING</BANKACCTFROM>',
+    '<BANKTRANLIST>',
+    ...lines,
+    '</BANKTRANLIST>',
+    `<LEDGERBAL><BALAMT>${balance.toFixed(2)}<DTASOF>${last}28</LEDGERBAL>`,
+    '</STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>',
+    '',
+  ].join('\n');
+  const path = join(tmpdir(), `fd-year-${String(Date.now())}.ofx`);
+  writeFileSync(path, ofx, 'utf8');
+  return path;
+}
 
 const ROUTES: { hash: string; title: RegExp; name: string }[] = [
   { hash: '#/', title: /tableau de bord/i, name: '01-dashboard' },
@@ -94,9 +139,13 @@ async function stubFilePicker(app: ElectronApplication, filePath: string): Promi
 }
 
 /** Drive the real import modal once to seed transactions (best-effort). */
-async function seedTransactions(app: ElectronApplication, page: Page): Promise<void> {
+async function seedTransactions(
+  app: ElectronApplication,
+  page: Page,
+  fixture: string,
+): Promise<void> {
   try {
-    await stubFilePicker(app, FIXTURE);
+    await stubFilePicker(app, fixture);
     await page.getByRole('button', { name: /importer un relevé/i }).click();
     await page.getByRole('button', { name: /parcourir/i }).click();
     await page.getByRole('button', { name: /continuer/i }).click({ timeout: 10_000 });
@@ -132,7 +181,7 @@ test('capture every route in dark and light', async () => {
     await page.setViewportSize(VIEWPORT);
 
     // Seed a representative dataset covering every screen.
-    await seedTransactions(app, page);
+    await seedTransactions(app, page, writeYearFixture());
     await ipcInvoke(page, 'patrimoine:createLoan', LOAN);
     await ipcInvoke(page, 'patrimoine:upsertAsset', ASSET);
     const { wrapper } = await ipcInvoke<{ wrapper: { id: string } }>(
