@@ -127,14 +127,14 @@ export function ReportsPage() {
 
       <div className="grid gap-3.5 lg:grid-cols-2">
         <CategoryDonut
-          overline="— II"
+          overline={period.granularity === 'year' ? "Sur l'année" : 'Sur le mois'}
           title="D'où vient l'argent"
           slices={categoryBreakdown(scoped, 'in')}
           centerTop="Entrées"
           emptyHint="Aucune entrée sur la période."
         />
         <CategoryDonut
-          overline="— III"
+          overline={period.granularity === 'year' ? "Sur l'année" : 'Sur le mois'}
           title="Où part l'argent"
           slices={categoryBreakdown(scoped, 'out')}
           centerTop="Sorties"
