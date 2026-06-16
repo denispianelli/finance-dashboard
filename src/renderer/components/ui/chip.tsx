@@ -18,9 +18,9 @@ export function Chip({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        'inline-flex h-6 items-center gap-1.5 rounded-sm border px-[9px] font-sans text-[11px] font-medium transition-colors',
+        'inline-flex h-6 items-center gap-1.5 rounded-full border px-[10px] font-sans text-[11px] font-medium transition-colors',
         active
-          ? 'border-[rgba(212,176,98,0.4)] bg-brass-soft text-paper'
+          ? 'border-transparent bg-brass text-accent-ink'
           : 'border-line-2 bg-ink-3 text-paper-soft hover:bg-ink-4',
       )}
     >
