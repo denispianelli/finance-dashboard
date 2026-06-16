@@ -16,45 +16,48 @@ export function AppShell() {
   const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebarCollapse();
 
   return (
-    <div className="flex h-full bg-ink-1">
-      <Sidebar
-        onImport={() => {
-          setImportOpen(true);
-        }}
-        netWorth={netWorth}
-        monthDelta={monthDelta}
-        collapsed={sidebarCollapsed}
-      />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar
+    <div className="relative flex h-full">
+      <div className="aurora-bg" aria-hidden />
+      <div className="relative z-10 flex h-full w-full min-w-0">
+        <Sidebar
           onImport={() => {
             setImportOpen(true);
           }}
-          onToggleSidebar={toggleSidebar}
-          sidebarCollapsed={sidebarCollapsed}
+          netWorth={netWorth}
+          monthDelta={monthDelta}
+          collapsed={sidebarCollapsed}
         />
-        {/* min-h-0 lets this flex child shrink to the viewport and scroll;
-            [&>*]:shrink-0 stops page sections from being vertically
-            compressed (which collapsed AccountTabs when the window
-            was short). Sections keep their natural height; main scrolls. */}
-        <main className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 pb-6 pt-5 xl:gap-5 xl:px-7 xl:pb-8 xl:pt-6 [&>*]:shrink-0">
-          <Outlet
-            context={
-              {
-                refreshToken,
-                openImport: () => {
-                  setImportOpen(true);
-                },
-                openCreateAccount: () => {
-                  setCreateAccountOpen(true);
-                },
-                notifyDataChanged: () => {
-                  setRefreshToken((t) => t + 1);
-                },
-              } satisfies AppOutletContext
-            }
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Topbar
+            onImport={() => {
+              setImportOpen(true);
+            }}
+            onToggleSidebar={toggleSidebar}
+            sidebarCollapsed={sidebarCollapsed}
           />
-        </main>
+          {/* min-h-0 lets this flex child shrink to the viewport and scroll;
+              [&>*]:shrink-0 stops page sections from being vertically
+              compressed (which collapsed AccountTabs when the window
+              was short). Sections keep their natural height; main scrolls. */}
+          <main className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 pb-6 pt-5 xl:gap-5 xl:px-7 xl:pb-8 xl:pt-6 [&>*]:shrink-0">
+            <Outlet
+              context={
+                {
+                  refreshToken,
+                  openImport: () => {
+                    setImportOpen(true);
+                  },
+                  openCreateAccount: () => {
+                    setCreateAccountOpen(true);
+                  },
+                  notifyDataChanged: () => {
+                    setRefreshToken((t) => t + 1);
+                  },
+                } satisfies AppOutletContext
+              }
+            />
+          </main>
+        </div>
       </div>
       <ImportModal
         open={importOpen}
