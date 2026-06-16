@@ -103,7 +103,7 @@ export function Topbar({
       </TooltipProvider>
       <Button onClick={onImport} className="shrink-0">
         <Upload size={16} strokeWidth={1.7} />
-        Importer un relevé
+        Importer
       </Button>
     </header>
   );

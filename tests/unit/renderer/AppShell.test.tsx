@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { MemoryRouter, Route, Routes, useOutletContext } from 'react-router-dom';
@@ -63,7 +63,9 @@ describe('AppShell', () => {
     renderShell();
     expect(screen.getByTestId('token').textContent).toBe('0');
 
-    await userEvent.click(screen.getByRole('button', { name: 'Importer un relevé' }));
+    await userEvent.click(
+      within(screen.getByRole('banner')).getByRole('button', { name: 'Importer' }),
+    );
     await userEvent.click(screen.getByRole('button', { name: 'simulate-import-success' }));
 
     expect(screen.getByTestId('token').textContent).toBe('1');

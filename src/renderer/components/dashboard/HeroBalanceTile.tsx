@@ -30,7 +30,12 @@ export function HeroBalanceTile({
   const visibleAccounts = accounts.slice(0, MAX_ACCOUNTS);
 
   return (
-    <Tile span={4} rowSpan={2} style={{ background: TILE_BG }} className="flex flex-col gap-3">
+    <Tile
+      span={4}
+      rowSpan={2}
+      style={{ background: TILE_BG }}
+      className="flex flex-col gap-3 self-stretch"
+    >
       {/* Eyebrow */}
       <div className="flex items-center gap-1.5">
         <span className="h-1.5 w-1.5 flex-none rounded-full bg-brass" />

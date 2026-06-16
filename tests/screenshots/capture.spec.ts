@@ -149,7 +149,7 @@ async function seedTransactions(
 ): Promise<void> {
   try {
     await stubFilePicker(app, fixture);
-    await page.getByRole('button', { name: /importer un relevé/i }).click();
+    await page.getByRole('banner').getByRole('button', { name: 'Importer' }).click();
     await page.getByRole('button', { name: /parcourir/i }).click();
     await page.getByRole('button', { name: /continuer/i }).click({ timeout: 10_000 });
     await page
