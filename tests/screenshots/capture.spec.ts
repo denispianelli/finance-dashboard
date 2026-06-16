@@ -13,7 +13,10 @@ import { join } from 'node:path';
 
 const OUT_DIR = join(process.cwd(), '.screenshots');
 
-const VIEWPORT = { width: 1440, height: 900 };
+// Tall viewport: the app scrolls an inner `main` (overflow-y-auto), not the
+// document, so a normal fullPage shot would clip below-the-fold sections. A tall
+// viewport lets the flex layout reveal the whole page in one capture.
+const VIEWPORT = { width: 1440, height: 2400 };
 
 /**
  * Build a 12-month OFX statement so the balance chart and the reports trends
