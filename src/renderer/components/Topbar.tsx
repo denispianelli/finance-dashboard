@@ -1,4 +1,4 @@
-import { Moon, PanelLeft, Sun } from 'lucide-react';
+import { Moon, PanelLeft, Sun, Upload } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useTheme } from './ThemeProvider';
 import { Button } from './ui/button';
@@ -102,6 +102,7 @@ export function Topbar({
         </Tooltip>
       </TooltipProvider>
       <Button onClick={onImport} className="shrink-0">
+        <Upload size={16} strokeWidth={1.7} />
         Importer un relevé
       </Button>
     </header>
