@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
-import { Calendar, Search, SlidersHorizontal } from 'lucide-react';
+import { Calendar, Search, SearchX, SlidersHorizontal, X } from 'lucide-react';
 import { ipc } from '@renderer/ipc/client';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Card, CardHeader, CardTitle } from '../components/ui/card';
+import { CardTitle } from '../components/ui/card';
 import { Overline } from '../components/ui/overline';
 import { Select } from '../components/ui/select';
 import { AccountTabs } from '../components/dashboard/AccountTabs';
@@ -18,7 +18,7 @@ import {
   type TxFilters,
   type TxType,
 } from '../lib/filterTransactions';
-import { formatEuro } from '../lib/euro';
+import { formatEuroRounded, formatSignedEuro, MINUS } from '../lib/euro';
 import { cn } from '../lib/utils';
 import type { AppOutletContext } from '../lib/outletContext';
 
@@ -33,9 +33,12 @@ const TYPES: { value: TxType; label: string }[] = [
   { value: 'all', label: 'Tout' },
   { value: 'income', label: 'Revenus' },
   { value: 'expense', label: 'Dépenses' },
-  { value: 'transfer', label: 'Transferts' },
-  { value: 'refund', label: 'Remboursements' },
 ];
+
+/** Canonical FIELD control from the handoff: 42px tall, r-sm (12px) radius, glass
+ *  surface, 13.5px text. (`rounded-sm` = 12px in this repo's overridden scale.) */
+const FIELD =
+  'h-[42px] rounded-sm border border-line-2 bg-surface px-3.5 text-[13.5px] text-paper outline-none';
 
 type PeriodPreset = 'all' | 'month' | '30d' | '90d' | 'year';
 
@@ -48,7 +51,7 @@ const PERIOD_OPTIONS: { value: PeriodPreset; label: string }[] = [
 ];
 
 const SEG_BTN =
-  'h-[30px] rounded-full px-3.5 font-sans text-[12.5px] font-medium transition-colors';
+  'h-[30px] whitespace-nowrap rounded-full px-3.5 font-sans text-[12.5px] font-medium transition-colors';
 
 function Segmented<T extends string>({
   options,
@@ -60,7 +63,7 @@ function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="inline-flex gap-[3px] rounded-full border border-line-2 bg-surface p-1">
+    <div className="inline-flex gap-0.5 rounded-full border border-line-2 bg-surface p-1">
       {options.map((o) => (
         <button
           key={o.value}
@@ -182,8 +185,9 @@ export function TransactionsPage() {
     return { totalIn: inSum, totalOut: outSum };
   }, [filtered]);
 
-  // Whether any filter is active (for the Reset button).
-  // Account is auto-selected by useDashboard (per-account view), not a chosen filter.
+  // Whether any filter is active (for the Reset button). The account is always
+  // auto-selected by useDashboard (the view is per-account, not an all-accounts
+  // aggregate), so it is NOT treated as a clearable filter here.
   const anyFilterActive = type !== 'all' || query !== '' || category !== 'all' || period !== 'all';
 
   function resetFilters() {
@@ -217,46 +221,47 @@ export function TransactionsPage() {
     // Fill the available viewport height so the page itself doesn't scroll (no outer
     // scrollbar); only the transaction list scrolls, inside its own container.
     <div className="flex min-h-0 flex-1 flex-col gap-4">
+      {/* Account filter cards (one row, wraps) */}
       <AccountTabs
         accounts={accounts.map(toAccount)}
         activeId={selectedAccountId ?? ''}
         onSelect={selectAccount}
       />
 
-      <Card className="min-h-0 flex-1">
-        <CardHeader>
-          <div className="flex min-w-0 flex-col gap-1">
+      {/* Container card — flat --surface panel, dropdowns portal out so it needs no
+          overflow handling. */}
+      <div className="flex min-h-0 flex-1 flex-col rounded-[20px] border border-line-2 bg-surface p-6 shadow-glass">
+        {/* Header: eyebrow + title · live Entrées / Sorties totals */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-1.5">
             <Overline>{acctName}</Overline>
             <CardTitle>Transactions</CardTitle>
           </div>
-          {/* Live Entrées / Sorties totals */}
-          <div className="flex shrink-0 gap-6">
-            <div className="flex flex-col items-end gap-0.5">
-              <span className="font-sans text-[10px] text-paper-mute">Entrées</span>
-              <span className="font-mono text-sm font-medium text-sage">
-                +&nbsp;{formatEuro(totalIn)}
+          <div className="flex gap-[22px]">
+            <div className="flex flex-col gap-[3px]">
+              <span className="text-[11px] text-paper-mute">Entrées</span>
+              <span className="font-mono text-base font-semibold tabular-nums text-income">
+                + {formatEuroRounded(totalIn)}
               </span>
             </div>
-            <div className="flex flex-col items-end gap-0.5">
-              <span className="font-sans text-[10px] text-paper-mute">Sorties</span>
-              <span className="font-mono text-sm font-medium text-coral">
-                −&nbsp;{formatEuro(Math.abs(totalOut))}
+            <div className="flex flex-col gap-[3px]">
+              <span className="text-[11px] text-paper-mute">Sorties</span>
+              <span className="font-mono text-base font-semibold tabular-nums text-expense">
+                {MINUS} {formatEuroRounded(Math.abs(totalOut))}
               </span>
             </div>
           </div>
-        </CardHeader>
+        </div>
 
         {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-3 pb-4">
+        <div className="mb-2 mt-5 flex flex-wrap items-center gap-3">
           <Segmented options={TYPES} value={type} onChange={setType} />
 
           {/* Search input with icon */}
-          <div className="relative flex min-w-[200px] flex-1 items-center">
-            <Search
-              size={16}
-              strokeWidth={1.8}
-              className="pointer-events-none absolute left-[14px] text-paper-mute"
-            />
+          <span className="relative flex min-w-[200px] flex-1 items-center">
+            <span className="pointer-events-none absolute left-3.5 flex text-paper-mute">
+              <Search size={16} strokeWidth={1.8} />
+            </span>
             <input
               type="search"
               aria-label="Rechercher une transaction"
@@ -265,9 +270,9 @@ export function TransactionsPage() {
               onChange={(e) => {
                 setQuery(e.target.value);
               }}
-              className="h-[42px] w-full rounded-sm border border-line-2 bg-surface pl-[40px] pr-[14px] font-sans text-[13.5px] text-paper placeholder:text-paper-dim outline-none focus:border-line-3"
+              className={cn(FIELD, 'w-full pl-10 placeholder:text-paper-dim focus:border-line-3')}
             />
-          </div>
+          </span>
 
           <Select
             ariaLabel="Catégorie"
@@ -298,89 +303,105 @@ export function TransactionsPage() {
             <button
               type="button"
               onClick={resetFilters}
-              className="h-7 rounded-md px-2.5 font-sans text-xs font-medium text-paper-mute transition-colors hover:text-paper"
+              className={cn(FIELD, 'inline-flex cursor-pointer items-center gap-2 text-paper-mute')}
             >
+              <X size={15} strokeWidth={1.8} />
               Réinitialiser
             </button>
           )}
         </div>
 
         {transactions.length === 0 ? (
-          <p className="py-8 text-center text-sm text-paper-mute">
+          <div className="flex flex-1 items-center justify-center py-[52px] text-center text-sm text-paper-mute">
             Aucune transaction — importez un relevé pour commencer.
-          </p>
+          </div>
         ) : filtered.length === 0 ? (
-          <p className="py-8 text-center text-sm text-paper-mute">
-            Aucune transaction ne correspond à ces filtres.
-          </p>
+          <div className="flex flex-1 flex-col items-center justify-center py-[52px] text-center text-sm text-paper-mute">
+            <SearchX size={28} strokeWidth={1.5} className="mb-2.5 text-paper-dim" />
+            <div>Aucune transaction ne correspond à ces filtres.</div>
+          </div>
         ) : (
-          <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-y-auto px-3.5">
-            {/* listRef sits below the top of the scroll container; scrollMargin = offsetTop so
-                each row is translated by (vi.start - scrollMargin). */}
-            <div
-              ref={listRef}
-              className="relative"
-              style={{ height: rowVirtualizer.getTotalSize() }}
-            >
-              {rowVirtualizer.getVirtualItems().map((vi) => {
-                const t = filtered[vi.index];
-                if (!t) return null;
-                return (
-                  <div
-                    key={t.id}
-                    data-index={vi.index}
-                    ref={(el) => {
-                      rowVirtualizer.measureElement(el);
-                    }}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      transform: `translateY(${String(vi.start - rowVirtualizer.options.scrollMargin)}px)`,
-                    }}
-                  >
-                    <TxRowFull
-                      row={toTxRow(t)}
-                      categories={categories}
-                      onReassign={(txId, catId) => {
-                        void reassign(txId, catId, t.labelClean);
+          <div className="mt-1 flex min-h-0 flex-1 flex-col">
+            <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-y-auto px-3.5">
+              {/* listRef sits below the top of the scroll container; scrollMargin = offsetTop so
+                  each row is translated by (vi.start - scrollMargin). */}
+              <div
+                ref={listRef}
+                className="relative"
+                style={{ height: rowVirtualizer.getTotalSize() }}
+              >
+                {rowVirtualizer.getVirtualItems().map((vi) => {
+                  const t = filtered[vi.index];
+                  if (!t) return null;
+                  return (
+                    <div
+                      key={t.id}
+                      data-index={vi.index}
+                      ref={(el) => {
+                        rowVirtualizer.measureElement(el);
                       }}
-                      onCreateCategory={createCategory}
-                      editing={editingId === t.id}
-                      onStartEdit={(id) => {
-                        setEditingId(id);
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        transform: `translateY(${String(vi.start - rowVirtualizer.options.scrollMargin)}px)`,
                       }}
-                      onSaveEdit={(id, fields) => {
-                        void updateTransaction({
-                          transactionId: id,
-                          date: fields.date,
-                          label: fields.label,
-                          amount: fields.amount,
-                        });
-                        setEditingId(null);
-                      }}
-                      onCancelEdit={() => {
-                        setEditingId(null);
-                      }}
-                      onDelete={(id) => {
-                        void deleteTransaction(id);
-                      }}
-                      onUnlinkLoan={(id) => {
-                        void ipc
-                          .invoke('patrimoine:unlinkPayment', { transactionId: id })
-                          .then(() => {
-                            refresh();
+                    >
+                      <TxRowFull
+                        row={toTxRow(t)}
+                        categories={categories}
+                        onReassign={(txId, catId) => {
+                          void reassign(txId, catId, t.labelClean);
+                        }}
+                        onCreateCategory={createCategory}
+                        editing={editingId === t.id}
+                        onStartEdit={(id) => {
+                          setEditingId(id);
+                        }}
+                        onSaveEdit={(id, fields) => {
+                          void updateTransaction({
+                            transactionId: id,
+                            date: fields.date,
+                            label: fields.label,
+                            amount: fields.amount,
                           });
-                      }}
-                    />
-                  </div>
-                );
-              })}
+                          setEditingId(null);
+                        }}
+                        onCancelEdit={() => {
+                          setEditingId(null);
+                        }}
+                        onDelete={(id) => {
+                          void deleteTransaction(id);
+                        }}
+                        onUnlinkLoan={(id) => {
+                          void ipc
+                            .invoke('patrimoine:unlinkPayment', { transactionId: id })
+                            .then(() => {
+                              refresh();
+                            });
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Footer: result count + net balance */}
+            <div className="flex items-center justify-between pt-4 text-[12.5px] text-paper-mute">
+              <span>
+                {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
+              </span>
+              <span>
+                Solde net{' '}
+                <span className="ml-1.5 font-mono tabular-nums text-paper">
+                  {formatSignedEuro(totalIn + totalOut)}
+                </span>
+              </span>
             </div>
           </div>
         )}
-      </Card>
+      </div>
       <RuleDialog
         proposal={ruleProposal}
         categories={categories}

@@ -137,9 +137,11 @@ export function TxRowFull({
   }
 
   return (
-    <div className="group flex items-center gap-3.5 -mx-3.5 rounded-md border-b border-line-2 px-3.5 py-[13px] hover:bg-surface transition-colors">
+    <div className="group flex items-center gap-4 -mx-3.5 rounded-sm border-b border-line-2 px-3.5 py-[13px] hover:bg-surface transition-colors">
       {/* Date */}
-      <span className="w-[58px] shrink-0 font-mono text-xs text-paper-mute">{t.date}</span>
+      <span className="w-[58px] shrink-0 font-mono tabular-nums text-xs text-paper-mute">
+        {t.date}
+      </span>
 
       {/* Category icon */}
       <CategoryIconTile name={t.icon} color={t.catColor} size={40} />
@@ -197,26 +199,28 @@ export function TxRowFull({
       </span>
 
       {/* Hover actions */}
-      <span className="flex shrink-0 gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      <span className="flex w-[56px] shrink-0 justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           type="button"
           aria-label="Modifier"
-          className={ICON_BTN}
+          title="Modifier le libellé"
+          className="flex rounded-xs p-1.5 text-paper-mute transition-colors hover:text-paper"
           onClick={() => {
             onStartEdit(t.id);
           }}
         >
-          <Pencil size={13} strokeWidth={1.8} />
+          <Pencil size={14} strokeWidth={1.8} />
         </button>
         <button
           type="button"
           aria-label="Supprimer"
-          className={ICON_BTN}
+          title="Supprimer"
+          className="flex rounded-xs p-1.5 text-paper-mute transition-colors hover:text-expense"
           onClick={() => {
             onDelete(t.id);
           }}
         >
-          <Trash2 size={13} strokeWidth={1.8} />
+          <Trash2 size={14} strokeWidth={1.8} />
         </button>
       </span>
     </div>
