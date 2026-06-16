@@ -93,6 +93,10 @@ export function ChartCard({ points, caption, range, onRangeChange }: ChartCardPr
             <Area
               dataKey="balance"
               type="linear"
+              // Pin the fill baseline to the bottom (dataMin) so the area fills
+              // DOWN from the line. Without this, recharts' "auto" baseline on a
+              // ['dataMin','dataMax'] domain fills upward (the inverted look).
+              baseValue="dataMin"
               stroke="var(--brass)"
               strokeWidth={1.5}
               fill="url(#chartBalanceFill)"
