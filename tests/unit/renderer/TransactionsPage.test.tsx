@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 
@@ -186,9 +187,12 @@ describe('TransactionsPage', () => {
   });
 
   it('filters by category', async () => {
+    const user = userEvent.setup();
     renderPage();
     await screen.findByText('Carrefour');
-    fireEvent.change(screen.getByLabelText('Catégorie'), { target: { value: 'cat-food' } });
+    // Glass dropdown: open the trigger, then pick the category option.
+    await user.click(screen.getByLabelText('Catégorie'));
+    await user.click(screen.getByRole('option', { name: 'Alimentation' }));
     expect(screen.getByText('Carrefour')).toBeInTheDocument();
     expect(screen.queryByText('Salaire')).not.toBeInTheDocument();
   });

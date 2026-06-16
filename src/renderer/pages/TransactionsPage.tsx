@@ -4,6 +4,7 @@ import { ipc } from '@renderer/ipc/client';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Overline } from '../components/ui/overline';
+import { Select } from '../components/ui/select';
 import { AccountTabs } from '../components/dashboard/AccountTabs';
 import { TxTableHeader, TxTableRow } from '../components/dashboard/TxTable';
 import { PeriodFilter, type DateRangeValue } from '../components/dashboard/PeriodFilter';
@@ -162,22 +163,17 @@ export function TransactionsPage() {
         <div className="flex flex-wrap items-center gap-3 pb-4">
           <PeriodFilter value={range} onChange={setRange} today={today} />
           <Segmented options={TYPES} value={type} onChange={setType} />
-          <select
-            aria-label="Catégorie"
+          <Select
+            ariaLabel="Catégorie"
             value={category}
-            onChange={(e) => {
-              setCategory(e.target.value);
-            }}
-            className={FIELD}
-          >
-            <option value="all">Toutes catégories</option>
-            <option value={NONE}>Sans catégorie</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            onValueChange={setCategory}
+            options={[
+              { value: 'all', label: 'Toutes catégories' },
+              { value: NONE, label: 'Sans catégorie' },
+              ...categories.map((c) => ({ value: c.id, label: c.name })),
+            ]}
+            className="min-w-[150px]"
+          />
           <input
             type="search"
             aria-label="Rechercher"
