@@ -102,7 +102,9 @@ export function ReportsPage() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-baseline gap-3.5">
-          <Overline>— Rapport</Overline>
+          <Overline>
+            {period.granularity === 'year' ? 'Rapport annuel' : 'Rapport mensuel'}
+          </Overline>
           <span className="font-sans font-semibold text-[20px] leading-none text-paper">
             {headerLabel}
           </span>

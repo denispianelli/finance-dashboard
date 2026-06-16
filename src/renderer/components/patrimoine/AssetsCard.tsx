@@ -106,8 +106,8 @@ export function AssetsCard({
     <Card>
       <CardHeader>
         <div className="flex items-center gap-3.5">
-          <Overline>— III</Overline>
-          <CardTitle>Biens</CardTitle>
+          <Overline>Hors comptes</Overline>
+          <CardTitle>Actifs déclarés</CardTitle>
         </div>
         {!formOpen && (
           <Button variant="secondary" size="sm" onClick={openAdd}>

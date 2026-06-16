@@ -152,7 +152,7 @@ export function TransactionsPage() {
       <Card className="min-h-0 flex-1">
         <CardHeader>
           <div className="flex items-center gap-3.5">
-            <Overline>— III</Overline>
+            <Overline>Activité</Overline>
             <CardTitle>Transactions</CardTitle>
           </div>
           <span className="font-mono text-xs text-paper-mute">

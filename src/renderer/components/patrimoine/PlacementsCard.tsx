@@ -200,7 +200,7 @@ export function PlacementsCard({
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2.5">
-          <Overline>— IV</Overline>
+          <Overline>Investissements</Overline>
           <CardTitle>Placements</CardTitle>
         </div>
         <div className="flex items-center gap-2">
