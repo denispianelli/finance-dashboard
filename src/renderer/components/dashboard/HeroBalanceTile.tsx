@@ -74,15 +74,23 @@ export function HeroBalanceTile({
       {/* Spacer pushes sparkline + accounts to bottom */}
       <div className="flex-1" />
 
-      {/* Sparkline */}
+      {/* Sparkline — line + area fill fading down to the baseline (matches the
+          big balance chart). */}
       {spark.length > 0 && (
         <svg
-          className="h-8 w-full opacity-70"
+          className="h-9 w-full"
           viewBox="0 0 84 32"
           preserveAspectRatio="none"
           aria-hidden="true"
         >
-          <polyline points={spark} fill="none" stroke="var(--color-income)" strokeWidth="1.2" />
+          <defs>
+            <linearGradient id="heroSparkFill" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="var(--color-income)" stopOpacity={0.28} />
+              <stop offset="100%" stopColor="var(--color-income)" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <polygon points={`${spark} 84,32 0,32`} fill="url(#heroSparkFill)" stroke="none" />
+          <polyline points={spark} fill="none" stroke="var(--color-income)" strokeWidth="1.4" />
         </svg>
       )}
 
