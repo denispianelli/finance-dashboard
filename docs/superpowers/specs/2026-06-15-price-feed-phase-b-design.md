@@ -195,10 +195,19 @@ All French, sentence case, `<Money>` / `formatEuro`, Lucide icons, existing dial
   montant ni de quantité) and to whom (portfolio-performance.info, Yahoo Finance), and that it is
   off by default. Disabling it stops all calls; cached `quote_symbol`/valuations remain.
 - **Placements card:** when the feed is on, a "Rafraîchir les cours" button + "dernière mise à jour
-  le …" line. Quoted supports show their value with a small "cours auto" marker.
-- **Support dialog (ISIN):** unchanged entry; when the feed is on and an ISIN is present but
-  unresolved, the next refresh resolves and caches the ticker (no extra UI needed). Optionally show
-  the resolved ticker read-only once known.
+  le …" line (re-values every quotable support). Quoted supports show their value with a small
+  "cours auto" marker.
+- **Inline ISIN entry (the fluid path):** an open support with no value yet, when the feed is on,
+  shows an inline ISIN field + "Valoriser" button directly on its row (instead of "déclare la valeur
+  actuelle"). Entering an ISIN there saves it AND values the support immediately — no detail dialog,
+  no separate refresh click. The ISIN is normalised to uppercase. When the feed is **off**, the row
+  keeps the manual "déclare la valeur actuelle" affordance (no ISIN field). This replaces the earlier
+  "set the ISIN only from the detail dialog, then refresh" idea, which tested as poor UX (the ISIN
+  field was undiscoverable and required an extra refresh click).
+- **Support detail dialog (ISIN):** an editable ISIN field (with a toast + "Enregistré" confirmation)
+  for changing the ISIN of an already-known support later; saving also re-values when the feed is on.
+- **Auto-value on save:** saving an ISIN (inline or in the dialog) triggers a quote refresh via the
+  hook; that refresh is a no-op server-side when the feed is off, so it is always safe to call.
 
 ## Error handling
 
@@ -236,9 +245,10 @@ state that an opt-in price feed exists and precisely what it transmits.
 2. In-app, feed **OFF** (default): Placements behaves exactly as today; no network traffic (verify
    with the app's network inactivity — no outbound to the two hosts).
 3. Enable the feed in settings; confirm the settings text states what is sent.
-4. On a wrapper imported from Fortuneo with an open MSCI World support, set its ISIN
-   (`IE00B4L5Y983`); click "Rafraîchir les cours". Expect: a value ≈ `net shares × ~124 €` appears,
-   labelled "cours auto", with a "dernière mise à jour" timestamp; TRI now shows.
-5. Declare an exact value for that support → it overrides the quote (declared wins); re-refresh does
-   not overwrite the declared value for that date.
-6. Turn the feed OFF → no further calls; existing values persist.
+4. On a wrapper imported from Fortuneo with an open MSCI World support, the row shows an inline ISIN
+   field. Enter `IE00B4L5Y983` and click "Valoriser". Expect: a value ≈ `net shares × ~124 €` appears
+   immediately, labelled "cours auto" (no separate refresh click); TRI now shows.
+5. Declare an exact value for that support (via the row update action) → it overrides the quote
+   (declared wins on its date); a re-refresh does not overwrite the declared value for that date.
+6. Turn the feed OFF → the row reverts to "déclare la valeur actuelle"; no further calls; existing
+   values persist.
