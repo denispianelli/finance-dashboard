@@ -40,7 +40,7 @@ export function ChartCard({ points, caption, range, onRangeChange }: ChartCardPr
             {title}
           </span>
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-[5px]">
           {RANGES.map((r) => (
             <Chip
               key={r.value}
