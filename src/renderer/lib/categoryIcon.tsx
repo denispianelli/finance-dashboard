@@ -48,16 +48,30 @@ export function CategoryIcon({ name }: { name: string }) {
   );
 }
 
-/** Larger icon tile tinted with the category colour — for the Catégories cards. */
-export function CategoryIconTile({ name, color }: { name: string; color: string | null }) {
+/** Icon tile tinted with the category colour — for the Catégories cards and the
+ *  dashboard recent-transactions rows. `size` is the square side in px. */
+export function CategoryIconTile({
+  name,
+  color,
+  size = 36,
+}: {
+  name: string;
+  color: string | null;
+  size?: number;
+}) {
   const Icon = MAP[name] ?? Wallet;
   const tint = color ?? '#6E6E78';
   return (
     <span
-      className="flex h-9 w-9 items-center justify-center rounded-lg"
-      style={{ background: `color-mix(in srgb, ${tint} 16%, transparent)`, color: tint }}
+      className="flex shrink-0 items-center justify-center rounded-lg"
+      style={{
+        width: size,
+        height: size,
+        background: `color-mix(in srgb, ${tint} 16%, transparent)`,
+        color: tint,
+      }}
     >
-      <Icon size={18} strokeWidth={1.7} />
+      <Icon size={Math.round(size * 0.5)} strokeWidth={1.7} />
     </span>
   );
 }
