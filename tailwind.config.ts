@@ -32,8 +32,8 @@ const config: Config = {
       },
       // Identity type scale (see globals.css --text-*). Keys are chosen to NOT
       // collide with Tailwind defaults (no sm/xs override), so adding them is
-      // inert until a class opts in. Display sizes are set in Instrument Serif
-      // italic at call sites; these only carry the px value.
+      // inert until a class opts in. Display sizes apply to bold Geist Sans at
+      // the call sites; these keys carry only the px value.
       fontSize: {
         hero: 'var(--text-hero)',
         display: 'var(--text-display)',
@@ -81,11 +81,6 @@ const config: Config = {
         lg: 'var(--radius-lg)',
         xl: 'var(--radius-xl)',
         full: 'var(--radius-full)',
-        'r-xs': 'var(--radius-xs)',
-        'r-sm': 'var(--radius-sm)',
-        'r-md': 'var(--radius-md)',
-        'r-lg': 'var(--radius-lg)',
-        'r-xl': 'var(--radius-xl)',
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -167,8 +162,8 @@ const config: Config = {
           15: 'var(--cat-15)',
         },
         // ---- Aurora-native handles (additive) ----
-        accentBrand: 'var(--accent-brand)',
-        accent2: 'var(--accent-2)',
+        'accent-brand': 'var(--accent-brand)',
+        'accent-2': 'var(--accent-2)',
         'accent-ink': 'var(--accent-ink)',
         bg: 'var(--bg)',
         panel: 'var(--panel)',
