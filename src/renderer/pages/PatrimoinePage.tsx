@@ -217,6 +217,9 @@ export function PatrimoinePage() {
         support={detailSupport}
         loadHistory={placements.getSupportHistory}
         loadOperations={placements.listOperations}
+        onSetIsin={(supportId, isin) =>
+          placements.setSupportIsin(supportId, isin).then(notifyDataChanged)
+        }
       />
 
       <ImportBourseDialog

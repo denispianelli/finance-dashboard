@@ -75,6 +75,7 @@ export const CHANNELS = {
   investmentPickBourseCsv: 'investment:pickBourseCsv',
   investmentImportBourseCsv: 'investment:importBourseCsv',
   investmentListOperations: 'investment:listOperations',
+  investmentSetSupportIsin: 'investment:setSupportIsin',
   investmentGetQuoteSettings: 'investment:getQuoteSettings',
   investmentSetQuotesEnabled: 'investment:setQuotesEnabled',
   investmentRefreshQuotes: 'investment:refreshQuotes',

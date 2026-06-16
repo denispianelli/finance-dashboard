@@ -113,6 +113,14 @@ export function usePlacements(refreshToken: number) {
     [],
   );
 
+  const setSupportIsin = useCallback(
+    async (supportId: string, isin: string | null) => {
+      await ipc.invoke('investment:setSupportIsin', { supportId, isin });
+      reload();
+    },
+    [reload],
+  );
+
   const getQuoteSettings = useCallback(() => ipc.invoke('investment:getQuoteSettings', {}), []);
 
   const setQuotesEnabled = useCallback(async (enabled: boolean) => {
@@ -137,6 +145,7 @@ export function usePlacements(refreshToken: number) {
     pickBourseCsv,
     importBourseCsv,
     listOperations,
+    setSupportIsin,
     getQuoteSettings,
     setQuotesEnabled,
     refreshQuotes,

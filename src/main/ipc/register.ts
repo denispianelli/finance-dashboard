@@ -90,6 +90,7 @@ import {
   handleInvestmentPickBourseCsv,
   handleInvestmentImportBourseCsv,
   handleInvestmentListOperations,
+  handleInvestmentSetSupportIsin,
   handleInvestmentGetQuoteSettings,
   handleInvestmentSetQuotesEnabled,
   handleInvestmentRefreshQuotes,
@@ -158,6 +159,7 @@ const MUTATING_CHANNELS: ReadonlySet<IpcChannel> = new Set<IpcChannel>([
   'investment:deleteSupport',
   'investment:updateSupport',
   'investment:importBourseCsv',
+  'investment:setSupportIsin',
   // Deliberately NOT mutating for sync: 'investment:refreshQuotes' (quote valuations regenerate
   // on each machine's own opt-in refresh — syncing them would churn a snapshot on every app open)
   // and 'investment:setQuotesEnabled' (the price-feed opt-in is a per-machine network-consent
@@ -250,6 +252,7 @@ export function registerAllHandlers(): void {
   register(CHANNELS.investmentPickBourseCsv, () => handleInvestmentPickBourseCsv());
   register(CHANNELS.investmentImportBourseCsv, handleInvestmentImportBourseCsv);
   register(CHANNELS.investmentListOperations, handleInvestmentListOperations);
+  register(CHANNELS.investmentSetSupportIsin, handleInvestmentSetSupportIsin);
   register(CHANNELS.investmentGetQuoteSettings, () => handleInvestmentGetQuoteSettings());
   register(CHANNELS.investmentSetQuotesEnabled, handleInvestmentSetQuotesEnabled);
   register(CHANNELS.investmentRefreshQuotes, () => handleInvestmentRefreshQuotes());

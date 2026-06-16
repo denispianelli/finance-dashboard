@@ -282,6 +282,10 @@ export interface IpcContract {
     payload: { supportId: string };
     response: { operations: OperationDTO[] };
   };
+  'investment:setSupportIsin': {
+    payload: { supportId: string; isin: string | null };
+    response: { ok: true };
+  };
   'investment:getQuoteSettings': {
     payload: Record<string, never>;
     response: QuoteSettings;

@@ -276,6 +276,14 @@ export function setQuoteSymbol(db: DatabaseSync, supportId: string, symbol: stri
   db.prepare('UPDATE investment_supports SET quote_symbol = ? WHERE id = ?').run(symbol, supportId);
 }
 
+/** Set (or clear) a support's ISIN. Clears the cached ticker so a changed ISIN re-resolves. */
+export function setSupportIsin(db: DatabaseSync, supportId: string, isin: string | null): void {
+  db.prepare('UPDATE investment_supports SET isin = ?, quote_symbol = NULL WHERE id = ?').run(
+    isin,
+    supportId,
+  );
+}
+
 /** Upsert one 'quote' valuation per (support, date). A same-date declared value is never shadowed. */
 export function writeQuoteValuation(
   db: DatabaseSync,

@@ -10,6 +10,7 @@ import {
 } from '../../../src/main/investment/investmentRepo';
 import {
   setQuoteSymbol,
+  setSupportIsin,
   writeQuoteValuation,
   listQuotableSupports,
 } from '../../../src/main/investment/investmentRepo';
@@ -72,6 +73,24 @@ describe('writeQuoteValuation', () => {
     expect(writeQuoteValuation(db, id, '2026-06-15', 372)).toBe('skipped_declared');
     const quotes = getSupportHistory(db, id).valuations.filter((v) => v.source === 'quote');
     expect(quotes).toHaveLength(0);
+  });
+});
+
+describe('setSupportIsin', () => {
+  it('sets the ISIN and clears any cached ticker so it re-resolves', () => {
+    const id = seedSupport(db);
+    setQuoteSymbol(db, id, 'EUNL.DE');
+    expect(listQuotableSupports(db)[0]?.quoteSymbol).toBe('EUNL.DE');
+    setSupportIsin(db, id, 'IE00BK5BQT80');
+    const row = listQuotableSupports(db)[0];
+    expect(row?.isin).toBe('IE00BK5BQT80');
+    expect(row?.quoteSymbol).toBeNull();
+  });
+
+  it('clears the ISIN when passed null (support drops out of quotable list)', () => {
+    const id = seedSupport(db);
+    setSupportIsin(db, id, null);
+    expect(listQuotableSupports(db)).toHaveLength(0);
   });
 });
 

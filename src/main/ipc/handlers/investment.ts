@@ -30,6 +30,7 @@ import {
   listSupportRows,
   applyUpdate,
   getSupportHistory,
+  setSupportIsin,
 } from '../../investment/investmentRepo';
 import { computePerformance } from '../../investment/performance';
 import { parseBourseCsv } from '../../investment/parseBourseCsv';
@@ -147,6 +148,14 @@ export function handleInvestmentListOperations(payload: { supportId: string }): 
   operations: OperationDTO[];
 } {
   return { operations: listOperations(getDb(), payload.supportId) };
+}
+
+export function handleInvestmentSetSupportIsin(payload: {
+  supportId: string;
+  isin: string | null;
+}): { ok: true } {
+  setSupportIsin(getDb(), payload.supportId, payload.isin);
+  return { ok: true };
 }
 
 export function handleInvestmentGetQuoteSettings(): QuoteSettings {
