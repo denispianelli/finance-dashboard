@@ -4,6 +4,7 @@ import type { CategoryDTO } from '@shared/types/category';
 import type { RuleDTO, RuleMatchType } from '@shared/types/rules';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Overline } from '../ui/overline';
+import { Select } from '../ui/select';
 import { useRules } from '../../hooks/useRules';
 import { cn } from '../../lib/utils';
 
@@ -59,21 +60,17 @@ export function RulesSection({ categories }: { categories: CategoryDTO[] }) {
             setQuery(e.target.value);
           }}
         />
-        <select
-          aria-label="Filtrer par catégorie"
-          className={FIELD}
+        <Select
+          ariaLabel="Filtrer par catégorie"
           value={categoryFilter}
-          onChange={(e) => {
-            setCategoryFilter(e.target.value);
-          }}
-        >
-          <option value="">Toutes les catégories</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+          onValueChange={setCategoryFilter}
+          options={[
+            { value: '', label: 'Toutes les catégories' },
+            ...categories.map((c) => ({ value: c.id, label: c.name })),
+          ]}
+          align="end"
+          className="min-w-[170px]"
+        />
         {filterActive && (
           <span className="shrink-0 font-mono text-[11px] tabular-nums text-paper-dim">
             {filtered.length} / {rules.length} règles

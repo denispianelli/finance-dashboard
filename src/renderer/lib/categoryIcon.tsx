@@ -47,3 +47,17 @@ export function CategoryIcon({ name }: { name: string }) {
     </span>
   );
 }
+
+/** Larger icon tile tinted with the category colour — for the Catégories cards. */
+export function CategoryIconTile({ name, color }: { name: string; color: string | null }) {
+  const Icon = MAP[name] ?? Wallet;
+  const tint = color ?? '#6E6E78';
+  return (
+    <span
+      className="flex h-9 w-9 items-center justify-center rounded-lg"
+      style={{ background: `color-mix(in srgb, ${tint} 16%, transparent)`, color: tint }}
+    >
+      <Icon size={18} strokeWidth={1.7} />
+    </span>
+  );
+}

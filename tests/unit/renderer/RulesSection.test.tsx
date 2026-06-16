@@ -81,8 +81,9 @@ describe('RulesSection', () => {
   it('lists rules with value, category, hit count and creation date', async () => {
     render(<RulesSection categories={CATEGORIES} />);
     expect(await screen.findByText('NETFLIX')).toBeTruthy();
-    // 'Loisirs' shows both as the row's category and as a filter <option>.
-    expect(screen.getAllByText('Loisirs')).toHaveLength(2);
+    // 'Loisirs' shows as the row's category. The glass filter only renders its
+    // options when open, so it no longer duplicates the label in the DOM.
+    expect(screen.getAllByText('Loisirs')).toHaveLength(1);
     expect(screen.getByText('12 ×')).toBeTruthy();
     expect(screen.getByText('ZZZ EXACT')).toBeTruthy();
     expect(screen.getByText('2026-05-15')).toBeTruthy();
@@ -131,10 +132,9 @@ describe('RulesSection', () => {
     render(<RulesSection categories={CATEGORIES} />);
     await screen.findByText('NETFLIX');
 
-    await userEvent.selectOptions(
-      screen.getByLabelText('Filtrer par catégorie'),
-      'cat-alimentation',
-    );
+    // Glass dropdown: open the filter, then pick the category option.
+    await userEvent.click(screen.getByLabelText('Filtrer par catégorie'));
+    await userEvent.click(screen.getByRole('option', { name: 'Alimentation' }));
 
     expect(screen.getByText('ZZZ EXACT')).toBeTruthy();
     expect(screen.queryByText('NETFLIX')).toBeNull();
