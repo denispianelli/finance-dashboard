@@ -29,10 +29,13 @@ export function Donut({
   segments,
   centerTop,
   centerMain,
+  centerSub,
 }: {
   segments: DonutSegment[];
   centerTop: string;
   centerMain: string;
+  /** Optional small caption below the main figure, e.g. a period label. */
+  centerSub?: string;
 }) {
   const total = segments.reduce((s, x) => s + Math.abs(x.value), 0) || 1;
   const arcs = segments.map((s, i) => {
@@ -98,6 +101,9 @@ export function Donut({
         <span className="font-sans font-semibold text-[22px] leading-none tracking-[-0.02em] text-paper">
           {centerMain}
         </span>
+        {centerSub !== undefined && (
+          <span className="font-sans text-[9px] text-paper-dim">{centerSub}</span>
+        )}
       </div>
       {hover !== null && hovered !== undefined && (
         <div
@@ -139,6 +145,8 @@ export interface DonutCardProps {
   centerTop: string;
   /** Centre figure; defaults to the compact sum of the segments. */
   centerMain?: string;
+  /** Optional small caption below the centre figure, e.g. a period label. */
+  centerSub?: string;
   emptyHint: string;
   /** Optional content pinned to the right of the section head (e.g. a total). */
   right?: ReactNode;
@@ -152,6 +160,7 @@ export function DonutCard({
   segments,
   centerTop,
   centerMain,
+  centerSub,
   emptyHint,
   right,
 }: DonutCardProps) {
@@ -174,6 +183,7 @@ export function DonutCard({
             segments={segments}
             centerTop={centerTop}
             centerMain={centerMain ?? formatCompact(total)}
+            centerSub={centerSub}
           />
           <DonutLegend segments={segments} />
         </div>
