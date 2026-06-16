@@ -118,18 +118,19 @@ function RuleRow({
   if (editing) {
     return (
       <div className="flex items-center gap-2 border-b border-line-1 py-2">
-        <select
-          aria-label="Type de la règle"
-          className={FIELD}
+        <Select
+          ariaLabel="Type de la règle"
           value={matchType}
-          onChange={(e) => {
-            setMatchType(e.target.value as RuleMatchType);
+          onValueChange={(v) => {
+            setMatchType(v as RuleMatchType);
           }}
-        >
-          <option value="contains">Contient</option>
-          <option value="exact">Exact</option>
-          <option value="regex">Regex</option>
-        </select>
+          options={[
+            { value: 'contains', label: 'Contient' },
+            { value: 'exact', label: 'Exact' },
+            { value: 'regex', label: 'Regex' },
+          ]}
+          className="h-8 text-[12px]"
+        />
         <input
           aria-label="Valeur de la règle"
           className={cn(FIELD, 'min-w-0 flex-1')}
@@ -138,20 +139,13 @@ function RuleRow({
             setMatchValue(e.target.value);
           }}
         />
-        <select
-          aria-label="Catégorie de la règle"
-          className={FIELD}
+        <Select
+          ariaLabel="Catégorie de la règle"
           value={categoryId}
-          onChange={(e) => {
-            setCategoryId(e.target.value);
-          }}
-        >
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+          onValueChange={setCategoryId}
+          options={categories.map((c) => ({ value: c.id, label: c.name }))}
+          className="h-8 text-[12px]"
+        />
         <button
           type="button"
           aria-label="Enregistrer la règle"

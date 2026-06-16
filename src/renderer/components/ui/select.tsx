@@ -17,6 +17,7 @@ interface SelectProps {
   /** Extra classes for the trigger (sizing / min-width to match neighbours). */
   className?: string;
   align?: 'start' | 'end';
+  disabled?: boolean;
 }
 
 const TRIGGER =
@@ -34,13 +35,18 @@ export function Select({
   ariaLabel,
   className,
   align = 'start',
+  disabled,
 }: SelectProps) {
   const [open, setOpen] = React.useState(false);
   const selected = options.find((o) => o.value === value);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger aria-label={ariaLabel} className={cn(TRIGGER, className)}>
+      <PopoverTrigger
+        aria-label={ariaLabel}
+        disabled={disabled}
+        className={cn(TRIGGER, disabled && 'cursor-not-allowed opacity-50', className)}
+      >
         <span className="truncate">{selected?.label ?? ''}</span>
         <ChevronDown size={13} strokeWidth={1.8} className="ml-auto shrink-0 text-paper-mute" />
       </PopoverTrigger>
