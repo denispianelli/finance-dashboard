@@ -209,16 +209,18 @@ function AccountCard({
     );
   }
 
-  const plural = account.txCount > 1 ? 's' : '';
   const Icon = ACCOUNT_ICON[accountIconKey(account.type)];
 
   return (
-    <div className="group tile tile-hover flex min-h-[132px] flex-col gap-3 p-[18px]">
-      <div className="flex items-start justify-between">
-        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brass-soft text-brass">
-          <Icon size={18} strokeWidth={1.7} />
-        </span>
-        <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+    <div className="group tile tile-hover flex min-h-[124px] flex-col gap-3 p-5">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brass-soft text-brass">
+            <Icon size={18} strokeWidth={1.7} />
+          </span>
+          <span className="truncate font-sans text-sm text-paper">{account.name}</span>
+        </div>
+        <div className="flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           <button
             type="button"
             aria-label={`Renommer ${account.name}`}
@@ -242,24 +244,19 @@ function AccountCard({
         </div>
       </div>
 
-      <div className="min-w-0">
-        <div className="truncate font-sans text-sm text-paper">{account.name}</div>
-        <div className="font-mono text-[11px] text-paper-dim">
-          {account.bankId ?? 'Sans banque'} · {account.txCount} transaction{plural}
-        </div>
-      </div>
+      {account.balance === null ? (
+        <span className="font-mono text-[24px] tabular-nums text-paper-dim">—</span>
+      ) : (
+        <Money
+          value={account.balance}
+          kind={account.balance < 0 ? 'expense' : 'plain'}
+          className="text-[24px] font-semibold"
+        />
+      )}
 
-      <div className="mt-auto">
-        {account.balance === null ? (
-          <span className="font-mono text-[20px] tabular-nums text-paper-dim">—</span>
-        ) : (
-          <Money
-            value={account.balance}
-            kind={account.balance < 0 ? 'expense' : 'plain'}
-            className="text-[20px] font-semibold"
-          />
-        )}
-      </div>
+      <span className="mt-auto font-sans text-[12px] text-paper-mute">
+        {account.bankId ?? 'Sans banque'}
+      </span>
 
       <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
         <DialogContent className="max-w-md">
@@ -267,7 +264,7 @@ function AccountCard({
             <DialogTitle>Supprimer ce compte ?</DialogTitle>
             <DialogDescription>
               {account.txCount > 0
-                ? `« ${account.name} » et ses ${String(account.txCount)} transaction${plural} seront définitivement supprimés. Cette action est irréversible.`
+                ? `« ${account.name} » et ses ${String(account.txCount)} transaction${account.txCount > 1 ? 's' : ''} seront définitivement supprimés. Cette action est irréversible.`
                 : `« ${account.name} » sera définitivement supprimé.`}
             </DialogDescription>
           </DialogHeader>
