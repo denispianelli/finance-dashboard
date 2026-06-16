@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CreditCard, Landmark, Pencil, PiggyBank, Plus, Trash2, Wallet, X } from 'lucide-react';
+import { Pencil, Plus, Trash2, X } from 'lucide-react';
 import type {
   AccountSummary,
   CreateAccountInput,
@@ -19,26 +19,10 @@ import {
 } from '../ui/dialog';
 import { useAccounts } from '../../hooks/useAccounts';
 import { cn } from '../../lib/utils';
+import { AccountIconTile } from '../../lib/accountIcon';
 
 const INPUT =
   'h-9 rounded-md border border-line-2 bg-ink-3 px-2.5 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
-
-// Static icon table (read by reference in render — not created during render).
-const ACCOUNT_ICON = {
-  savings: PiggyBank,
-  card: CreditCard,
-  checking: Wallet,
-  bank: Landmark,
-} as const;
-
-/** Map the (free-form) account type to a static icon key. Defaults to a bank. */
-function accountIconKey(type: string): keyof typeof ACCOUNT_ICON {
-  const t = type.toLowerCase();
-  if (t.includes('saving') || t.includes('livret') || t.includes('epargne')) return 'savings';
-  if (t.includes('card') || t.includes('revolv') || t.includes('credit')) return 'card';
-  if (t.includes('check') || t.includes('courant') || t.includes('joint')) return 'checking';
-  return 'bank';
-}
 
 /** `onMutated` is forwarded to `useAccounts` so account create / rename / delete
  *  can refresh shell-level data (sidebar net worth). */
@@ -209,15 +193,11 @@ function AccountCard({
     );
   }
 
-  const Icon = ACCOUNT_ICON[accountIconKey(account.type)];
-
   return (
     <div className="group tile tile-hover flex min-h-[124px] flex-col gap-3 p-5">
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brass-soft text-brass">
-            <Icon size={18} strokeWidth={1.7} />
-          </span>
+          <AccountIconTile type={account.type} size={36} />
           <span className="truncate font-sans text-sm text-paper">{account.name}</span>
         </div>
         <div className="flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">

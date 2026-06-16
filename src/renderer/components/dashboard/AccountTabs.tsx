@@ -1,80 +1,62 @@
-import { Plus } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { cn } from '@renderer/lib/utils';
 import { NBSP } from '@renderer/lib/euro';
+import { AccountIconTile } from '@renderer/lib/accountIcon';
 
 export interface Account {
   id: string;
   name: string;
   bank: string;
   balance: string; // pre-formatted or "—"
+  type: string;
 }
 
 export function AccountTabs({
   accounts,
   activeId,
   onSelect,
-  onAdd,
 }: {
   accounts: Account[];
   activeId: string;
   onSelect: (id: string) => void;
-  onAdd?: () => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-line-2 bg-ink-2">
-      {/* Same mechanism as the KPI grid below: a CSS grid of equal
-          minmax(0,1fr) columns + one fixed "Ajouter" column. Columns
-          shrink together and never clip or collapse — every account
-          stays visible at any window width. At very narrow widths
-          (≥5 accounts on a 1024px window) the strip falls back to a
-          horizontal scroll so labels remain readable. */}
-      <div
-        className="grid min-w-full items-stretch overflow-x-auto"
-        style={{
-          gridTemplateColumns: `repeat(${String(accounts.length)}, minmax(140px, 1fr)) auto`,
-        }}
-      >
-        {accounts.map((a) => {
-          const active = a.id === activeId;
-          return (
-            <button
-              key={a.id}
-              type="button"
-              onClick={() => {
-                onSelect(a.id);
-              }}
-              className={cn(
-                'flex min-w-0 flex-col gap-1 border-r border-line-2 px-4 py-3 text-left',
-                active && 'bg-ink-3',
-              )}
-            >
+    <div className="flex flex-wrap gap-4">
+      {accounts.map((a) => {
+        const active = a.id === activeId;
+        return (
+          <button
+            key={a.id}
+            type="button"
+            onClick={() => {
+              onSelect(a.id);
+            }}
+            className={cn(
+              'flex min-w-[168px] flex-1 flex-col gap-2.5 rounded-md border p-[16px_18px] text-left transition-colors',
+              active
+                ? 'border-[rgb(var(--accent-glow)/0.5)] bg-[rgb(var(--accent-glow)/0.08)]'
+                : 'border-line-2 bg-surface hover:bg-surface-2',
+            )}
+          >
+            <div className="flex items-center gap-2.5">
+              <AccountIconTile type={a.type} size={30} />
               <span
                 className={cn(
-                  'truncate font-sans text-[11px] font-medium uppercase tracking-[0.06em]',
-                  active ? 'text-brass' : 'text-paper-mute',
+                  'flex-1 truncate font-sans text-[12.5px]',
+                  active ? 'text-paper' : 'text-paper-soft',
                 )}
               >
                 {a.name}
               </span>
-              <span className="truncate font-mono text-base font-medium tabular-nums text-paper">
-                {a.balance === '—' ? '—' : `${a.balance}${NBSP}€`}
-              </span>
-              <span className="truncate font-sans text-[9px] tracking-[0.06em] text-paper-dim">
-                {a.bank}
-              </span>
-            </button>
-          );
-        })}
-        <button
-          type="button"
-          aria-label="Ajouter un compte"
-          onClick={onAdd}
-          className="flex flex-col items-center justify-center gap-1 px-4 py-3 text-paper-dim transition-colors hover:bg-ink-3 hover:text-paper"
-        >
-          <Plus size={16} strokeWidth={1.6} />
-          <span className="hidden font-sans text-[9px] xl:inline">Ajouter</span>
-        </button>
-      </div>
+              {active && <Check size={15} strokeWidth={2} className="shrink-0 text-brass" />}
+            </div>
+            <span className="font-sans text-[22px] font-semibold tracking-[-0.02em] text-paper">
+              {a.balance === '—' ? '—' : `${a.balance}${NBSP}€`}
+            </span>
+            <span className="truncate font-sans text-[11px] text-paper-mute">{a.bank}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
