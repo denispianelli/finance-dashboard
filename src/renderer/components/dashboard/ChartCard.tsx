@@ -32,7 +32,7 @@ export function ChartCard({ points, caption, range, onRangeChange }: ChartCardPr
   const title = RANGES.find((r) => r.value === range)?.title ?? '';
 
   return (
-    <div className="flex flex-col gap-3.5 rounded-lg border border-line-2 bg-ink-2 px-[22px] pb-4 pt-5">
+    <div className="flex flex-col gap-3.5">
       <div className="flex flex-wrap items-center justify-between gap-y-2">
         <div className="flex min-w-0 items-center gap-3.5">
           <Overline>— II</Overline>

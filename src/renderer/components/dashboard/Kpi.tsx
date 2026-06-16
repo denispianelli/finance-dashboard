@@ -14,7 +14,7 @@ export interface KpiProps {
 
 export function Kpi({ label, value, sub, delta, deltaDir, ctx, spark, sparkColor }: KpiProps) {
   return (
-    <div className="relative flex min-h-[130px] flex-col gap-2.5 overflow-hidden rounded-lg border border-line-2 bg-ink-2 px-5 py-[18px]">
+    <div className="relative flex min-h-[130px] flex-col gap-2.5 overflow-hidden">
       <Label>{label}</Label>
       <span className="whitespace-nowrap font-sans font-semibold text-[32px] leading-none tracking-[-0.02em] text-paper [font-variant-numeric:lining-nums_tabular-nums]">
         {value}
