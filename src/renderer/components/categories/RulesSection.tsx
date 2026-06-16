@@ -41,7 +41,7 @@ export function RulesSection({ categories }: { categories: CategoryDTO[] }) {
   return (
     <Card className="min-h-0 flex-1">
       <CardHeader>
-        <div className="flex items-center gap-3.5">
+        <div className="flex min-w-0 flex-col gap-1">
           <Overline>Moteur</Overline>
           <CardTitle>Règles</CardTitle>
         </div>

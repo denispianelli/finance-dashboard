@@ -151,7 +151,7 @@ export function TransactionsPage() {
 
       <Card className="min-h-0 flex-1">
         <CardHeader>
-          <div className="flex items-center gap-3.5">
+          <div className="flex min-w-0 flex-col gap-1">
             <Overline>Activité</Overline>
             <CardTitle>Transactions</CardTitle>
           </div>

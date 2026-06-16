@@ -21,7 +21,7 @@ export function AllocationCard({
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-2.5">
+        <div className="flex min-w-0 flex-col gap-1">
           <Overline>Répartition</Overline>
           <CardTitle>Allocation par classe</CardTitle>
         </div>

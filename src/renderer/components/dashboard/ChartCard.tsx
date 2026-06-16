@@ -34,7 +34,7 @@ export function ChartCard({ points, caption, range, onRangeChange }: ChartCardPr
   return (
     <div className="flex flex-col gap-3.5">
       <div className="flex flex-wrap items-center justify-between gap-y-2">
-        <div className="flex min-w-0 items-center gap-3.5">
+        <div className="flex min-w-0 flex-col gap-1">
           <Overline>Évolution du solde</Overline>
           <span className="truncate font-sans text-sm font-medium tracking-[-0.012em]">
             {title}

@@ -168,9 +168,11 @@ export function DonutCard({
 
   return (
     <div className="flex flex-col gap-3.5 rounded-lg border border-line-2 bg-ink-2 px-[22px] py-5">
-      <div className="flex items-center gap-3.5">
-        <Overline>{overline}</Overline>
-        <span className="font-sans text-sm font-medium tracking-[-0.012em]">{title}</span>
+      <div className="flex items-center justify-between gap-3.5">
+        <div className="flex min-w-0 flex-col gap-1">
+          <Overline>{overline}</Overline>
+          <span className="font-sans text-sm font-medium tracking-[-0.012em]">{title}</span>
+        </div>
         {right}
       </div>
       {segments.length === 0 ? (

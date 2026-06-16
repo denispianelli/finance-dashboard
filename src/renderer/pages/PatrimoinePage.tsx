@@ -77,7 +77,7 @@ export function PatrimoinePage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3.5">
+          <div className="flex min-w-0 flex-col gap-1">
             <Overline>Crédits</Overline>
             <CardTitle>Prêts</CardTitle>
           </div>
