@@ -104,16 +104,16 @@ beforeEach(() => {
   //
   // @tanstack/react-virtual reads offsetHeight for the scroll container size and
   // getBoundingClientRect for individual row measurements.
-  // Viewport: 300 px (shows ~5 rows at ROW_ESTIMATE=57 px + overscan=8 → ~13 items max).
-  // Row height: 40 px via getBoundingClientRect. This keeps the 3-row fixture fully visible
+  // Viewport: 300 px (shows ~4 rows at ROW_ESTIMATE=76 px + overscan=8 → ~11 items max).
+  // Row height: 76 px via getBoundingClientRect. This keeps the 3-row fixture fully visible
   // while the 30-row fixture is windowed (fewer than 30 rendered).
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
     width: 800,
-    height: 40,
+    height: 76,
     top: 0,
     left: 0,
     right: 800,
-    bottom: 40,
+    bottom: 76,
     x: 0,
     y: 0,
     toJSON: () => ({}),
@@ -172,7 +172,9 @@ describe('TransactionsPage', () => {
   it('filters by free-text search on the label', async () => {
     renderPage();
     await screen.findByText('Carrefour');
-    fireEvent.change(screen.getByLabelText('Rechercher'), { target: { value: 'pharma' } });
+    fireEvent.change(screen.getByLabelText('Rechercher une transaction'), {
+      target: { value: 'pharma' },
+    });
     expect(screen.getByText('Pharmacie')).toBeInTheDocument();
     expect(screen.queryByText('Carrefour')).not.toBeInTheDocument();
     expect(screen.queryByText('Salaire')).not.toBeInTheDocument();
@@ -197,10 +199,40 @@ describe('TransactionsPage', () => {
     expect(screen.queryByText('Salaire')).not.toBeInTheDocument();
   });
 
+  it('filters by period preset via the Période dropdown', async () => {
+    // Use a transaction dated well before the anchor to verify exclusion under 'month'.
+    const transactions = [
+      tx({ id: 'old', date: '2026-03-01', labelClean: 'OldTx', amount: -5 }),
+      tx({ id: 'new', date: '2026-05-14', labelClean: 'NewTx', amount: -10 }),
+    ];
+    stubIpc(transactions);
+    const user = userEvent.setup();
+    renderPage();
+
+    // Both rows visible when period is '30d' (default) — anchor = 2026-05-14,
+    // 30d from = 2026-04-14, so 'OldTx' (2026-03-01) should already be hidden.
+    await screen.findByText('NewTx');
+    expect(screen.queryByText('OldTx')).not.toBeInTheDocument();
+
+    // Switch to 'Toute la période' — both should appear.
+    await user.click(screen.getByLabelText('Période'));
+    await user.click(screen.getByRole('option', { name: 'Toute la période' }));
+    expect(screen.getByText('NewTx')).toBeInTheDocument();
+    expect(screen.getByText('OldTx')).toBeInTheDocument();
+
+    // Switch to 'Ce mois-ci' — only 2026-05 row should appear.
+    await user.click(screen.getByLabelText('Période'));
+    await user.click(screen.getByRole('option', { name: 'Ce mois-ci' }));
+    expect(screen.getByText('NewTx')).toBeInTheDocument();
+    expect(screen.queryByText('OldTx')).not.toBeInTheDocument();
+  });
+
   it('shows a filtered-empty state when nothing matches', async () => {
     renderPage();
     await screen.findByText('Carrefour');
-    fireEvent.change(screen.getByLabelText('Rechercher'), { target: { value: 'zzzzz' } });
+    fireEvent.change(screen.getByLabelText('Rechercher une transaction'), {
+      target: { value: 'zzzzz' },
+    });
     expect(screen.getByText(/ne correspond à ces filtres/i)).toBeInTheDocument();
   });
 
@@ -246,11 +278,12 @@ describe('TransactionsPage', () => {
     expect(mockInvoke).toHaveBeenCalledWith('transactions:delete', { transactionId: 'a' });
   });
 
-  it('defaults to the last-30-days range and renders the Du/Au fields', async () => {
+  it('shows the Période dropdown defaulting to 30 derniers jours', async () => {
     renderPage();
     await screen.findByText('Carrefour');
-    expect(screen.getByLabelText('Du')).toBeInTheDocument();
-    expect(screen.getByLabelText('Au')).toBeInTheDocument();
-    expect(screen.getByLabelText<HTMLInputElement>('Du').value).not.toBe('');
+    // The period trigger should show the current label for '30d'.
+    expect(screen.getByLabelText('Période')).toBeInTheDocument();
+    // The trigger text should show the current selection.
+    expect(screen.getByText('30 derniers jours')).toBeInTheDocument();
   });
 });

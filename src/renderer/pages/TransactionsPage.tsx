@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import { ipc } from '@renderer/ipc/client';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Overline } from '../components/ui/overline';
 import { Select } from '../components/ui/select';
 import { AccountTabs } from '../components/dashboard/AccountTabs';
-import { TxTableHeader, TxTableRow } from '../components/dashboard/TxTable';
-import { PeriodFilter, type DateRangeValue } from '../components/dashboard/PeriodFilter';
+import { TxRowFull } from '../components/dashboard/TxRowFull';
 import { RuleDialog, type RuleProposal } from '../components/categories/RuleDialog';
 import { useDashboard } from '../hooks/useDashboard';
 import { toAccount, toTxRow } from '../lib/dashboardMap';
@@ -18,6 +18,7 @@ import {
   type TxFilters,
   type TxType,
 } from '../lib/filterTransactions';
+import { formatEuro } from '../lib/euro';
 import { cn } from '../lib/utils';
 import type { AppOutletContext } from '../lib/outletContext';
 
@@ -25,8 +26,8 @@ import type { AppOutletContext } from '../lib/outletContext';
 const FULL_HISTORY_LIMIT = 100000;
 /** Sentinel select value mapping to "uncategorized" (null) in the filter. */
 const NONE = '__none__';
-/** Approximate rendered height of one row, used as the virtualizer's size estimate. */
-const ROW_ESTIMATE = 57;
+/** Approximate rendered height of one rich row. */
+const ROW_ESTIMATE = 76;
 
 const TYPES: { value: TxType; label: string }[] = [
   { value: 'all', label: 'Tous' },
@@ -36,8 +37,17 @@ const TYPES: { value: TxType; label: string }[] = [
   { value: 'refund', label: 'Remboursements' },
 ];
 
+type PeriodPreset = 'all' | 'month' | '30d' | '90d' | 'year';
+
+const PERIOD_OPTIONS: { value: PeriodPreset; label: string }[] = [
+  { value: 'all', label: 'Toute la période' },
+  { value: 'month', label: 'Ce mois-ci' },
+  { value: '30d', label: '30 derniers jours' },
+  { value: '90d', label: '3 derniers mois' },
+  { value: 'year', label: 'Cette année' },
+];
+
 const SEG_BTN = 'h-7 rounded-md px-2.5 font-sans text-xs font-medium transition-colors';
-const FIELD = 'h-7 rounded-md border border-line-2 bg-ink-2 px-2 font-sans text-xs text-paper';
 
 function Segmented<T extends string>({
   options,
@@ -67,6 +77,35 @@ function Segmented<T extends string>({
       ))}
     </div>
   );
+}
+
+/**
+ * Compute {from, to} for a period preset, anchored on the latest transaction
+ * date rather than today. This way preset filters are coherent for real bank
+ * data that doesn't extend to the current day.
+ */
+function presetToRange(
+  preset: PeriodPreset,
+  anchor: string,
+): { from: string | null; to: string | null } {
+  if (preset === 'all') return { from: null, to: null };
+  const to = anchor;
+  let from: string;
+  switch (preset) {
+    case 'month':
+      from = `${anchor.slice(0, 7)}-01`;
+      break;
+    case 'year':
+      from = `${anchor.slice(0, 4)}-01-01`;
+      break;
+    case '30d':
+      from = periodStart('30d', anchor) ?? '1900-01-01';
+      break;
+    case '90d':
+      from = periodStart('3m', anchor) ?? '1900-01-01';
+      break;
+  }
+  return { from, to };
 }
 
 export function TransactionsPage() {
@@ -106,25 +145,66 @@ export function TransactionsPage() {
     }
   }, [accountParam, accounts, selectAccount]);
 
-  const [today] = useState(() => toLocalISODate(new Date()));
-  const [range, setRange] = useState<DateRangeValue>(() => ({
-    from: periodStart('30d', today),
-    to: today,
-  }));
   const [type, setType] = useState<TxType>('all');
   const [category, setCategory] = useState<string>('all');
   const [query, setQuery] = useState('');
+  const [period, setPeriod] = useState<PeriodPreset>('30d');
+
+  // Anchor: the latest transaction date (or today if none).
+  const anchor = useMemo(() => {
+    if (transactions.length === 0) return toLocalISODate(new Date());
+    const first = transactions[0];
+    return transactions.reduce((max, t) => (t.date > max ? t.date : max), first?.date ?? '');
+  }, [transactions]);
+
+  const { from, to } = useMemo(() => presetToRange(period, anchor), [period, anchor]);
 
   const filtered = useMemo(() => {
     const filters: TxFilters = {
-      from: range.from,
-      to: range.to,
+      from,
+      to,
       type,
       query,
       categoryId: category === NONE ? null : category,
     };
     return filterTransactions(transactions, filters);
-  }, [transactions, range, type, query, category]);
+  }, [transactions, from, to, type, query, category]);
+
+  // Live totals from the filtered set.
+  const { totalIn, totalOut } = useMemo(() => {
+    let inSum = 0;
+    let outSum = 0;
+    for (const t of filtered) {
+      if (t.amount > 0) inSum += t.amount;
+      else outSum += t.amount;
+    }
+    return { totalIn: inSum, totalOut: outSum };
+  }, [filtered]);
+
+  // Whether any filter is active (for the Reset button).
+  const anyFilterActive =
+    selectedAccountId !== null ||
+    type !== 'all' ||
+    query !== '' ||
+    category !== 'all' ||
+    period !== 'all';
+
+  function resetFilters() {
+    setType('all');
+    setQuery('');
+    setCategory('all');
+    setPeriod('all');
+    // selectAccount accepts a string; pass empty string to deselect all
+    // (AccountTabs treats '' as "no account selected").
+    selectAccount('');
+  }
+
+  // Eyebrow: selected account name or fallback.
+  const acctName = useMemo(() => {
+    if (!selectedAccountId) return 'Tous les comptes';
+    const found = accounts.find((a) => a.id === selectedAccountId);
+    return found?.name ?? 'Tous les comptes';
+  }, [selectedAccountId, accounts]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -152,17 +232,49 @@ export function TransactionsPage() {
       <Card className="min-h-0 flex-1">
         <CardHeader>
           <div className="flex min-w-0 flex-col gap-1">
-            <Overline>Activité</Overline>
+            <Overline>{acctName}</Overline>
             <CardTitle>Transactions</CardTitle>
           </div>
-          <span className="font-mono text-xs text-paper-mute">
-            {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
-          </span>
+          {/* Live Entrées / Sorties totals */}
+          <div className="flex shrink-0 gap-6">
+            <div className="flex flex-col items-end gap-0.5">
+              <span className="font-sans text-[10px] text-paper-mute">Entrées</span>
+              <span className="font-mono text-sm font-medium text-sage">
+                +&nbsp;{formatEuro(totalIn)}
+              </span>
+            </div>
+            <div className="flex flex-col items-end gap-0.5">
+              <span className="font-sans text-[10px] text-paper-mute">Sorties</span>
+              <span className="font-mono text-sm font-medium text-coral">
+                −&nbsp;{formatEuro(Math.abs(totalOut))}
+              </span>
+            </div>
+          </div>
         </CardHeader>
 
+        {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-3 pb-4">
-          <PeriodFilter value={range} onChange={setRange} today={today} />
           <Segmented options={TYPES} value={type} onChange={setType} />
+
+          {/* Search input with icon */}
+          <div className="relative flex min-w-[200px] flex-1 items-center">
+            <Search
+              size={14}
+              strokeWidth={1.8}
+              className="pointer-events-none absolute left-2.5 text-paper-mute"
+            />
+            <input
+              type="search"
+              aria-label="Rechercher une transaction"
+              placeholder="Rechercher une transaction…"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+              }}
+              className="h-7 w-full rounded-md border border-line-2 bg-ink-2 pl-8 pr-2 font-sans text-xs text-paper placeholder:text-paper-dim outline-none focus:border-line-3"
+            />
+          </div>
+
           <Select
             ariaLabel="Catégorie"
             value={category}
@@ -174,16 +286,26 @@ export function TransactionsPage() {
             ]}
             className="min-w-[150px]"
           />
-          <input
-            type="search"
-            aria-label="Rechercher"
-            placeholder="Rechercher…"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
+
+          <Select
+            ariaLabel="Période"
+            value={period}
+            onValueChange={(v) => {
+              setPeriod(v as PeriodPreset);
             }}
-            className={cn(FIELD, 'min-w-[160px] flex-1 placeholder:text-paper-dim')}
+            options={PERIOD_OPTIONS}
+            className="min-w-[160px]"
           />
+
+          {anyFilterActive && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="h-7 rounded-md px-2.5 font-sans text-xs font-medium text-paper-mute transition-colors hover:text-paper"
+            >
+              Réinitialiser
+            </button>
+          )}
         </div>
 
         {transactions.length === 0 ? (
@@ -195,12 +317,9 @@ export function TransactionsPage() {
             Aucune transaction ne correspond à ces filtres.
           </p>
         ) : (
-          <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-y-auto">
-            <div className="sticky top-0 z-10 bg-ink-2">
-              <TxTableHeader />
-            </div>
-            {/* listRef sits below the sticky header, so scrollMargin = header height; each
-                row is translated by (vi.start - scrollMargin) to land right under it. */}
+          <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-y-auto px-3.5">
+            {/* listRef sits below the top of the scroll container; scrollMargin = offsetTop so
+                each row is translated by (vi.start - scrollMargin). */}
             <div
               ref={listRef}
               className="relative"
@@ -224,7 +343,7 @@ export function TransactionsPage() {
                       transform: `translateY(${String(vi.start - rowVirtualizer.options.scrollMargin)}px)`,
                     }}
                   >
-                    <TxTableRow
+                    <TxRowFull
                       row={toTxRow(t)}
                       categories={categories}
                       onReassign={(txId, catId) => {
