@@ -116,6 +116,9 @@ export function usePlacements(refreshToken: number) {
   const setSupportIsin = useCallback(
     async (supportId: string, isin: string | null) => {
       await ipc.invoke('investment:setSupportIsin', { supportId, isin });
+      // Value it right away when the feed is on. refreshQuotes is a no-op server-side when the
+      // feed is off, so this is safe to always call when an ISIN was set.
+      if (isin !== null) await ipc.invoke('investment:refreshQuotes', {});
       reload();
     },
     [reload],

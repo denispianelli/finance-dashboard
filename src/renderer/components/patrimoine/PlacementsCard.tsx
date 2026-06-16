@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Eye, Plus, RefreshCw, Trash2, Upload } from 'lucide-react';
+import { toast } from 'sonner';
 import type {
   QuoteSettings,
   RefreshResult,
@@ -13,6 +14,58 @@ import { Money } from '../ui/money';
 import { formatPercent } from '../../lib/euro';
 import { formatTs } from '../../lib/formatDate';
 import { cn } from '../../lib/utils';
+
+const ISIN_INPUT =
+  'h-7 w-36 rounded-md border border-line-2 bg-ink-3 px-2 font-mono text-[12px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
+
+/** Inline ISIN entry shown on an open support with no value yet, when the price feed is on.
+ *  Saving values the support immediately (the handler refreshes the quote) — no detail dialog,
+ *  no separate "refresh quotes" click. */
+function InlineIsin({
+  support,
+  onSubmit,
+}: {
+  support: SupportWithPerf;
+  onSubmit: (supportId: string, isin: string | null) => Promise<void>;
+}) {
+  const [value, setValue] = useState(support.isin ?? '');
+  const [busy, setBusy] = useState(false);
+
+  const normalized = value.trim().toUpperCase();
+
+  function submit() {
+    if (normalized === '' || busy) return;
+    setBusy(true);
+    void onSubmit(support.id, normalized)
+      .catch(() => {
+        toast.error("L'ISIN n'a pas pu être enregistré");
+      })
+      .finally(() => {
+        setBusy(false);
+      });
+  }
+
+  return (
+    <span className="flex items-center gap-1.5">
+      <input
+        className={ISIN_INPUT}
+        value={value}
+        placeholder="ISIN (ex. IE00B4L5Y983)"
+        aria-label={`ISIN ${support.name}`}
+        disabled={busy}
+        onChange={(e) => {
+          setValue(e.target.value);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') submit();
+        }}
+      />
+      <Button variant="outline" size="sm" disabled={normalized === '' || busy} onClick={submit}>
+        {busy ? <RefreshCw size={12} strokeWidth={1.8} className="animate-spin" /> : 'Valoriser'}
+      </Button>
+    </span>
+  );
+}
 
 /** Colour class for a performance value: sage for gains, coral for losses. */
 function perfColor(value: number | null): string {
@@ -119,6 +172,7 @@ export function PlacementsCard({
   onImport,
   getQuoteSettings,
   refreshQuotes,
+  onSetSupportIsin,
 }: {
   wrappers: WrapperWithSupports[];
   onAddWrapper: () => void;
@@ -130,6 +184,8 @@ export function PlacementsCard({
   onImport: () => void;
   getQuoteSettings: () => Promise<QuoteSettings>;
   refreshQuotes: () => Promise<RefreshResult>;
+  /** Saves the ISIN and (when the feed is on) values the support immediately. */
+  onSetSupportIsin: (supportId: string, isin: string | null) => Promise<void>;
 }) {
   const [confirmingWrapperId, setConfirmingWrapperId] = useState<string | null>(null);
   const [confirmingSupportId, setConfirmingSupportId] = useState<string | null>(null);
@@ -269,15 +325,19 @@ export function PlacementsCard({
                           {support.name}
                         </span>
                         {support.needsValuation ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              onUpdateSupport(support);
-                            }}
-                            className="font-sans text-[11px] text-brass hover:underline"
-                          >
-                            déclare la valeur actuelle
-                          </button>
+                          quoteSettings?.enabled === true ? (
+                            <InlineIsin support={support} onSubmit={onSetSupportIsin} />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onUpdateSupport(support);
+                              }}
+                              className="font-sans text-[11px] text-brass hover:underline"
+                            >
+                              déclare la valeur actuelle
+                            </button>
+                          )
                         ) : (
                           <>
                             <Money value={support.currentValue} className="text-[12px]" />

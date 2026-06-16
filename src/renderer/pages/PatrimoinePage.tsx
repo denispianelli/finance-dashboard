@@ -138,6 +138,9 @@ export function PatrimoinePage() {
         }}
         getQuoteSettings={placements.getQuoteSettings}
         refreshQuotes={placements.refreshQuotes}
+        onSetSupportIsin={(supportId, isin) =>
+          placements.setSupportIsin(supportId, isin).then(notifyDataChanged)
+        }
       />
 
       {viewing && (
