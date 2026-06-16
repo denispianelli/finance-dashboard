@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { Check } from 'lucide-react';
+import { toast } from 'sonner';
 import type { OperationDTO, SupportHistory, SupportWithPerf } from '@shared/types/investment';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -20,16 +22,29 @@ function IsinEditor({
   // Rendered with key={support.id} by the parent, so it re-mounts (and re-seeds from
   // support.isin) when the dialog switches support — no state-syncing effect needed.
   const [value, setValue] = useState(support.isin ?? '');
+  // `saved` is the last persisted ISIN; it moves to the current value on a successful save so
+  // the button greys out and a "saved" tick shows — the feedback that the action took effect.
+  const [saved, setSaved] = useState(support.isin ?? '');
   const [saving, setSaving] = useState(false);
 
-  const trimmed = value.trim();
-  const dirty = trimmed !== (support.isin ?? '');
+  const normalized = value.trim().toUpperCase();
+  const dirty = normalized !== saved;
 
   function save() {
     setSaving(true);
-    void onSave(support.id, trimmed === '' ? null : trimmed).finally(() => {
-      setSaving(false);
-    });
+    const next = normalized === '' ? null : normalized;
+    void onSave(support.id, next)
+      .then(() => {
+        setValue(normalized);
+        setSaved(normalized);
+        toast.success(next === null ? 'ISIN retiré' : `ISIN enregistré (${normalized})`);
+      })
+      .catch(() => {
+        toast.error("L'ISIN n'a pas pu être enregistré");
+      })
+      .finally(() => {
+        setSaving(false);
+      });
   }
 
   return (
@@ -48,7 +63,13 @@ function IsinEditor({
           }}
         />
         <Button variant="outline" size="sm" disabled={!dirty || saving} onClick={save}>
-          Enregistrer
+          {!dirty && saved !== '' ? (
+            <>
+              <Check size={12} strokeWidth={2} /> Enregistré
+            </>
+          ) : (
+            'Enregistrer'
+          )}
         </Button>
       </span>
       <span className="text-[11px] text-paper-dim">
