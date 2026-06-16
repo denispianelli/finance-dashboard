@@ -1,5 +1,6 @@
 import { type ComponentType, type ReactNode } from 'react';
 import { Database, FolderSync, LineChart, Palette } from 'lucide-react';
+import { useTheme } from '../components/ThemeProvider';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -94,15 +95,27 @@ function DataSection() {
 }
 
 function AppearanceSection() {
+  const { theme, setTheme } = useTheme();
   return (
     <Section icon={Palette} overline="— Interface" title="Apparence & divers">
       <Row label="Thème">
         <div className="flex items-center gap-2">
-          <Chip active>Sombre</Chip>
-          <span title="À venir">
-            <Chip>Clair</Chip>
-          </span>
-          <SoonBadge />
+          <Chip
+            active={theme === 'dark'}
+            onClick={() => {
+              setTheme('dark');
+            }}
+          >
+            Sombre
+          </Chip>
+          <Chip
+            active={theme === 'light'}
+            onClick={() => {
+              setTheme('light');
+            }}
+          >
+            Clair
+          </Chip>
         </div>
       </Row>
 
