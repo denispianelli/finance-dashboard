@@ -13,8 +13,6 @@ export interface HeroBalanceTileProps {
   monthAmount?: number; // signed € change "ce mois"
 }
 
-const TILE_BG = 'linear-gradient(155deg, rgb(var(--accent-glow) / 0.16), var(--surface) 46%)';
-
 /** Up to 4 account rows with deterministic dot colours from the category palette. */
 const MAX_ACCOUNTS = 4;
 
@@ -30,12 +28,7 @@ export function HeroBalanceTile({
   const visibleAccounts = accounts.slice(0, MAX_ACCOUNTS);
 
   return (
-    <Tile
-      span={4}
-      rowSpan={2}
-      style={{ background: TILE_BG }}
-      className="flex flex-col gap-3 self-stretch"
-    >
+    <Tile span={4} rowSpan={2} className="flex flex-col gap-3 self-stretch">
       {/* Eyebrow */}
       <div className="flex items-center gap-1.5">
         <span className="h-1.5 w-1.5 flex-none rounded-full bg-brass" />
