@@ -12,12 +12,12 @@ export function Insight({ children }: { children: ReactNode }) {
 
 export function Quote({ children, size = 17 }: { children: ReactNode; size?: number }) {
   return (
-    <p className="font-serif italic leading-snug text-paper" style={{ fontSize: size }}>
+    <p className="font-sans font-semibold leading-snug text-paper" style={{ fontSize: size }}>
       {children}
     </p>
   );
 }
 
 export function QuoteNum({ children }: { children: ReactNode }) {
-  return <span className="font-mono not-italic text-brass">{children}</span>;
+  return <span className="font-mono text-brass">{children}</span>;
 }

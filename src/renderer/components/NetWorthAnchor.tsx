@@ -19,8 +19,8 @@ function formatWhole(amount: number): string {
 }
 
 /**
- * Sidebar summary anchor: the brand-signature net-worth figure (Instrument Serif
- * italic) plus the month's delta in sage/coral. Presentational only — every number
+ * Sidebar summary anchor: the brand-signature net-worth figure (bold Geist)
+ * plus the month's delta in sage/coral. Presentational only — every number
  * arrives via props. On collapse the card's vertical space animates to 0 (grid-rows
  * 1fr→0fr) and fades, so the rail's icons slide up smoothly instead of jumping; the
  * button is disabled while hidden so it leaves the tab order.
@@ -55,7 +55,7 @@ export function NetWorthAnchor({
             Patrimoine net
           </span>
 
-          <span className="whitespace-nowrap font-serif text-[26px] italic leading-none tracking-figure tabular-nums text-paper">
+          <span className="whitespace-nowrap font-sans font-semibold text-[26px] leading-none tracking-figure tabular-nums text-paper">
             {formatWhole(netWorth)}
             <span className="text-[16px] text-paper-mute">{NBSP}€</span>
           </span>

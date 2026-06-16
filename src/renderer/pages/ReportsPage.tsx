@@ -103,7 +103,7 @@ export function ReportsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-baseline gap-3.5">
           <Overline>— Rapport</Overline>
-          <span className="font-serif text-[20px] italic leading-none text-paper">
+          <span className="font-sans font-semibold text-[20px] leading-none text-paper">
             {headerLabel}
           </span>
         </div>

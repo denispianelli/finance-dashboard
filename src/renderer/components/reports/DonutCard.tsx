@@ -95,7 +95,7 @@ export function Donut({
         <span className="font-sans text-[9px] font-semibold uppercase tracking-[0.14em] text-paper-mute">
           {centerTop}
         </span>
-        <span className="font-serif text-[22px] italic leading-none tracking-[-0.02em] text-paper">
+        <span className="font-sans font-semibold text-[22px] leading-none tracking-[-0.02em] text-paper">
           {centerMain}
         </span>
       </div>

@@ -16,7 +16,7 @@ export function Kpi({ label, value, sub, delta, deltaDir, ctx, spark, sparkColor
   return (
     <div className="relative flex min-h-[130px] flex-col gap-2.5 overflow-hidden rounded-lg border border-line-2 bg-ink-2 px-5 py-[18px]">
       <Label>{label}</Label>
-      <span className="whitespace-nowrap font-serif text-[32px] italic leading-none tracking-[-0.02em] text-paper [font-variant-numeric:lining-nums_tabular-nums]">
+      <span className="whitespace-nowrap font-sans font-semibold text-[32px] leading-none tracking-[-0.02em] text-paper [font-variant-numeric:lining-nums_tabular-nums]">
         {value}
         {sub ? <span className="text-[20px] text-paper-mute">{sub}</span> : null}
       </span>
