@@ -22,7 +22,8 @@ export function AccountCard({
 }) {
   const rootClass = cn(
     'tile group flex min-h-[124px] flex-col gap-3 p-5 tile-hover',
-    active && 'border-line-3 bg-surface-2',
+    // Active (selected) state per the design source: subtle lime border + tint.
+    active && 'border-[rgb(var(--accent-glow)/0.5)] bg-[rgb(var(--accent-glow)/0.08)]',
   );
 
   const inner = (
