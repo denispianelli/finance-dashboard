@@ -113,4 +113,16 @@ describe('performance', () => {
     expect(perf.absoluteGain).toBeCloseTo(100, 6);
     expect(perf.triAnnual).toBeCloseTo(0.1, 2);
   });
+
+  it('treats a quote valuation as a real valuation (drives TTWROR, not excluded like auto)', () => {
+    const perf = computePerformance(
+      [
+        { date: '2025-06-15', value: 1000, source: 'quote' },
+        { date: '2026-06-15', value: 1200, source: 'quote' },
+      ],
+      [{ date: '2025-06-15', amount: 1000 }],
+    );
+    expect(perf.ttworrCumulative).not.toBeNull();
+    expect(perf.currentValue).toBe(1200);
+  });
 });

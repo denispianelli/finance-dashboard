@@ -64,6 +64,8 @@ import type {
   SupportUpdateInput,
   ImportBourseResult,
   OperationDTO,
+  QuoteSettings,
+  RefreshResult,
 } from './investment';
 
 export interface PingPayload {
@@ -279,6 +281,22 @@ export interface IpcContract {
   'investment:listOperations': {
     payload: { supportId: string };
     response: { operations: OperationDTO[] };
+  };
+  'investment:setSupportIsin': {
+    payload: { supportId: string; isin: string | null };
+    response: { ok: true };
+  };
+  'investment:getQuoteSettings': {
+    payload: Record<string, never>;
+    response: QuoteSettings;
+  };
+  'investment:setQuotesEnabled': {
+    payload: { enabled: boolean };
+    response: { ok: true };
+  };
+  'investment:refreshQuotes': {
+    payload: Record<string, never>;
+    response: { result: RefreshResult };
   };
 }
 

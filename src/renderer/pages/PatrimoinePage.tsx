@@ -136,6 +136,11 @@ export function PatrimoinePage() {
         onImport={() => {
           setImporting(true);
         }}
+        getQuoteSettings={placements.getQuoteSettings}
+        refreshQuotes={placements.refreshQuotes}
+        onSetSupportIsin={(supportId, isin) =>
+          placements.setSupportIsin(supportId, isin).then(notifyDataChanged)
+        }
       />
 
       {viewing && (
@@ -215,6 +220,9 @@ export function PatrimoinePage() {
         support={detailSupport}
         loadHistory={placements.getSupportHistory}
         loadOperations={placements.listOperations}
+        onSetIsin={(supportId, isin) =>
+          placements.setSupportIsin(supportId, isin).then(notifyDataChanged)
+        }
       />
 
       <ImportBourseDialog

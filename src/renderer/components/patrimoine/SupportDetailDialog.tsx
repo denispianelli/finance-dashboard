@@ -1,8 +1,83 @@
 import { useEffect, useState } from 'react';
+import { Check } from 'lucide-react';
+import { toast } from 'sonner';
 import type { OperationDTO, SupportHistory, SupportWithPerf } from '@shared/types/investment';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Button } from '../ui/button';
 import { Money } from '../ui/money';
 import { formatPercent } from '../../lib/euro';
+
+const INPUT =
+  'h-8 rounded-md border border-line-2 bg-ink-3 px-2 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
+
+/** Editable ISIN — needed to value a support from the price feed, especially imported supports
+ *  (the Fortuneo CSV carries no ISIN). Saving a new ISIN clears the cached ticker server-side. */
+function IsinEditor({
+  support,
+  onSave,
+}: {
+  support: SupportWithPerf;
+  onSave: (supportId: string, isin: string | null) => Promise<void>;
+}) {
+  // Rendered with key={support.id} by the parent, so it re-mounts (and re-seeds from
+  // support.isin) when the dialog switches support — no state-syncing effect needed.
+  const [value, setValue] = useState(support.isin ?? '');
+  // `saved` is the last persisted ISIN; it moves to the current value on a successful save so
+  // the button greys out and a "saved" tick shows — the feedback that the action took effect.
+  const [saved, setSaved] = useState(support.isin ?? '');
+  const [saving, setSaving] = useState(false);
+
+  const normalized = value.trim().toUpperCase();
+  const dirty = normalized !== saved;
+
+  function save() {
+    setSaving(true);
+    const next = normalized === '' ? null : normalized;
+    void onSave(support.id, next)
+      .then(() => {
+        setValue(normalized);
+        setSaved(normalized);
+        toast.success(next === null ? 'ISIN retiré' : `ISIN enregistré (${normalized})`);
+      })
+      .catch(() => {
+        toast.error("L'ISIN n'a pas pu être enregistré");
+      })
+      .finally(() => {
+        setSaving(false);
+      });
+  }
+
+  return (
+    <label className="flex flex-col gap-1 font-sans text-[12px] text-paper-soft">
+      ISIN
+      <span className="flex items-center gap-2">
+        <input
+          className={INPUT}
+          value={value}
+          placeholder="IE00B4L5Y983"
+          onChange={(e) => {
+            setValue(e.target.value);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && dirty) save();
+          }}
+        />
+        <Button variant="outline" size="sm" disabled={!dirty || saving} onClick={save}>
+          {!dirty && saved !== '' ? (
+            <>
+              <Check size={12} strokeWidth={2} /> Enregistré
+            </>
+          ) : (
+            'Enregistrer'
+          )}
+        </Button>
+      </span>
+      <span className="text-[11px] text-paper-dim">
+        Requis pour valoriser ce support via les cours de marché.
+      </span>
+    </label>
+  );
+}
 
 function Pct({ value }: { value: number | null }) {
   if (value === null) return <span className="text-paper-dim">—</span>;
@@ -198,12 +273,14 @@ export function SupportDetailDialog({
   support,
   loadHistory,
   loadOperations,
+  onSetIsin,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   support: SupportWithPerf | null;
   loadHistory: (supportId: string) => Promise<SupportHistory>;
   loadOperations: (supportId: string) => Promise<OperationDTO[]>;
+  onSetIsin: (supportId: string, isin: string | null) => Promise<void>;
 }) {
   if (!support) return null;
 
@@ -225,6 +302,11 @@ export function SupportDetailDialog({
         </DialogHeader>
 
         <div className="flex flex-col gap-6">
+          {/* ISIN — editable, drives the price feed */}
+          <section>
+            <IsinEditor key={support.id} support={support} onSave={onSetIsin} />
+          </section>
+
           {/* Performance summary */}
           <section>
             <p className="mb-2 font-sans text-[11px] font-semibold uppercase tracking-widest text-paper-dim">

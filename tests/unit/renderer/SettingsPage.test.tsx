@@ -11,6 +11,9 @@ vi.mock('@renderer/components/sync/SyncSettingsSection', () => ({
 vi.mock('@renderer/components/backup/BackupSettingsSection', () => ({
   BackupSettingsSection: () => null,
 }));
+vi.mock('@renderer/components/patrimoine/QuoteSettingsSection', () => ({
+  QuoteSettingsSection: () => null,
+}));
 vi.mock('@renderer/ipc/client', () => ({ ipc: { invoke: vi.fn() } }));
 
 import { SettingsPage } from '@renderer/pages/SettingsPage';
@@ -20,10 +23,11 @@ afterEach(() => {
 });
 
 describe('SettingsPage', () => {
-  it('renders the three content sections and no model section', () => {
+  it('renders the four content sections and no model section', () => {
     render(<SettingsPage />);
     expect(screen.getByText('Synchronisation')).toBeInTheDocument();
     expect(screen.getByText('Données & Sauvegarde')).toBeInTheDocument();
+    expect(screen.getByText('Cours de marché')).toBeInTheDocument();
     expect(screen.getByText('Apparence & divers')).toBeInTheDocument();
     expect(screen.queryByText('Modèle LLM')).not.toBeInTheDocument();
   });

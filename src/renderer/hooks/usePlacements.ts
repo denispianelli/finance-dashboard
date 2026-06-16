@@ -9,6 +9,7 @@ import type {
   SupportHistory,
   ImportBourseResult,
   OperationDTO,
+  RefreshResult,
 } from '@shared/types/investment';
 
 export function usePlacements(refreshToken: number) {
@@ -29,6 +30,20 @@ export function usePlacements(refreshToken: number) {
       alive = false;
     };
   }, [refreshToken, tick]);
+
+  // On mount, if the feed is enabled, refresh quotes in the background and reload when done.
+  useEffect(() => {
+    let alive = true;
+    void ipc.invoke('investment:getQuoteSettings', {}).then((s) => {
+      if (!alive || !s.enabled) return;
+      void ipc.invoke('investment:refreshQuotes', {}).then(() => {
+        if (alive) reload();
+      });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [reload]);
 
   const createWrapper = useCallback(
     async (input: CreateWrapperInput): Promise<WrapperDTO> => {
@@ -98,6 +113,29 @@ export function usePlacements(refreshToken: number) {
     [],
   );
 
+  const setSupportIsin = useCallback(
+    async (supportId: string, isin: string | null) => {
+      await ipc.invoke('investment:setSupportIsin', { supportId, isin });
+      // Value it right away when the feed is on. refreshQuotes is a no-op server-side when the
+      // feed is off, so this is safe to always call when an ISIN was set.
+      if (isin !== null) await ipc.invoke('investment:refreshQuotes', {});
+      reload();
+    },
+    [reload],
+  );
+
+  const getQuoteSettings = useCallback(() => ipc.invoke('investment:getQuoteSettings', {}), []);
+
+  const setQuotesEnabled = useCallback(async (enabled: boolean) => {
+    await ipc.invoke('investment:setQuotesEnabled', { enabled });
+  }, []);
+
+  const refreshQuotes = useCallback(async (): Promise<RefreshResult> => {
+    const r = await ipc.invoke('investment:refreshQuotes', {});
+    reload();
+    return r.result;
+  }, [reload]);
+
   return {
     wrappers,
     reload,
@@ -110,5 +148,9 @@ export function usePlacements(refreshToken: number) {
     pickBourseCsv,
     importBourseCsv,
     listOperations,
+    setSupportIsin,
+    getQuoteSettings,
+    setQuotesEnabled,
+    refreshQuotes,
   };
 }

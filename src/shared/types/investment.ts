@@ -16,14 +16,18 @@ export interface SupportDTO {
   currency: string;
   sortOrder: number;
   currentValue: number; // latest valuation, 0 if none yet
+  /** Source of the latest valuation backing `currentValue` (for honest "cours auto" labelling).
+   *  null when the support has no valuation yet. */
+  currentValueSource: 'declared' | 'auto' | 'quote' | null;
 }
 
 export interface DatedValue {
   date: string; // ISO yyyy-mm-dd
   value: number;
-  /** 'declared' = user-entered; 'auto' = system sentinel (CSV import open/close 0). Only
-   *  declared valuations drive TTWROR. Absent ⇒ treated as declared (manual entries). */
-  source?: 'declared' | 'auto';
+  /** 'declared' = user-entered; 'auto' = system sentinel (CSV import open/close 0);
+   *  'quote' = price-feed valuation. Only 'declared' and 'quote' valuations drive TTWROR
+   *  (only 'auto' is excluded). Absent ⇒ treated as declared (manual entries). */
+  source?: 'declared' | 'auto' | 'quote';
 }
 export interface DatedFlow {
   date: string; // ISO yyyy-mm-dd
@@ -116,4 +120,26 @@ export interface ImportBourseResult {
   skippedRows: number;
   createdSupports: SupportDTO[];
   supportsTouched: number;
+}
+
+/** A support eligible for an auto quote: has an ISIN and a positive net share count. */
+export interface QuotableSupport {
+  id: string;
+  isin: string;
+  quoteSymbol: string | null;
+  shares: number;
+}
+
+/** Opt-in price-feed settings surfaced to the renderer. */
+export interface QuoteSettings {
+  enabled: boolean;
+  lastRefreshAt: string | null; // ISO
+}
+
+/** Outcome of one refresh pass over all quotable supports. */
+export interface RefreshResult {
+  refreshed: number; // quote valuations written/updated
+  skipped: number; // no EUR ticker, or a declared value already covers today
+  failed: number; // network/parse failure for that support
+  lastRefreshAt: string | null; // ISO of this pass (null only if feed was disabled)
 }

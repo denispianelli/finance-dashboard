@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { PlacementsCard } from '../../../src/renderer/components/patrimoine/PlacementsCard';
-import type { WrapperWithSupports, Performance } from '@shared/types/investment';
+import type { QuoteSettings, WrapperWithSupports, Performance } from '@shared/types/investment';
 
 vi.mock('electron', () => ({}));
 
@@ -51,6 +51,7 @@ const WRAPPERS: WrapperWithSupports[] = [
         currency: 'EUR',
         sortOrder: 0,
         currentValue: 5300,
+        currentValueSource: 'declared',
         perf: fullYear,
         needsValuation: false,
       },
@@ -72,6 +73,7 @@ const WRAPPERS: WrapperWithSupports[] = [
         currency: 'EUR',
         sortOrder: 0,
         currentValue: 1050,
+        currentValueSource: 'declared',
         perf: shortHist,
         needsValuation: false,
       },
@@ -80,6 +82,12 @@ const WRAPPERS: WrapperWithSupports[] = [
 ];
 
 const noop = (): void => undefined;
+const asyncNoop = (): Promise<void> => Promise.resolve();
+
+const disabledQuoteSettings: QuoteSettings = { enabled: false, lastRefreshAt: null };
+const getQuoteSettingsDisabled = () => Promise.resolve(disabledQuoteSettings);
+const refreshQuotes = () =>
+  Promise.resolve({ refreshed: 0, skipped: 0, failed: 0, lastRefreshAt: null });
 
 it('renders wrappers + supports; annualised when ≥1y, cumulative "depuis l\'origine" when short', () => {
   render(
@@ -92,6 +100,9 @@ it('renders wrappers + supports; annualised when ≥1y, cumulative "depuis l\'or
       onDeleteWrapper={noop}
       onDeleteSupport={noop}
       onImport={noop}
+      getQuoteSettings={getQuoteSettingsDisabled}
+      refreshQuotes={refreshQuotes}
+      onSetSupportIsin={asyncNoop}
     />,
   );
   expect(screen.getByText('PEA')).toBeInTheDocument();
@@ -111,7 +122,110 @@ it('renders an empty state when there are no wrappers', () => {
       onDeleteWrapper={noop}
       onDeleteSupport={noop}
       onImport={noop}
+      getQuoteSettings={getQuoteSettingsDisabled}
+      refreshQuotes={refreshQuotes}
+      onSetSupportIsin={asyncNoop}
     />,
   );
   expect(screen.getByText(/aucune enveloppe|aucun placement/i)).toBeInTheDocument();
+});
+
+it('renders "cours auto" marker for a support with currentValueSource === "quote" when quotes are enabled', async () => {
+  const enabledSettings: QuoteSettings = { enabled: true, lastRefreshAt: null };
+  const getQuoteSettingsEnabled = () => Promise.resolve(enabledSettings);
+
+  const wrappersWithQuote: WrapperWithSupports[] = [
+    {
+      id: 'w1',
+      name: 'PEA',
+      type: 'pea',
+      sortOrder: 0,
+      perf: fullYear,
+      supports: [
+        {
+          id: 's1',
+          wrapperId: 'w1',
+          name: 'MSCI World',
+          isin: 'LU0274208692',
+          classId: null,
+          currency: 'EUR',
+          sortOrder: 0,
+          currentValue: 5300,
+          currentValueSource: 'quote',
+          perf: fullYear,
+          needsValuation: false,
+        },
+      ],
+    },
+  ];
+
+  render(
+    <PlacementsCard
+      wrappers={wrappersWithQuote}
+      onAddWrapper={noop}
+      onAddSupport={noop}
+      onUpdateSupport={noop}
+      onOpenDetail={noop}
+      onDeleteWrapper={noop}
+      onDeleteSupport={noop}
+      onImport={noop}
+      getQuoteSettings={getQuoteSettingsEnabled}
+      refreshQuotes={refreshQuotes}
+      onSetSupportIsin={asyncNoop}
+    />,
+  );
+
+  // Wait for the getQuoteSettings effect to resolve and re-render
+  expect(await screen.findByText('cours auto')).toBeInTheDocument();
+});
+
+it('offers inline ISIN entry on an open support when the feed is enabled', async () => {
+  const setIsin = vi.fn(() => Promise.resolve());
+  const wrappers: WrapperWithSupports[] = [
+    {
+      id: 'w1',
+      name: 'PEA',
+      type: 'pea',
+      sortOrder: 0,
+      perf: shortHist,
+      supports: [
+        {
+          id: 's1',
+          wrapperId: 'w1',
+          name: 'MSCI World',
+          isin: null,
+          classId: null,
+          currency: 'EUR',
+          sortOrder: 0,
+          currentValue: 0,
+          currentValueSource: null,
+          perf: shortHist,
+          needsValuation: true,
+        },
+      ],
+    },
+  ];
+
+  const { default: userEvent } = await import('@testing-library/user-event');
+  const user = userEvent.setup();
+  render(
+    <PlacementsCard
+      wrappers={wrappers}
+      onAddWrapper={noop}
+      onAddSupport={noop}
+      onUpdateSupport={noop}
+      onOpenDetail={noop}
+      onDeleteWrapper={noop}
+      onDeleteSupport={noop}
+      onImport={noop}
+      getQuoteSettings={() => Promise.resolve({ enabled: true, lastRefreshAt: null })}
+      refreshQuotes={refreshQuotes}
+      onSetSupportIsin={setIsin}
+    />,
+  );
+
+  const input = await screen.findByLabelText('ISIN MSCI World');
+  await user.type(input, 'ie00b4l5y983');
+  await user.click(screen.getByRole('button', { name: 'Valoriser' }));
+  expect(setIsin).toHaveBeenCalledWith('s1', 'IE00B4L5Y983'); // normalised to uppercase
 });
