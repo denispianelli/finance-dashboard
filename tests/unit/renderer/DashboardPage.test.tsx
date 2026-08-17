@@ -108,7 +108,10 @@ function renderPage() {
 describe('DashboardPage', () => {
   it('renders accounts loaded over IPC', async () => {
     renderPage();
-    expect(await screen.findByText('Compte courant')).toBeInTheDocument();
+    // The account name appears in both the hero balance tile and the
+    // accounts-mini tile in the bento layout, so match all occurrences.
+    const matches = await screen.findAllByText('Compte courant');
+    expect(matches.length).toBeGreaterThan(0);
   });
 
   it('renders transactions loaded over IPC', async () => {
@@ -118,9 +121,10 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Non catégorisé')).toBeInTheDocument();
   });
 
-  it('renders the static KPI tiles', () => {
+  it('renders the bento KPI tiles', () => {
     renderPage();
-    expect(screen.getByText('Solde net')).toBeInTheDocument();
+    // Hero tile shows "Solde net · comptes" overline; Kpi tiles show month-specific labels.
+    expect(screen.getByText('Solde net · comptes')).toBeInTheDocument();
     expect(screen.getByText(/Dépenses/)).toBeInTheDocument();
   });
 

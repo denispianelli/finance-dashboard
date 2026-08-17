@@ -4,6 +4,7 @@ import type { AssetClass } from '@shared/types/patrimoine';
 import type { CreateSupportInput, CreateWrapperInput, WrapperType } from '@shared/types/investment';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
+import { Select } from '../ui/select';
 
 const INPUT =
   'h-8 rounded-md border border-line-2 bg-ink-3 px-2 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
@@ -123,25 +124,21 @@ export function WrapperDialog({
                 />
               </label>
 
-              <label className="flex flex-col gap-1 font-sans text-[12px] text-paper-soft">
-                Type
-                <select
-                  className={INPUT}
+              <div className="flex flex-col gap-1 font-sans text-[12px] text-paper-soft">
+                <span>Type</span>
+                <Select
+                  ariaLabel="Type"
                   value={wrapperType}
-                  disabled={wrapperReady}
-                  onChange={(e) => {
-                    setWrapperType(e.target.value as WrapperType);
+                  onValueChange={(v) => {
+                    setWrapperType(v as WrapperType);
                   }}
-                >
-                  {(Object.entries(WRAPPER_TYPE_LABELS) as [WrapperType, string][]).map(
-                    ([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ),
+                  options={(Object.entries(WRAPPER_TYPE_LABELS) as [WrapperType, string][]).map(
+                    ([value, label]) => ({ value, label }),
                   )}
-                </select>
-              </label>
+                  disabled={wrapperReady}
+                  className="h-9 w-full text-[13px]"
+                />
+              </div>
 
               {!wrapperReady && (
                 <Button
@@ -210,23 +207,19 @@ export function WrapperDialog({
                 />
               </label>
 
-              <label className="flex flex-col gap-1 font-sans text-[12px] text-paper-soft">
-                Classe d&apos;actif (optionnel)
-                <select
-                  className={INPUT}
+              <div className="flex flex-col gap-1 font-sans text-[12px] text-paper-soft">
+                <span>Classe d&apos;actif (optionnel)</span>
+                <Select
+                  ariaLabel="Classe d'actif (optionnel)"
                   value={supportClassId}
-                  onChange={(e) => {
-                    setSupportClassId(e.target.value);
-                  }}
-                >
-                  <option value="">Non classé</option>
-                  {classes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  onValueChange={setSupportClassId}
+                  options={[
+                    { value: '', label: 'Non classé' },
+                    ...classes.map((c) => ({ value: c.id, label: c.name })),
+                  ]}
+                  className="h-9 w-full text-[13px]"
+                />
+              </div>
 
               <div className="flex gap-2">
                 <Button

@@ -1,5 +1,6 @@
 import { HashRouter, Route, Routes } from 'react-router-dom';
 import { Toaster } from 'sonner';
+import { ThemeProvider } from './components/ThemeProvider';
 import { AppShell } from './components/AppShell';
 import { DashboardPage } from './pages/DashboardPage';
 import { AccountsPage } from './pages/AccountsPage';
@@ -12,20 +13,22 @@ import { SyncLaunchGate } from './components/sync/SyncLaunchGate';
 
 export default function App() {
   return (
-    <HashRouter>
-      <Toaster richColors />
-      <SyncLaunchGate />
-      <Routes>
-        <Route element={<AppShell />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="/transactions" element={<TransactionsPage />} />
-          <Route path="/accounts" element={<AccountsPage />} />
-          <Route path="/categories" element={<CategoriesPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/patrimoine" element={<PatrimoinePage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-        </Route>
-      </Routes>
-    </HashRouter>
+    <ThemeProvider>
+      <HashRouter>
+        <Toaster richColors />
+        <SyncLaunchGate />
+        <Routes>
+          <Route element={<AppShell />}>
+            <Route index element={<DashboardPage />} />
+            <Route path="/transactions" element={<TransactionsPage />} />
+            <Route path="/accounts" element={<AccountsPage />} />
+            <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/patrimoine" element={<PatrimoinePage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
+        </Routes>
+      </HashRouter>
+    </ThemeProvider>
   );
 }

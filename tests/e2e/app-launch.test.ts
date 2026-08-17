@@ -32,7 +32,7 @@ test('app launches and renders the dashboard with an empty state', async () => {
 test('import modal opens and shows pick state', async () => {
   const { app, window } = await launchApp();
   try {
-    await window.getByRole('button', { name: /importer un relevé/i }).click();
+    await window.getByRole('banner').getByRole('button', { name: 'Importer' }).click();
     await expect(window.getByRole('dialog')).toBeVisible();
     await expect(window.getByRole('button', { name: /parcourir/i })).toBeVisible();
     await expect(window.getByText(/OFX recommandé/i)).toBeVisible();

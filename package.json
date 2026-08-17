@@ -25,13 +25,14 @@
     "dist:mac": "electron-vite build && electron-builder --mac",
     "dist:win": "electron-vite build && electron-builder --win",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src tests playwright.config.ts electron.vite.config.ts --max-warnings 0",
+    "lint": "eslint src tests playwright.config.ts playwright.screenshots.config.ts electron.vite.config.ts --max-warnings 0",
     "test": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:all": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write src",
     "test:e2e": "npm run build && playwright test",
+    "screenshots": "npm run build && xvfb-run -a playwright test --config playwright.screenshots.config.ts",
     "prepare": "husky"
   },
   "devDependencies": {

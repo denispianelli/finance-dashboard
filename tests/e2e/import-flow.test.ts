@@ -42,7 +42,7 @@ test('imports an OFX statement end to end and surfaces it on the dashboard', asy
     await expect(window.getByText(/Aucune transaction/i)).toBeVisible();
 
     // Open the import modal and pick the (stubbed) file into the default account.
-    await window.getByRole('button', { name: /importer un relevé/i }).click();
+    await window.getByRole('banner').getByRole('button', { name: 'Importer' }).click();
     await expect(window.getByRole('dialog')).toBeVisible();
     await window.getByRole('button', { name: /parcourir/i }).click();
 

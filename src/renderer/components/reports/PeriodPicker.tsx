@@ -1,5 +1,4 @@
-import { ChevronDown } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { Select, type SelectOption } from '../ui/select';
 import type { ReportPeriod } from '../../lib/reports';
 
 export interface PeriodPickerProps {
@@ -8,65 +7,24 @@ export interface PeriodPickerProps {
   onChange: (period: ReportPeriod) => void;
 }
 
-// "Toute l'année" + the twelve months, as [value, label] pairs (kit order).
-const MONTHS: [string, string][] = [
-  ['all', "Toute l'année"],
-  ['01', 'Janvier'],
-  ['02', 'Février'],
-  ['03', 'Mars'],
-  ['04', 'Avril'],
-  ['05', 'Mai'],
-  ['06', 'Juin'],
-  ['07', 'Juillet'],
-  ['08', 'Août'],
-  ['09', 'Septembre'],
-  ['10', 'Octobre'],
-  ['11', 'Novembre'],
-  ['12', 'Décembre'],
+// "Toute l'année" + the twelve months, as glass-select options (kit order).
+const MONTH_OPTIONS: SelectOption[] = [
+  { value: 'all', label: "Toute l'année" },
+  { value: '01', label: 'Janvier' },
+  { value: '02', label: 'Février' },
+  { value: '03', label: 'Mars' },
+  { value: '04', label: 'Avril' },
+  { value: '05', label: 'Mai' },
+  { value: '06', label: 'Juin' },
+  { value: '07', label: 'Juillet' },
+  { value: '08', label: 'Août' },
+  { value: '09', label: 'Septembre' },
+  { value: '10', label: 'Octobre' },
+  { value: '11', label: 'Novembre' },
+  { value: '12', label: 'Décembre' },
 ];
 
-const SELECT =
-  'h-8 cursor-pointer appearance-none rounded-md border border-line-2 bg-ink-2 pl-3 pr-[30px] font-sans text-[13px] font-medium text-paper outline-none focus:ring-1 focus:ring-brass';
-
-/** A compact native select styled like the kit, with a Lucide chevron overlay. */
-function PeriodSelect({
-  value,
-  onChange,
-  options,
-  ariaLabel,
-  minWidth,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  options: [string, string][];
-  ariaLabel: string;
-  minWidth: number;
-}) {
-  return (
-    <span className="relative inline-flex">
-      <select
-        aria-label={ariaLabel}
-        value={value}
-        onChange={(e) => {
-          onChange(e.target.value);
-        }}
-        className={cn(SELECT)}
-        style={{ minWidth }}
-      >
-        {options.map(([v, label]) => (
-          <option key={v} value={v}>
-            {label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        size={13}
-        strokeWidth={1.8}
-        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-paper-mute"
-      />
-    </span>
-  );
-}
+const TRIGGER = 'h-8 text-[13px] font-medium';
 
 /** Period selector (kit): a month select ("Toute l'année" + the twelve months)
  *  and a year select. "Toute l'année" is the year view; any month narrows to it. */
@@ -91,19 +49,20 @@ export function PeriodPicker({ period, available, onChange }: PeriodPickerProps)
 
   return (
     <div className="flex items-center gap-2">
-      <PeriodSelect
+      <Select
         ariaLabel="Mois"
         value={month}
-        onChange={setMonth}
-        options={MONTHS}
-        minWidth={132}
+        onValueChange={setMonth}
+        options={MONTH_OPTIONS}
+        className={`${TRIGGER} min-w-[132px]`}
       />
-      <PeriodSelect
+      <Select
         ariaLabel="Année"
         value={year}
-        onChange={setYear}
-        options={available.years.map((y) => [y, y])}
-        minWidth={86}
+        onValueChange={setYear}
+        options={available.years.map((y) => ({ value: y, label: y }))}
+        align="end"
+        className={`${TRIGGER} min-w-[86px]`}
       />
     </div>
   );

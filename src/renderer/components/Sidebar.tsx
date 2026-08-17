@@ -74,24 +74,21 @@ function BrandMark() {
       height={28}
       viewBox="0 0 40 40"
       fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      xmlns="http://www.w3.org/2000/svg"
       aria-hidden
     >
-      <circle cx="20" cy="20" r="18.5" strokeWidth="1" />
-      <text
-        x="20"
-        y="28"
-        textAnchor="middle"
-        fontFamily="serif"
-        fontStyle="italic"
-        fontSize="22"
-        fill="currentColor"
-        stroke="none"
-      >
-        ƒ
-      </text>
+      <rect width="40" height="40" rx="12" fill="var(--accent-brand)" />
+      <g transform="translate(8,8)">
+        <polyline
+          points="3,17 9,11 13,14 21,5"
+          fill="none"
+          stroke="var(--accent-ink)"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx="21" cy="5" r="2.4" fill="var(--accent-ink)" />
+      </g>
     </svg>
   );
 }
@@ -205,7 +202,7 @@ export function Sidebar({
             icons in both states); the wordmark stays mounted and fades + is clipped by the
             shrinking rail rather than being unmounted — so the logo slides, never teleports. */}
         <div className="flex items-center gap-3 overflow-hidden px-[13px] pb-[18px] pt-5">
-          <span className="flex shrink-0 text-brass">
+          <span className="flex shrink-0">
             <BrandMark />
           </span>
           <div
@@ -217,7 +214,7 @@ export function Sidebar({
             <span className="font-sans text-[13px] font-medium leading-none tracking-[-0.015em] text-paper">
               Finance
             </span>
-            <span className="font-serif text-[15px] italic font-normal leading-none text-paper-soft">
+            <span className="font-sans text-[14px] font-semibold leading-none tracking-[-0.015em] text-paper-soft">
               Dashboard
             </span>
           </div>

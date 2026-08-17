@@ -7,9 +7,11 @@ import type { LoanWithStats } from '@shared/types/patrimoine';
 import type { SupportWithPerf, WrapperWithSupports } from '@shared/types/investment';
 import { usePatrimoine } from '../hooks/usePatrimoine';
 import { usePlacements } from '../hooks/usePlacements';
+import { useNetWorthSummary } from '../hooks/useNetWorthSummary';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Overline } from '../components/ui/overline';
+import { NetWorthSummaryCard } from '../components/patrimoine/NetWorthSummaryCard';
 import { LoanCard } from '../components/patrimoine/LoanCard';
 import { AssetsCard } from '../components/patrimoine/AssetsCard';
 import { AllocationCard } from '../components/patrimoine/AllocationCard';
@@ -40,6 +42,7 @@ export function PatrimoinePage() {
     assignClass,
   } = usePatrimoine(refreshToken);
   const placements = usePlacements(refreshToken);
+  const { netWorth, monthDelta, actifs, passif } = useNetWorthSummary(refreshToken);
 
   const [viewing, setViewing] = useState<LoanWithStats | null>(null);
   const [adding, setAdding] = useState(false);
@@ -57,10 +60,25 @@ export function PatrimoinePage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <NetWorthSummaryCard
+        netWorth={netWorth}
+        monthDelta={monthDelta}
+        actifs={actifs}
+        passif={passif}
+        allocation={allocation}
+      />
+
+      <AllocationCard
+        allocation={allocation}
+        onManage={() => {
+          setManaging(true);
+        }}
+      />
+
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3.5">
-            <Overline>— I</Overline>
+          <div className="flex min-w-0 flex-col gap-1">
+            <Overline>Crédits</Overline>
             <CardTitle>Prêts</CardTitle>
           </div>
           <Button
@@ -100,13 +118,6 @@ export function PatrimoinePage() {
           </div>
         )}
       </Card>
-
-      <AllocationCard
-        allocation={allocation}
-        onManage={() => {
-          setManaging(true);
-        }}
-      />
 
       <AssetsCard
         assets={assets}

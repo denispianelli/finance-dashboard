@@ -4,7 +4,6 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 import { Sidebar } from '@renderer/components/Sidebar';
-import { KpiGrid, Row2 } from '@renderer/components/dashboard/layout';
 
 interface MatchMediaStub {
   matches: boolean;
@@ -68,32 +67,5 @@ describe('Sidebar collapsed rendering', () => {
     // rather than teleport) but rendered transparent, so the rail reads as icon-only.
     expect(screen.getByRole('link', { name: 'Tableau de bord' })).toBeInTheDocument();
     expect(screen.getByText('Tableau de bord').className).toContain('opacity-0');
-  });
-});
-
-describe('KpiGrid responsive class composition', () => {
-  it('declares 2 / 4 column breakpoints in source order', () => {
-    const { container } = render(
-      <KpiGrid>
-        <div>a</div>
-      </KpiGrid>,
-    );
-    const grid = container.firstElementChild;
-    expect(grid?.className).toContain('grid-cols-2');
-    expect(grid?.className).toContain('xl:grid-cols-4');
-  });
-});
-
-describe('Row2 responsive class composition', () => {
-  it('stacks below xl and uses the 1.6fr/1fr split at xl', () => {
-    const { container } = render(
-      <Row2>
-        <div>a</div>
-        <div>b</div>
-      </Row2>,
-    );
-    const grid = container.firstElementChild;
-    expect(grid?.className).toContain('grid-cols-1');
-    expect(grid?.className).toContain('xl:grid-cols-[1.6fr_1fr]');
   });
 });

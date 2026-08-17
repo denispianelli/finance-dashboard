@@ -32,15 +32,15 @@ export function ChartCard({ points, caption, range, onRangeChange }: ChartCardPr
   const title = RANGES.find((r) => r.value === range)?.title ?? '';
 
   return (
-    <div className="flex flex-col gap-3.5 rounded-lg border border-line-2 bg-ink-2 px-[22px] pb-4 pt-5">
+    <div className="flex flex-col gap-3.5">
       <div className="flex flex-wrap items-center justify-between gap-y-2">
-        <div className="flex min-w-0 items-center gap-3.5">
-          <Overline>— II</Overline>
-          <span className="truncate font-sans text-sm font-medium tracking-[-0.012em]">
+        <div className="flex min-w-0 flex-col gap-1">
+          <Overline>Évolution du solde</Overline>
+          <span className="truncate font-sans text-base font-semibold tracking-[-0.015em] text-paper">
             {title}
           </span>
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-[5px]">
           {RANGES.map((r) => (
             <Chip
               key={r.value}
@@ -93,6 +93,10 @@ export function ChartCard({ points, caption, range, onRangeChange }: ChartCardPr
             <Area
               dataKey="balance"
               type="linear"
+              // Pin the fill baseline to the bottom (dataMin) so the area fills
+              // DOWN from the line. Without this, recharts' "auto" baseline on a
+              // ['dataMin','dataMax'] domain fills upward (the inverted look).
+              baseValue="dataMin"
               stroke="var(--brass)"
               strokeWidth={1.5}
               fill="url(#chartBalanceFill)"

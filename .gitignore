@@ -35,3 +35,6 @@ release/
 # CUDA runtime libs (vendored, ~800MB — never commit)
 .cuda-spike/
 .cuda-libs/
+
+# Screenshot harness output (npm run screenshots)
+.screenshots/

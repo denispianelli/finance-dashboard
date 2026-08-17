@@ -1,5 +1,6 @@
 import { type ComponentType, type ReactNode } from 'react';
 import { Database, FolderSync, LineChart, Palette } from 'lucide-react';
+import { useTheme } from '../components/ThemeProvider';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -30,7 +31,7 @@ export function SettingsPage() {
 
 function QuotesSection() {
   return (
-    <Section icon={LineChart} overline="— Opt-in" title="Cours de marché">
+    <Section icon={LineChart} overline="Opt-in" title="Cours de marché">
       <QuoteSettingsSection Row={Row} />
     </Section>
   );
@@ -38,7 +39,7 @@ function QuotesSection() {
 
 function SyncSection() {
   return (
-    <Section icon={FolderSync} overline="— Multi-machines" title="Synchronisation">
+    <Section icon={FolderSync} overline="Multi-machines" title="Synchronisation">
       <SyncSettingsSection Row={Row} />
     </Section>
   );
@@ -46,7 +47,7 @@ function SyncSection() {
 
 function DataSection() {
   return (
-    <Section icon={Database} overline="— 100% local" title="Données & Sauvegarde">
+    <Section icon={Database} overline="100% local" title="Données & Sauvegarde">
       <Row label="Emplacement de la base">
         <span className="font-mono text-[12px] text-paper-dim">{PLACEHOLDER}</span>
       </Row>
@@ -94,15 +95,27 @@ function DataSection() {
 }
 
 function AppearanceSection() {
+  const { theme, setTheme } = useTheme();
   return (
-    <Section icon={Palette} overline="— Interface" title="Apparence & divers">
+    <Section icon={Palette} overline="Interface" title="Apparence & divers">
       <Row label="Thème">
         <div className="flex items-center gap-2">
-          <Chip active>Sombre</Chip>
-          <span title="À venir">
-            <Chip>Clair</Chip>
-          </span>
-          <SoonBadge />
+          <Chip
+            active={theme === 'dark'}
+            onClick={() => {
+              setTheme('dark');
+            }}
+          >
+            Sombre
+          </Chip>
+          <Chip
+            active={theme === 'light'}
+            onClick={() => {
+              setTheme('light');
+            }}
+          >
+            Clair
+          </Chip>
         </div>
       </Row>
 
@@ -129,12 +142,14 @@ function Section({
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-3.5">
-          <span className="flex text-brass">
-            <Icon size={15} strokeWidth={1.7} />
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brass-soft text-brass">
+            <Icon size={16} strokeWidth={1.7} />
           </span>
-          <Overline>{overline}</Overline>
-          <CardTitle>{title}</CardTitle>
+          <div className="flex flex-col gap-0.5">
+            <Overline>{overline}</Overline>
+            <CardTitle>{title}</CardTitle>
+          </div>
         </div>
       </CardHeader>
       <div className="flex flex-col">{children}</div>

@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 import { Button } from '../ui/button';
+import { Select } from '../ui/select';
 
 /** What the reassign toast hands over: the corrected label + chosen category. */
 export interface RuleProposal {
@@ -78,21 +79,22 @@ function RuleForm({
         </DialogHeader>
         <p className="font-mono text-[11px] text-paper-dim">{proposal.labelClean}</p>
         <div className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-[12px] text-paper-soft">
-            Type de règle
-            <select
-              aria-label="Type de règle"
-              className={FIELD}
+          <div className="flex flex-col gap-1 text-[12px] text-paper-soft">
+            <span>Type de règle</span>
+            <Select
+              ariaLabel="Type de règle"
               value={matchType}
-              onChange={(e) => {
-                setMatchType(e.target.value as RuleMatchType);
+              onValueChange={(v) => {
+                setMatchType(v as RuleMatchType);
               }}
-            >
-              <option value="contains">Contient</option>
-              <option value="exact">Exact</option>
-              <option value="regex">Regex</option>
-            </select>
-          </label>
+              options={[
+                { value: 'contains', label: 'Contient' },
+                { value: 'exact', label: 'Exact' },
+                { value: 'regex', label: 'Regex' },
+              ]}
+              className="h-9 w-full text-[13px]"
+            />
+          </div>
           <label className="flex flex-col gap-1 text-[12px] text-paper-soft">
             Valeur
             <input
@@ -104,23 +106,16 @@ function RuleForm({
               }}
             />
           </label>
-          <label className="flex flex-col gap-1 text-[12px] text-paper-soft">
-            Catégorie
-            <select
-              aria-label="Catégorie"
-              className={FIELD}
+          <div className="flex flex-col gap-1 text-[12px] text-paper-soft">
+            <span>Catégorie</span>
+            <Select
+              ariaLabel="Catégorie"
               value={categoryId}
-              onChange={(e) => {
-                setCategoryId(e.target.value);
-              }}
-            >
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              onValueChange={setCategoryId}
+              options={categories.map((c) => ({ value: c.id, label: c.name }))}
+              className="h-9 w-full text-[13px]"
+            />
+          </div>
           {error !== null && <p className="text-[12px] text-flag">{error}</p>}
         </div>
         <DialogFooter>

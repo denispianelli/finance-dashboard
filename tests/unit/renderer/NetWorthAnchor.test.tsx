@@ -13,7 +13,7 @@ function squash(s: string | null | undefined): string {
 }
 
 describe('NetWorthAnchor', () => {
-  it('expanded + positive delta: serif figure, sage delta, navigates on click', () => {
+  it('expanded + positive delta: bold figure, sage delta, navigates on click', () => {
     const onNavigate = vi.fn();
     const { container } = render(
       <NetWorthAnchor
@@ -26,7 +26,7 @@ describe('NetWorthAnchor', () => {
 
     expect(screen.getByText('Patrimoine net')).toBeTruthy();
 
-    const figure = container.querySelector('.font-serif');
+    const figure = container.querySelector('.tracking-figure');
     expect(squash(figure?.textContent)).toBe('54748€');
 
     const delta = container.querySelector('.font-mono');

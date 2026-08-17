@@ -44,7 +44,7 @@ export function TransactionReviewTable({
             <tr
               key={tx.tx_hash}
               aria-label={tx.tx_hash}
-              className={tx.isDuplicate ? 'opacity-40 italic' : ''}
+              className={tx.isDuplicate ? 'opacity-40' : ''}
             >
               <td className="px-3 py-2">
                 <Checkbox

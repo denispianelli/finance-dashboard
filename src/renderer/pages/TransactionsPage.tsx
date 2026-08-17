@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
+import { Calendar, Search, SearchX, SlidersHorizontal, X } from 'lucide-react';
 import { ipc } from '@renderer/ipc/client';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Card, CardHeader, CardTitle } from '../components/ui/card';
+import { CardTitle } from '../components/ui/card';
 import { Overline } from '../components/ui/overline';
+import { Select } from '../components/ui/select';
 import { AccountTabs } from '../components/dashboard/AccountTabs';
-import { TxTableHeader, TxTableRow } from '../components/dashboard/TxTable';
-import { PeriodFilter, type DateRangeValue } from '../components/dashboard/PeriodFilter';
+import { TxRowFull } from '../components/dashboard/TxRowFull';
 import { RuleDialog, type RuleProposal } from '../components/categories/RuleDialog';
 import { useDashboard } from '../hooks/useDashboard';
 import { toAccount, toTxRow } from '../lib/dashboardMap';
@@ -17,6 +18,7 @@ import {
   type TxFilters,
   type TxType,
 } from '../lib/filterTransactions';
+import { formatEuroRounded, formatSignedEuro, MINUS } from '../lib/euro';
 import { cn } from '../lib/utils';
 import type { AppOutletContext } from '../lib/outletContext';
 
@@ -24,19 +26,32 @@ import type { AppOutletContext } from '../lib/outletContext';
 const FULL_HISTORY_LIMIT = 100000;
 /** Sentinel select value mapping to "uncategorized" (null) in the filter. */
 const NONE = '__none__';
-/** Approximate rendered height of one row, used as the virtualizer's size estimate. */
-const ROW_ESTIMATE = 57;
+/** Approximate rendered height of one rich row. */
+const ROW_ESTIMATE = 76;
 
 const TYPES: { value: TxType; label: string }[] = [
-  { value: 'all', label: 'Tous' },
+  { value: 'all', label: 'Tout' },
   { value: 'income', label: 'Revenus' },
   { value: 'expense', label: 'Dépenses' },
-  { value: 'transfer', label: 'Transferts' },
-  { value: 'refund', label: 'Remboursements' },
 ];
 
-const SEG_BTN = 'h-7 rounded-md px-2.5 font-sans text-xs font-medium transition-colors';
-const FIELD = 'h-7 rounded-md border border-line-2 bg-ink-2 px-2 font-sans text-xs text-paper';
+/** Canonical FIELD control from the handoff: 42px tall, r-sm (12px) radius, glass
+ *  surface, 13.5px text. (`rounded-sm` = 12px in this repo's overridden scale.) */
+const FIELD =
+  'h-[42px] rounded-sm border border-line-2 bg-surface px-3.5 text-[13.5px] text-paper outline-none';
+
+type PeriodPreset = 'all' | 'month' | '30d' | '90d' | 'year';
+
+const PERIOD_OPTIONS: { value: PeriodPreset; label: string }[] = [
+  { value: 'all', label: 'Toute la période' },
+  { value: 'month', label: 'Ce mois-ci' },
+  { value: '30d', label: '30 derniers jours' },
+  { value: '90d', label: '3 derniers mois' },
+  { value: 'year', label: 'Cette année' },
+];
+
+const SEG_BTN =
+  'h-[30px] whitespace-nowrap rounded-full px-3.5 font-sans text-[12.5px] font-medium transition-colors';
 
 function Segmented<T extends string>({
   options,
@@ -48,7 +63,7 @@ function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="inline-flex gap-1 rounded-lg border border-line-2 bg-ink-2 p-1">
+    <div className="inline-flex gap-0.5 rounded-full border border-line-2 bg-surface p-1">
       {options.map((o) => (
         <button
           key={o.value}
@@ -58,7 +73,7 @@ function Segmented<T extends string>({
           }}
           className={cn(
             SEG_BTN,
-            value === o.value ? 'bg-ink-3 text-paper' : 'text-paper-mute hover:text-paper',
+            value === o.value ? 'bg-brass text-accent-ink' : 'text-paper-mute hover:text-paper',
           )}
         >
           {o.label}
@@ -66,6 +81,35 @@ function Segmented<T extends string>({
       ))}
     </div>
   );
+}
+
+/**
+ * Compute {from, to} for a period preset, anchored on the latest transaction
+ * date rather than today. This way preset filters are coherent for real bank
+ * data that doesn't extend to the current day.
+ */
+function presetToRange(
+  preset: PeriodPreset,
+  anchor: string,
+): { from: string | null; to: string | null } {
+  if (preset === 'all') return { from: null, to: null };
+  const to = anchor;
+  let from: string;
+  switch (preset) {
+    case 'month':
+      from = `${anchor.slice(0, 7)}-01`;
+      break;
+    case 'year':
+      from = `${anchor.slice(0, 4)}-01-01`;
+      break;
+    case '30d':
+      from = periodStart('30d', anchor) ?? '1900-01-01';
+      break;
+    case '90d':
+      from = periodStart('3m', anchor) ?? '1900-01-01';
+      break;
+  }
+  return { from, to };
 }
 
 export function TransactionsPage() {
@@ -105,25 +149,60 @@ export function TransactionsPage() {
     }
   }, [accountParam, accounts, selectAccount]);
 
-  const [today] = useState(() => toLocalISODate(new Date()));
-  const [range, setRange] = useState<DateRangeValue>(() => ({
-    from: periodStart('30d', today),
-    to: today,
-  }));
   const [type, setType] = useState<TxType>('all');
   const [category, setCategory] = useState<string>('all');
   const [query, setQuery] = useState('');
+  const [period, setPeriod] = useState<PeriodPreset>('all');
+
+  // Anchor: the latest transaction date (or today if none).
+  const anchor = useMemo(() => {
+    if (transactions.length === 0) return toLocalISODate(new Date());
+    const first = transactions[0];
+    return transactions.reduce((max, t) => (t.date > max ? t.date : max), first?.date ?? '');
+  }, [transactions]);
+
+  const { from, to } = useMemo(() => presetToRange(period, anchor), [period, anchor]);
 
   const filtered = useMemo(() => {
     const filters: TxFilters = {
-      from: range.from,
-      to: range.to,
+      from,
+      to,
       type,
       query,
       categoryId: category === NONE ? null : category,
     };
     return filterTransactions(transactions, filters);
-  }, [transactions, range, type, query, category]);
+  }, [transactions, from, to, type, query, category]);
+
+  // Live totals from the filtered set.
+  const { totalIn, totalOut } = useMemo(() => {
+    let inSum = 0;
+    let outSum = 0;
+    for (const t of filtered) {
+      if (t.amount > 0) inSum += t.amount;
+      else outSum += t.amount;
+    }
+    return { totalIn: inSum, totalOut: outSum };
+  }, [filtered]);
+
+  // Whether any filter is active (for the Reset button). The account is always
+  // auto-selected by useDashboard (the view is per-account, not an all-accounts
+  // aggregate), so it is NOT treated as a clearable filter here.
+  const anyFilterActive = type !== 'all' || query !== '' || category !== 'all' || period !== 'all';
+
+  function resetFilters() {
+    setType('all');
+    setQuery('');
+    setCategory('all');
+    setPeriod('all');
+  }
+
+  // Eyebrow: selected account name or fallback.
+  const acctName = useMemo(() => {
+    if (!selectedAccountId) return 'Tous les comptes';
+    const found = accounts.find((a) => a.id === selectedAccountId);
+    return found?.name ?? 'Tous les comptes';
+  }, [selectedAccountId, accounts]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -142,133 +221,187 @@ export function TransactionsPage() {
     // Fill the available viewport height so the page itself doesn't scroll (no outer
     // scrollbar); only the transaction list scrolls, inside its own container.
     <div className="flex min-h-0 flex-1 flex-col gap-4">
+      {/* Account filter cards (one row, wraps) */}
       <AccountTabs
         accounts={accounts.map(toAccount)}
         activeId={selectedAccountId ?? ''}
         onSelect={selectAccount}
       />
 
-      <Card className="min-h-0 flex-1">
-        <CardHeader>
-          <div className="flex items-center gap-3.5">
-            <Overline>— III</Overline>
+      {/* Container card — flat --surface panel, dropdowns portal out so it needs no
+          overflow handling. */}
+      <div className="flex min-h-0 flex-1 flex-col rounded-[20px] border border-line-2 bg-surface p-6 shadow-glass">
+        {/* Header: eyebrow + title · live Entrées / Sorties totals */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Overline>{acctName}</Overline>
             <CardTitle>Transactions</CardTitle>
           </div>
-          <span className="font-mono text-xs text-paper-mute">
-            {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
-          </span>
-        </CardHeader>
+          <div className="flex gap-[22px]">
+            <div className="flex flex-col gap-[3px]">
+              <span className="text-[11px] text-paper-mute">Entrées</span>
+              <span className="font-mono text-base font-semibold tabular-nums text-income">
+                + {formatEuroRounded(totalIn)}
+              </span>
+            </div>
+            <div className="flex flex-col gap-[3px]">
+              <span className="text-[11px] text-paper-mute">Sorties</span>
+              <span className="font-mono text-base font-semibold tabular-nums text-expense">
+                {MINUS} {formatEuroRounded(Math.abs(totalOut))}
+              </span>
+            </div>
+          </div>
+        </div>
 
-        <div className="flex flex-wrap items-center gap-3 pb-4">
-          <PeriodFilter value={range} onChange={setRange} today={today} />
+        {/* Toolbar */}
+        <div className="mb-2 mt-5 flex flex-wrap items-center gap-3">
           <Segmented options={TYPES} value={type} onChange={setType} />
-          <select
-            aria-label="Catégorie"
+
+          {/* Search input with icon */}
+          <span className="relative flex min-w-[200px] flex-1 items-center">
+            <span className="pointer-events-none absolute left-3.5 flex text-paper-mute">
+              <Search size={16} strokeWidth={1.8} />
+            </span>
+            <input
+              type="search"
+              aria-label="Rechercher une transaction"
+              placeholder="Rechercher une transaction…"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+              }}
+              className={cn(FIELD, 'w-full pl-10 placeholder:text-paper-dim focus:border-line-3')}
+            />
+          </span>
+
+          <Select
+            ariaLabel="Catégorie"
             value={category}
-            onChange={(e) => {
-              setCategory(e.target.value);
-            }}
-            className={FIELD}
-          >
-            <option value="all">Toutes catégories</option>
-            <option value={NONE}>Sans catégorie</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <input
-            type="search"
-            aria-label="Rechercher"
-            placeholder="Rechercher…"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-            }}
-            className={cn(FIELD, 'min-w-[160px] flex-1 placeholder:text-paper-dim')}
+            onValueChange={setCategory}
+            options={[
+              { value: 'all', label: 'Toutes catégories' },
+              { value: NONE, label: 'Sans catégorie' },
+              ...categories.map((c) => ({ value: c.id, label: c.name })),
+            ]}
+            className="min-w-[150px]"
+            icon={SlidersHorizontal}
+            triggerLabel={category === 'all' ? 'Catégorie' : undefined}
           />
+
+          <Select
+            ariaLabel="Période"
+            value={period}
+            onValueChange={(v) => {
+              setPeriod(v as PeriodPreset);
+            }}
+            options={PERIOD_OPTIONS}
+            className="min-w-[160px]"
+            icon={Calendar}
+          />
+
+          {anyFilterActive && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className={cn(FIELD, 'inline-flex cursor-pointer items-center gap-2 text-paper-mute')}
+            >
+              <X size={15} strokeWidth={1.8} />
+              Réinitialiser
+            </button>
+          )}
         </div>
 
         {transactions.length === 0 ? (
-          <p className="py-8 text-center text-sm text-paper-mute">
+          <div className="flex flex-1 items-center justify-center py-[52px] text-center text-sm text-paper-mute">
             Aucune transaction — importez un relevé pour commencer.
-          </p>
+          </div>
         ) : filtered.length === 0 ? (
-          <p className="py-8 text-center text-sm text-paper-mute">
-            Aucune transaction ne correspond à ces filtres.
-          </p>
+          <div className="flex flex-1 flex-col items-center justify-center py-[52px] text-center text-sm text-paper-mute">
+            <SearchX size={28} strokeWidth={1.5} className="mb-2.5 text-paper-dim" />
+            <div>Aucune transaction ne correspond à ces filtres.</div>
+          </div>
         ) : (
-          <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-y-auto">
-            <div className="sticky top-0 z-10 bg-ink-2">
-              <TxTableHeader />
-            </div>
-            {/* listRef sits below the sticky header, so scrollMargin = header height; each
-                row is translated by (vi.start - scrollMargin) to land right under it. */}
-            <div
-              ref={listRef}
-              className="relative"
-              style={{ height: rowVirtualizer.getTotalSize() }}
-            >
-              {rowVirtualizer.getVirtualItems().map((vi) => {
-                const t = filtered[vi.index];
-                if (!t) return null;
-                return (
-                  <div
-                    key={t.id}
-                    data-index={vi.index}
-                    ref={(el) => {
-                      rowVirtualizer.measureElement(el);
-                    }}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      transform: `translateY(${String(vi.start - rowVirtualizer.options.scrollMargin)}px)`,
-                    }}
-                  >
-                    <TxTableRow
-                      row={toTxRow(t)}
-                      categories={categories}
-                      onReassign={(txId, catId) => {
-                        void reassign(txId, catId, t.labelClean);
+          <div className="mt-1 flex min-h-0 flex-1 flex-col">
+            <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-y-auto px-3.5">
+              {/* listRef sits below the top of the scroll container; scrollMargin = offsetTop so
+                  each row is translated by (vi.start - scrollMargin). */}
+              <div
+                ref={listRef}
+                className="relative"
+                style={{ height: rowVirtualizer.getTotalSize() }}
+              >
+                {rowVirtualizer.getVirtualItems().map((vi) => {
+                  const t = filtered[vi.index];
+                  if (!t) return null;
+                  return (
+                    <div
+                      key={t.id}
+                      data-index={vi.index}
+                      ref={(el) => {
+                        rowVirtualizer.measureElement(el);
                       }}
-                      onCreateCategory={createCategory}
-                      editing={editingId === t.id}
-                      onStartEdit={(id) => {
-                        setEditingId(id);
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        transform: `translateY(${String(vi.start - rowVirtualizer.options.scrollMargin)}px)`,
                       }}
-                      onSaveEdit={(id, fields) => {
-                        void updateTransaction({
-                          transactionId: id,
-                          date: fields.date,
-                          label: fields.label,
-                          amount: fields.amount,
-                        });
-                        setEditingId(null);
-                      }}
-                      onCancelEdit={() => {
-                        setEditingId(null);
-                      }}
-                      onDelete={(id) => {
-                        void deleteTransaction(id);
-                      }}
-                      onUnlinkLoan={(id) => {
-                        void ipc
-                          .invoke('patrimoine:unlinkPayment', { transactionId: id })
-                          .then(() => {
-                            refresh();
+                    >
+                      <TxRowFull
+                        row={toTxRow(t)}
+                        categories={categories}
+                        onReassign={(txId, catId) => {
+                          void reassign(txId, catId, t.labelClean);
+                        }}
+                        onCreateCategory={createCategory}
+                        editing={editingId === t.id}
+                        onStartEdit={(id) => {
+                          setEditingId(id);
+                        }}
+                        onSaveEdit={(id, fields) => {
+                          void updateTransaction({
+                            transactionId: id,
+                            date: fields.date,
+                            label: fields.label,
+                            amount: fields.amount,
                           });
-                      }}
-                    />
-                  </div>
-                );
-              })}
+                          setEditingId(null);
+                        }}
+                        onCancelEdit={() => {
+                          setEditingId(null);
+                        }}
+                        onDelete={(id) => {
+                          void deleteTransaction(id);
+                        }}
+                        onUnlinkLoan={(id) => {
+                          void ipc
+                            .invoke('patrimoine:unlinkPayment', { transactionId: id })
+                            .then(() => {
+                              refresh();
+                            });
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Footer: result count + net balance */}
+            <div className="flex items-center justify-between pt-4 text-[12.5px] text-paper-mute">
+              <span>
+                {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
+              </span>
+              <span>
+                Solde net{' '}
+                <span className="ml-1.5 font-mono tabular-nums text-paper">
+                  {formatSignedEuro(totalIn + totalOut)}
+                </span>
+              </span>
             </div>
           </div>
         )}
-      </Card>
+      </div>
       <RuleDialog
         proposal={ruleProposal}
         categories={categories}

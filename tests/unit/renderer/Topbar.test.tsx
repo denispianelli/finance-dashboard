@@ -4,6 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { ThemeProvider } from '@renderer/components/ThemeProvider';
 import { Topbar } from '@renderer/components/Topbar';
 
 afterEach(() => {
@@ -12,17 +13,21 @@ afterEach(() => {
 
 function renderTopbar(props: Partial<Parameters<typeof Topbar>[0]> = {}) {
   return render(
-    <MemoryRouter initialEntries={['/']}>
-      <Topbar onImport={() => undefined} {...props} />
-    </MemoryRouter>,
+    <ThemeProvider>
+      <MemoryRouter initialEntries={['/']}>
+        <Topbar onImport={() => undefined} {...props} />
+      </MemoryRouter>
+    </ThemeProvider>,
   );
 }
 
 function renderTopbarAt(path: string) {
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <Topbar onImport={() => undefined} />
-    </MemoryRouter>,
+    <ThemeProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <Topbar onImport={() => undefined} />
+      </MemoryRouter>
+    </ThemeProvider>,
   );
 }
 

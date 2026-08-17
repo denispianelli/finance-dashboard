@@ -1,5 +1,6 @@
-import { PanelLeft } from 'lucide-react';
+import { Moon, PanelLeft, Sun, Upload } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import { useTheme } from './ThemeProvider';
 import { Button } from './ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
@@ -20,6 +21,7 @@ const PAGE_META: Record<string, PageMeta> = {
   '/accounts': { title: 'Comptes', breadcrumb: ['Vue', 'Comptes'] },
   '/categories': { title: 'Catégories', breadcrumb: ['Vue', 'Catégories'] },
   '/reports': { title: 'Rapports', breadcrumb: ['Vue', 'Rapports'] },
+  '/patrimoine': { title: 'Patrimoine', breadcrumb: ['Vue', 'Patrimoine'] },
   '/settings': { title: 'Paramètres', breadcrumb: ['Outils', 'Paramètres'] },
 };
 
@@ -35,6 +37,8 @@ export function Topbar({
   const { pathname } = useLocation();
   const meta = PAGE_META[pathname] ?? { title: 'Finance Dashboard', breadcrumb: [] };
   const toggleLabel = sidebarCollapsed ? 'Déplier la barre latérale' : 'Replier la barre latérale';
+  const { theme, toggleTheme } = useTheme();
+  const themeLabel = theme === 'dark' ? 'Passer en thème clair' : 'Passer en thème sombre';
 
   return (
     <header
@@ -73,13 +77,33 @@ export function Topbar({
             ))}
           </span>
         ) : null}
-        <h1 className="truncate font-serif text-[22px] italic leading-[1.05] tracking-[-0.02em] text-paper xl:text-[26px]">
+        <h1 className="truncate font-sans text-[22px] font-semibold leading-[1.05] tracking-[-0.015em] text-paper xl:text-[26px]">
           {meta.title}
         </h1>
       </div>
       <span className="flex-1" />
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={themeLabel}
+              className="flex size-9 shrink-0 items-center justify-center rounded-md text-paper-mute transition-colors hover:bg-surface-2 hover:text-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass"
+            >
+              {theme === 'dark' ? (
+                <Sun size={17} strokeWidth={1.7} />
+              ) : (
+                <Moon size={17} strokeWidth={1.7} />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{themeLabel}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <Button onClick={onImport} className="shrink-0">
-        Importer un relevé
+        <Upload size={16} strokeWidth={1.7} />
+        Importer
       </Button>
     </header>
   );
