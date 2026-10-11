@@ -8,6 +8,23 @@ From v0.1.0 onward this file is generated automatically by
 [Conventional Commits](https://www.conventionalcommits.org/). Do not edit
 released sections by hand.
 
+## [0.7.0](https://github.com/denispianelli/finance-dashboard/compare/v0.6.1...v0.7.0) (2026-06-16)
+
+
+### Features
+
+* **investment:** import Fortuneo bourse CSV (operations → flows + shares) ([#234](https://github.com/denispianelli/finance-dashboard/issues/234)) ([588e6b1](https://github.com/denispianelli/finance-dashboard/commit/588e6b1c9544c9e1601a5ed168566e6e81684cdc))
+* **investment:** opt-in market-price feed (Phase B) ([#235](https://github.com/denispianelli/finance-dashboard/issues/235)) ([4ba2aaf](https://github.com/denispianelli/finance-dashboard/commit/4ba2aaf078f7f2c766314b18441105b81733228b))
+* **investment:** per-support TRI/TTWROR tracking (Phase A) ([#233](https://github.com/denispianelli/finance-dashboard/issues/233)) ([5adab3a](https://github.com/denispianelli/finance-dashboard/commit/5adab3acf89616b6f9f403f9ef471d835a4672b2))
+* **patrimoine:** allocation by asset class with targets ([#232](https://github.com/denispianelli/finance-dashboard/issues/232)) ([e2f83f7](https://github.com/denispianelli/finance-dashboard/commit/e2f83f7d87919398b74707ce521c6b4402c2027d))
+* **patrimoine:** mortgage module v1 (import amortization table + net worth) ([#227](https://github.com/denispianelli/finance-dashboard/issues/227)) ([de97bc6](https://github.com/denispianelli/finance-dashboard/commit/de97bc65b759d5343fa3c1c916fd0bd8b1e48dda))
+* **patrimoine:** split mortgage payments in reports (brick 2) ([#228](https://github.com/denispianelli/finance-dashboard/issues/228)) ([9739edb](https://github.com/denispianelli/finance-dashboard/commit/9739edbc81656edc27b492b1c9208b0c0a31c809))
+
+
+### Bug Fixes
+
+* **categories:** scroll the cards internally so the page stays fixed ([#225](https://github.com/denispianelli/finance-dashboard/issues/225)) ([e7f74d0](https://github.com/denispianelli/finance-dashboard/commit/e7f74d0e8110080a41a13a7720943c7e9063e16e))
+
 ## [0.6.1](https://github.com/denispianelli/finance-dashboard/compare/v0.6.0...v0.6.1) (2026-06-12)
 
 
