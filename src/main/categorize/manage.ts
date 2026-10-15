@@ -18,13 +18,16 @@ interface CategoryRow {
   parent_id: string | null;
   is_default: number;
   position: number;
+  tx_count: number;
 }
 
-/** Active (non-deprecated) categories, ordered for display. */
+/** Active (non-deprecated) categories, ordered for display, each with its
+ *  current transaction count (for the Catégories cards). */
 export function listCategories(db: DatabaseSync): CategoryDTO[] {
   const rows = db
     .prepare(
-      `SELECT id, name, icon, color, parent_id, is_default, position
+      `SELECT id, name, icon, color, parent_id, is_default, position,
+              (SELECT COUNT(*) FROM transactions t WHERE t.category_id = categories.id) AS tx_count
        FROM categories
        WHERE deprecated_at IS NULL
        ORDER BY position ASC, name ASC`,
@@ -38,6 +41,7 @@ export function listCategories(db: DatabaseSync): CategoryDTO[] {
     parentId: r.parent_id,
     isDefault: r.is_default === 1,
     position: r.position,
+    txCount: r.tx_count,
   }));
 }
 

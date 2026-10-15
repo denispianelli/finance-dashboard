@@ -102,8 +102,10 @@ export function ReportsPage() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-baseline gap-3.5">
-          <Overline>— Rapport</Overline>
-          <span className="font-serif text-[20px] italic leading-none text-paper">
+          <Overline>
+            {period.granularity === 'year' ? 'Rapport annuel' : 'Rapport mensuel'}
+          </Overline>
+          <span className="font-sans font-semibold text-[20px] leading-none text-paper">
             {headerLabel}
           </span>
         </div>
@@ -125,14 +127,14 @@ export function ReportsPage() {
 
       <div className="grid gap-3.5 lg:grid-cols-2">
         <CategoryDonut
-          overline="— II"
+          overline={period.granularity === 'year' ? "Sur l'année" : 'Sur le mois'}
           title="D'où vient l'argent"
           slices={categoryBreakdown(scoped, 'in')}
           centerTop="Entrées"
           emptyHint="Aucune entrée sur la période."
         />
         <CategoryDonut
-          overline="— III"
+          overline={period.granularity === 'year' ? "Sur l'année" : 'Sur le mois'}
           title="Où part l'argent"
           slices={categoryBreakdown(scoped, 'out')}
           centerTop="Sorties"

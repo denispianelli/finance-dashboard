@@ -5,7 +5,6 @@ import type {
   CreateAccountInput,
   UpdateAccountInput,
 } from '@shared/types/dashboard';
-import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Overline } from '../ui/overline';
 import { Money } from '../ui/money';
@@ -20,6 +19,7 @@ import {
 } from '../ui/dialog';
 import { useAccounts } from '../../hooks/useAccounts';
 import { cn } from '../../lib/utils';
+import { AccountCard } from './AccountCard';
 
 const INPUT =
   'h-9 rounded-md border border-line-2 bg-ink-3 px-2.5 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
@@ -30,48 +30,78 @@ export function AccountManager({ onMutated }: { onMutated?: () => void }) {
   const { accounts, createAccount, updateAccount, deleteAccount } = useAccounts(onMutated);
   const [adding, setAdding] = useState(false);
 
-  return (
-    <Card className="max-w-[760px]">
-      <CardHeader>
-        <div className="flex items-center gap-3.5">
-          <Overline>— Réglages</Overline>
-          <CardTitle>Comptes</CardTitle>
-        </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            setAdding((a) => !a);
-          }}
-        >
-          <Plus size={14} strokeWidth={1.8} />
-          Nouveau compte
-        </Button>
-      </CardHeader>
+  const total = accounts.reduce((sum, a) => sum + (a.balance ?? 0), 0);
+  const n = accounts.length;
 
-      <p className="pb-1 font-sans text-[11px] text-paper-dim">
-        Renomme, ajoute ou supprime tes comptes. Supprimer un compte efface aussi définitivement ses
-        transactions.
-      </p>
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="tile flex flex-wrap items-start justify-between gap-4 p-[22px]">
+        <div className="min-w-0">
+          <Overline>
+            {n} compte{n > 1 ? 's' : ''}
+          </Overline>
+          <h2 className="mt-1 font-sans text-base font-semibold tracking-[-0.015em] text-paper">
+            Mes comptes
+          </h2>
+          <p className="mt-1 max-w-[460px] font-sans text-[11px] text-paper-dim">
+            Renomme, ajoute ou supprime tes comptes. Supprimer un compte efface aussi définitivement
+            ses transactions.
+          </p>
+        </div>
+        <div className="flex items-center gap-5">
+          <div className="text-right">
+            <div className="font-sans text-[10px] uppercase tracking-[0.12em] text-paper-mute">
+              Total
+            </div>
+            <Money value={total} className="text-title font-semibold" />
+          </div>
+          <Button
+            onClick={() => {
+              setAdding((a) => !a);
+            }}
+          >
+            <Plus size={14} strokeWidth={1.8} />
+            Nouveau compte
+          </Button>
+        </div>
+      </div>
 
       {adding && (
-        <div className="mb-2 rounded-md border border-line-2 bg-ink-2/60 p-3">
+        <div className="tile p-[18px]">
           <AccountForm
             submitLabel="Créer le compte"
             onSubmit={(input) => {
               void createAccount(input);
               setAdding(false);
             }}
+            onCancel={() => {
+              setAdding(false);
+            }}
           />
         </div>
       )}
 
-      <div className="flex flex-col">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {accounts.map((a) => (
-          <AccountRow key={a.id} account={a} onUpdate={updateAccount} onDelete={deleteAccount} />
+          <AccountManageCard
+            key={a.id}
+            account={a}
+            onUpdate={updateAccount}
+            onDelete={deleteAccount}
+          />
         ))}
+        <button
+          type="button"
+          onClick={() => {
+            setAdding(true);
+          }}
+          className="flex min-h-[132px] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-line-2 text-paper-mute transition-colors hover:border-line-3 hover:text-paper"
+        >
+          <Plus size={18} strokeWidth={1.6} />
+          <span className="font-sans text-xs">Ajouter un compte</span>
+        </button>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -101,7 +131,7 @@ function AccountForm({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <input
         autoFocus
         value={name}
@@ -110,7 +140,7 @@ function AccountForm({
           setName(e.target.value);
         }}
         onKeyDown={onKey}
-        className={cn(INPUT, 'flex-1')}
+        className={cn(INPUT, 'min-w-[160px] flex-1')}
       />
       <input
         value={bank}
@@ -138,7 +168,7 @@ function AccountForm({
   );
 }
 
-function AccountRow({
+function AccountManageCard({
   account,
   onUpdate,
   onDelete,
@@ -152,7 +182,7 @@ function AccountRow({
 
   if (editing) {
     return (
-      <div className="border-b border-line-1 py-2">
+      <div className="tile p-[18px]">
         <AccountForm
           initial={{ name: account.name, bankId: account.bankId }}
           submitLabel="Enregistrer"
@@ -168,54 +198,45 @@ function AccountRow({
     );
   }
 
-  const plural = account.txCount > 1 ? 's' : '';
-
   return (
-    <div className="group flex items-center gap-2.5 border-b border-line-1 py-2">
-      <div className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate font-sans text-[13px] text-paper">{account.name}</span>
-        <span className="font-mono text-[11px] text-paper-dim">
-          {account.bankId ?? 'Sans banque'} · {account.txCount} transaction{plural}
-        </span>
-      </div>
-
-      {account.balance === null ? (
-        <span className="font-mono text-[13px] tabular-nums text-paper-dim">—</span>
-      ) : (
-        <Money
-          value={account.balance}
-          kind={account.balance < 0 ? 'expense' : 'plain'}
-          className="text-[13px]"
-        />
-      )}
-      <button
-        type="button"
-        aria-label={`Renommer ${account.name}`}
-        onClick={() => {
-          setEditing(true);
-        }}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-paper-dim opacity-0 transition-opacity hover:bg-ink-3 hover:text-paper group-hover:opacity-100"
-      >
-        <Pencil size={13} strokeWidth={1.6} />
-      </button>
-      <button
-        type="button"
-        aria-label={`Supprimer ${account.name}`}
-        onClick={() => {
-          setConfirmingDelete(true);
-        }}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-paper-dim opacity-0 transition-opacity hover:bg-ink-3 hover:text-coral group-hover:opacity-100"
-      >
-        <Trash2 size={13} strokeWidth={1.6} />
-      </button>
-
+    <>
+      <AccountCard
+        type={account.type}
+        name={account.name}
+        balance={account.balance}
+        bank={account.bankId}
+        actions={
+          <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <button
+              type="button"
+              aria-label={`Renommer ${account.name}`}
+              onClick={() => {
+                setEditing(true);
+              }}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-paper-dim hover:bg-surface-2 hover:text-paper"
+            >
+              <Pencil size={13} strokeWidth={1.6} />
+            </button>
+            <button
+              type="button"
+              aria-label={`Supprimer ${account.name}`}
+              onClick={() => {
+                setConfirmingDelete(true);
+              }}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-paper-dim hover:bg-surface-2 hover:text-coral"
+            >
+              <Trash2 size={13} strokeWidth={1.6} />
+            </button>
+          </div>
+        }
+      />
       <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Supprimer ce compte ?</DialogTitle>
             <DialogDescription>
               {account.txCount > 0
-                ? `« ${account.name} » et ses ${String(account.txCount)} transaction${plural} seront définitivement supprimés. Cette action est irréversible.`
+                ? `« ${account.name} » et ses ${String(account.txCount)} transaction${account.txCount > 1 ? 's' : ''} seront définitivement supprimés. Cette action est irréversible.`
                 : `« ${account.name} » sera définitivement supprimé.`}
             </DialogDescription>
           </DialogHeader>
@@ -238,6 +259,6 @@ function AccountRow({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

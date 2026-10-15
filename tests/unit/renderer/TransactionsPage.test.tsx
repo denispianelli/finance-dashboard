@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { MemoryRouter, Routes, Route, Outlet } from 'react-router-dom';
 
@@ -80,11 +81,11 @@ function stubIpc(transactions: DashboardTransaction[] = TX): void {
 }
 
 beforeEach(() => {
-  // Freeze "today" so the fixtures (dated 2026-05-14) always fall inside the
-  // page's default last-30-days window. Without this the suite is a time bomb:
-  // it passes until the real clock moves >30 days past the fixture date, then
-  // the default filter hides every row. Fake only Date — real timers stay live
-  // so testing-library's findByText polling still works.
+  // Freeze "today" so period-preset calculations are deterministic. The page's
+  // default period is now 'all', so this is harmless but kept for preset tests
+  // that select date-windowed options (Ce mois-ci, 30 derniers jours, etc.).
+  // Fake only Date — real timers stay live so testing-library's findByText
+  // polling still works.
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-05-20T12:00:00Z'));
   mockInvoke.mockReset();
@@ -103,16 +104,16 @@ beforeEach(() => {
   //
   // @tanstack/react-virtual reads offsetHeight for the scroll container size and
   // getBoundingClientRect for individual row measurements.
-  // Viewport: 300 px (shows ~5 rows at ROW_ESTIMATE=57 px + overscan=8 → ~13 items max).
-  // Row height: 40 px via getBoundingClientRect. This keeps the 3-row fixture fully visible
+  // Viewport: 300 px (shows ~4 rows at ROW_ESTIMATE=76 px + overscan=8 → ~11 items max).
+  // Row height: 76 px via getBoundingClientRect. This keeps the 3-row fixture fully visible
   // while the 30-row fixture is windowed (fewer than 30 rendered).
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
     width: 800,
-    height: 40,
+    height: 76,
     top: 0,
     left: 0,
     right: 800,
-    bottom: 40,
+    bottom: 76,
     x: 0,
     y: 0,
     toJSON: () => ({}),
@@ -171,7 +172,9 @@ describe('TransactionsPage', () => {
   it('filters by free-text search on the label', async () => {
     renderPage();
     await screen.findByText('Carrefour');
-    fireEvent.change(screen.getByLabelText('Rechercher'), { target: { value: 'pharma' } });
+    fireEvent.change(screen.getByLabelText('Rechercher une transaction'), {
+      target: { value: 'pharma' },
+    });
     expect(screen.getByText('Pharmacie')).toBeInTheDocument();
     expect(screen.queryByText('Carrefour')).not.toBeInTheDocument();
     expect(screen.queryByText('Salaire')).not.toBeInTheDocument();
@@ -186,17 +189,49 @@ describe('TransactionsPage', () => {
   });
 
   it('filters by category', async () => {
+    const user = userEvent.setup();
     renderPage();
     await screen.findByText('Carrefour');
-    fireEvent.change(screen.getByLabelText('Catégorie'), { target: { value: 'cat-food' } });
+    // Glass dropdown: open the trigger, then pick the category option.
+    await user.click(screen.getByLabelText('Catégorie'));
+    await user.click(screen.getByRole('option', { name: 'Alimentation' }));
     expect(screen.getByText('Carrefour')).toBeInTheDocument();
     expect(screen.queryByText('Salaire')).not.toBeInTheDocument();
+  });
+
+  it('filters by period preset via the Période dropdown', async () => {
+    // Use a transaction dated well before the anchor to verify exclusion under 'month'.
+    const transactions = [
+      tx({ id: 'old', date: '2026-03-01', labelClean: 'OldTx', amount: -5 }),
+      tx({ id: 'new', date: '2026-05-14', labelClean: 'NewTx', amount: -10 }),
+    ];
+    stubIpc(transactions);
+    const user = userEvent.setup();
+    renderPage();
+
+    // Default period is 'all' — both rows visible.
+    await screen.findByText('NewTx');
+    expect(screen.getByText('OldTx')).toBeInTheDocument();
+
+    // Switch to 'Ce mois-ci' — only 2026-05 row should appear.
+    await user.click(screen.getByLabelText('Période'));
+    await user.click(screen.getByRole('option', { name: 'Ce mois-ci' }));
+    expect(screen.getByText('NewTx')).toBeInTheDocument();
+    expect(screen.queryByText('OldTx')).not.toBeInTheDocument();
+
+    // Switch back to 'Toute la période' — both should appear again.
+    await user.click(screen.getByLabelText('Période'));
+    await user.click(screen.getByRole('option', { name: 'Toute la période' }));
+    expect(screen.getByText('NewTx')).toBeInTheDocument();
+    expect(screen.getByText('OldTx')).toBeInTheDocument();
   });
 
   it('shows a filtered-empty state when nothing matches', async () => {
     renderPage();
     await screen.findByText('Carrefour');
-    fireEvent.change(screen.getByLabelText('Rechercher'), { target: { value: 'zzzzz' } });
+    fireEvent.change(screen.getByLabelText('Rechercher une transaction'), {
+      target: { value: 'zzzzz' },
+    });
     expect(screen.getByText(/ne correspond à ces filtres/i)).toBeInTheDocument();
   });
 
@@ -242,11 +277,12 @@ describe('TransactionsPage', () => {
     expect(mockInvoke).toHaveBeenCalledWith('transactions:delete', { transactionId: 'a' });
   });
 
-  it('defaults to the last-30-days range and renders the Du/Au fields', async () => {
+  it('shows the Période dropdown defaulting to Toute la période', async () => {
     renderPage();
     await screen.findByText('Carrefour');
-    expect(screen.getByLabelText('Du')).toBeInTheDocument();
-    expect(screen.getByLabelText('Au')).toBeInTheDocument();
-    expect(screen.getByLabelText<HTMLInputElement>('Du').value).not.toBe('');
+    // The period trigger should show the current label for 'all'.
+    expect(screen.getByLabelText('Période')).toBeInTheDocument();
+    // The trigger text should show the current selection.
+    expect(screen.getByText('Toute la période')).toBeInTheDocument();
   });
 });

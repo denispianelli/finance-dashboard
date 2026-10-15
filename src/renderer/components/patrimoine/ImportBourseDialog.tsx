@@ -8,6 +8,7 @@ import type {
 } from '@shared/types/investment';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
+import { Select } from '../ui/select';
 
 const INPUT =
   'h-8 rounded-md border border-line-2 bg-ink-3 px-2 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
@@ -142,24 +143,20 @@ export function ImportBourseDialog({
             {/* Step 2 — target wrapper (only shown once a file is selected) */}
             {csvPath && (
               <div className="flex flex-col gap-3 border-t border-line-2 pt-3">
-                <label className="flex flex-col gap-1 font-sans text-[12px] text-paper-soft">
-                  Enveloppe cible
-                  <select
-                    className={INPUT}
+                <div className="flex flex-col gap-1 font-sans text-[12px] text-paper-soft">
+                  <span>Enveloppe cible</span>
+                  <Select
+                    ariaLabel="Enveloppe cible"
                     value={wrapperId}
-                    onChange={(e) => {
-                      setWrapperId(e.target.value);
-                    }}
-                  >
-                    <option value="">— choisir —</option>
-                    {wrappers.map((w) => (
-                      <option key={w.id} value={w.id}>
-                        {w.name}
-                      </option>
-                    ))}
-                    <option value="__new__">+ Nouvelle enveloppe</option>
-                  </select>
-                </label>
+                    onValueChange={setWrapperId}
+                    options={[
+                      { value: '', label: '— choisir —' },
+                      ...wrappers.map((w) => ({ value: w.id, label: w.name })),
+                      { value: '__new__', label: '+ Nouvelle enveloppe' },
+                    ]}
+                    className="h-9 w-full text-[13px]"
+                  />
+                </div>
 
                 {isNewWrapper && (
                   <>
@@ -175,24 +172,20 @@ export function ImportBourseDialog({
                         }}
                       />
                     </label>
-                    <label className="flex flex-col gap-1 font-sans text-[12px] text-paper-soft">
-                      Type
-                      <select
-                        className={INPUT}
+                    <div className="flex flex-col gap-1 font-sans text-[12px] text-paper-soft">
+                      <span>Type</span>
+                      <Select
+                        ariaLabel="Type"
                         value={newWrapperType}
-                        onChange={(e) => {
-                          setNewWrapperType(e.target.value as WrapperType);
+                        onValueChange={(v) => {
+                          setNewWrapperType(v as WrapperType);
                         }}
-                      >
-                        {(Object.entries(WRAPPER_TYPE_LABELS) as [WrapperType, string][]).map(
-                          ([value, label]) => (
-                            <option key={value} value={value}>
-                              {label}
-                            </option>
-                          ),
-                        )}
-                      </select>
-                    </label>
+                        options={(
+                          Object.entries(WRAPPER_TYPE_LABELS) as [WrapperType, string][]
+                        ).map(([value, label]) => ({ value, label }))}
+                        className="h-9 w-full text-[13px]"
+                      />
+                    </div>
                   </>
                 )}
               </div>

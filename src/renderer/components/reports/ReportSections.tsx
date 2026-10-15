@@ -52,7 +52,7 @@ export function RecurringCard({ recurring }: { recurring: RecurringReport | null
   );
   return (
     <Section
-      mark="— V"
+      mark="Récurrents"
       title="Abonnements & récurrents"
       right={subs.length > 0 ? total : undefined}
     >
@@ -84,7 +84,7 @@ export function RecurringCard({ recurring }: { recurring: RecurringReport | null
 
 export function BiggestMovementsCard({ movements }: { movements: DashboardTransaction[] }) {
   return (
-    <Section mark="— VI" title="Plus gros mouvements">
+    <Section mark="Faits marquants" title="Plus gros mouvements">
       {movements.length === 0 ? (
         <Empty>Aucun mouvement.</Empty>
       ) : (

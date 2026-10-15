@@ -64,8 +64,8 @@ describe('RuleDialog', () => {
   it('pre-fills the suggested token, contains type and the chosen category', () => {
     renderDialog();
     expect(screen.getByLabelText('Valeur')).toHaveProperty('value', 'CARREFOUR');
-    expect(screen.getByLabelText('Type de règle')).toHaveProperty('value', 'contains');
-    expect(screen.getByLabelText('Catégorie')).toHaveProperty('value', 'cat-alimentation');
+    expect(screen.getByLabelText('Type de règle')).toHaveTextContent('Contient');
+    expect(screen.getByLabelText('Catégorie')).toHaveTextContent('Alimentation');
   });
 
   it('creates the rule and reports the applied count', async () => {

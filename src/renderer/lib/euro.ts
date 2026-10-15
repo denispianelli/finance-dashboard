@@ -19,6 +19,15 @@ export function formatEuro(amount: number): string {
   return `${formatAmount(amount)}${NBSP}€`;
 }
 
+/**
+ * "8 421 €" — whole-euro grouping with no decimals, for glance figures
+ * (account filter cards, the Entrées/Sorties header totals). The to-the-cent
+ * values stay available in the row amounts and the footer net.
+ */
+export function formatEuroRounded(amount: number): string {
+  return `${Math.round(amount).toLocaleString('fr-FR', { maximumFractionDigits: 0 })}${NBSP}€`;
+}
+
 /** "+ 1 234,56 €" / "− 1 234,56 €" — explicit spaced sign (U+2212) + euro. */
 export function formatSignedEuro(amount: number): string {
   const sign = amount >= 0 ? '+' : MINUS;

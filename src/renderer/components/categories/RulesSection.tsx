@@ -4,6 +4,7 @@ import type { CategoryDTO } from '@shared/types/category';
 import type { RuleDTO, RuleMatchType } from '@shared/types/rules';
 import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Overline } from '../ui/overline';
+import { Select } from '../ui/select';
 import { useRules } from '../../hooks/useRules';
 import { cn } from '../../lib/utils';
 
@@ -40,8 +41,8 @@ export function RulesSection({ categories }: { categories: CategoryDTO[] }) {
   return (
     <Card className="min-h-0 flex-1">
       <CardHeader>
-        <div className="flex items-center gap-3.5">
-          <Overline>— II</Overline>
+        <div className="flex min-w-0 flex-col gap-1">
+          <Overline>Moteur</Overline>
           <CardTitle>Règles</CardTitle>
         </div>
       </CardHeader>
@@ -59,21 +60,17 @@ export function RulesSection({ categories }: { categories: CategoryDTO[] }) {
             setQuery(e.target.value);
           }}
         />
-        <select
-          aria-label="Filtrer par catégorie"
-          className={FIELD}
+        <Select
+          ariaLabel="Filtrer par catégorie"
           value={categoryFilter}
-          onChange={(e) => {
-            setCategoryFilter(e.target.value);
-          }}
-        >
-          <option value="">Toutes les catégories</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+          onValueChange={setCategoryFilter}
+          options={[
+            { value: '', label: 'Toutes les catégories' },
+            ...categories.map((c) => ({ value: c.id, label: c.name })),
+          ]}
+          align="end"
+          className="min-w-[170px]"
+        />
         {filterActive && (
           <span className="shrink-0 font-mono text-[11px] tabular-nums text-paper-dim">
             {filtered.length} / {rules.length} règles
@@ -121,18 +118,19 @@ function RuleRow({
   if (editing) {
     return (
       <div className="flex items-center gap-2 border-b border-line-1 py-2">
-        <select
-          aria-label="Type de la règle"
-          className={FIELD}
+        <Select
+          ariaLabel="Type de la règle"
           value={matchType}
-          onChange={(e) => {
-            setMatchType(e.target.value as RuleMatchType);
+          onValueChange={(v) => {
+            setMatchType(v as RuleMatchType);
           }}
-        >
-          <option value="contains">Contient</option>
-          <option value="exact">Exact</option>
-          <option value="regex">Regex</option>
-        </select>
+          options={[
+            { value: 'contains', label: 'Contient' },
+            { value: 'exact', label: 'Exact' },
+            { value: 'regex', label: 'Regex' },
+          ]}
+          className="h-8 text-[12px]"
+        />
         <input
           aria-label="Valeur de la règle"
           className={cn(FIELD, 'min-w-0 flex-1')}
@@ -141,20 +139,13 @@ function RuleRow({
             setMatchValue(e.target.value);
           }}
         />
-        <select
-          aria-label="Catégorie de la règle"
-          className={FIELD}
+        <Select
+          ariaLabel="Catégorie de la règle"
           value={categoryId}
-          onChange={(e) => {
-            setCategoryId(e.target.value);
-          }}
-        >
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+          onValueChange={setCategoryId}
+          options={categories.map((c) => ({ value: c.id, label: c.name }))}
+          className="h-8 text-[12px]"
+        />
         <button
           type="button"
           aria-label="Enregistrer la règle"

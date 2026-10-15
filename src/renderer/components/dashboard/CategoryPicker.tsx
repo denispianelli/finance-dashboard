@@ -93,11 +93,21 @@ export function CategoryPicker({ categories, current, onSelect, onCreate }: Cate
           if (open) close();
           else openMenu();
         }}
-        className="inline-flex items-center gap-1.5 rounded-sm px-1 py-0.5 font-sans text-[11px] font-medium text-paper-soft hover:bg-ink-4"
+        className={cn(
+          'inline-flex w-[176px] items-center gap-[7px] rounded-full border px-[11px] py-[6px] font-sans text-[12px] text-paper-soft transition-colors',
+          open ? 'border-line-3 bg-surface-2' : 'border-line-2 bg-surface hover:bg-surface-2',
+        )}
       >
-        <span className="h-1.5 w-1.5 rounded-full" style={{ background: current.color }} />
-        {current.name}
-        <ChevronDown size={11} strokeWidth={1.8} className="text-paper-dim" />
+        <span
+          className="h-[7px] w-[7px] shrink-0 rounded-full"
+          style={{ background: current.color }}
+        />
+        <span className="min-w-0 flex-1 truncate text-left">{current.name}</span>
+        <ChevronDown
+          size={13}
+          strokeWidth={1.8}
+          className={cn('shrink-0 text-paper-dim transition-transform', open && 'rotate-180')}
+        />
       </button>
 
       {open &&

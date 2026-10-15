@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Overline } from '../ui/overline';
 import { Money } from '../ui/money';
+import { Select } from '../ui/select';
 
 const INPUT =
   'h-8 rounded-md border border-line-2 bg-ink-3 px-2 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
@@ -104,9 +105,9 @@ export function AssetsCard({
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-3.5">
-          <Overline>— III</Overline>
-          <CardTitle>Biens</CardTitle>
+        <div className="flex min-w-0 flex-col gap-1">
+          <Overline>Hors comptes</Overline>
+          <CardTitle>Actifs déclarés</CardTitle>
         </div>
         {!formOpen && (
           <Button variant="secondary" size="sm" onClick={openAdd}>
@@ -273,29 +274,26 @@ function AssetForm({
           onKeyDown={onKeyDown}
         />
       </label>
-      <label className="flex flex-col gap-1 font-sans text-[12px] text-paper-soft">
-        Classe
-        <select
-          className={INPUT}
+      <div className="flex flex-col gap-1 font-sans text-[12px] text-paper-soft">
+        <span>Classe</span>
+        <Select
+          ariaLabel="Classe"
           value={draftClassId ?? ''}
-          onChange={(e) => {
-            onChangeClassId(e.target.value === '' ? null : e.target.value);
+          onValueChange={(v) => {
+            onChangeClassId(v === '' ? null : v);
           }}
-          onKeyDown={onKeyDown}
-        >
-          <option value="">Non classé</option>
-          {classes.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: '', label: 'Non classé' },
+            ...classes.map((c) => ({ value: c.id, label: c.name })),
+          ]}
+          className="h-9 w-full text-[13px]"
+        />
         {classes.length === 0 && (
           <span className="font-sans text-[11px] text-paper-dim">
             Crée tes classes dans « Gérer les classes » sur la carte Allocation.
           </span>
         )}
-      </label>
+      </div>
       <label className="flex flex-col gap-1 font-sans text-[12px] text-paper-soft">
         Valeur déclarée (€)
         <input

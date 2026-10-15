@@ -16,6 +16,7 @@ vi.mock('@renderer/components/patrimoine/QuoteSettingsSection', () => ({
 }));
 vi.mock('@renderer/ipc/client', () => ({ ipc: { invoke: vi.fn() } }));
 
+import { ThemeProvider } from '@renderer/components/ThemeProvider';
 import { SettingsPage } from '@renderer/pages/SettingsPage';
 
 afterEach(() => {
@@ -24,7 +25,11 @@ afterEach(() => {
 
 describe('SettingsPage', () => {
   it('renders the four content sections and no model section', () => {
-    render(<SettingsPage />);
+    render(
+      <ThemeProvider>
+        <SettingsPage />
+      </ThemeProvider>,
+    );
     expect(screen.getByText('Synchronisation')).toBeInTheDocument();
     expect(screen.getByText('Données & Sauvegarde')).toBeInTheDocument();
     expect(screen.getByText('Cours de marché')).toBeInTheDocument();
@@ -33,13 +38,21 @@ describe('SettingsPage', () => {
   });
 
   it('disables the "à venir" actions (reset)', () => {
-    render(<SettingsPage />);
+    render(
+      <ThemeProvider>
+        <SettingsPage />
+      </ThemeProvider>,
+    );
     // "Restaurer" moved into BackupSettingsSection (stubbed here); only "Tout réinitialiser" stays.
     expect(screen.getByRole('button', { name: /Tout réinitialiser/ })).toBeDisabled();
   });
 
   it('keeps the live-worthy export actions enabled', () => {
-    render(<SettingsPage />);
+    render(
+      <ThemeProvider>
+        <SettingsPage />
+      </ThemeProvider>,
+    );
     expect(screen.getByRole('button', { name: 'CSV' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'JSON' })).toBeEnabled();
     // "Sauvegarder maintenant" moved into BackupSettingsSection (stubbed here).

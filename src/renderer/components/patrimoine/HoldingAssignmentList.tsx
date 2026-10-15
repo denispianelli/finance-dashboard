@@ -1,9 +1,7 @@
 import { Banknote, Home, TrendingUp, Wallet } from 'lucide-react';
 import type { AssetClass, ClassifiableHolding } from '@shared/types/patrimoine';
 import { formatEuro } from '../../lib/euro';
-
-const INPUT =
-  'h-8 rounded-md border border-line-2 bg-ink-3 px-2 text-[13px] text-paper placeholder:text-paper-dim focus:outline-none focus:ring-1 focus:ring-brass';
+import { Select } from '../ui/select';
 
 function kindIcon(kind: ClassifiableHolding['kind']) {
   if (kind === 'account') return <Wallet size={13} strokeWidth={1.6} />;
@@ -62,20 +60,19 @@ export function HoldingAssignmentList({
               {formatEuro(h.signedValue)}
             </span>
           )}
-          <select
-            className={`${INPUT} w-44 shrink-0`}
+          <Select
+            ariaLabel={`Classe de ${h.name}`}
             value={h.classId ?? ''}
-            onChange={(e) => {
-              onAssign(h.kind, h.id, e.target.value === '' ? null : e.target.value);
+            onValueChange={(v) => {
+              onAssign(h.kind, h.id, v === '' ? null : v);
             }}
-          >
-            <option value="">Non classé</option>
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            options={[
+              { value: '', label: 'Non classé' },
+              ...classes.map((c) => ({ value: c.id, label: c.name })),
+            ]}
+            align="end"
+            className="h-8 w-44 shrink-0 text-xs"
+          />
         </div>
       ))}
     </div>

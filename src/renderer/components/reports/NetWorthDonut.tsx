@@ -26,7 +26,7 @@ export function NetWorthDonut({ netWorth }: NetWorthDonutProps) {
 
   return (
     <DonutCard
-      overline="— IV"
+      overline="Tous comptes"
       title="Patrimoine · tous comptes"
       centerTop="Comptes"
       centerMain={formatCompact(accountsTotal)}
